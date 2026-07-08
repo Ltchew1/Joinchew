@@ -53,34 +53,71 @@ module.exports = async (req, res) => {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const bookingId = session.metadata?.booking_id;
-    const tier = session.metadata?.tier;
-    const slotIso = session.metadata?.slot;
-    const clientName = session.metadata?.client_name;
     const email = session.customer_email || session.customer_details?.email;
 
-    if (!bookingId) {
-      console.error('Webhook received with no booking_id in metadata — cannot reconcile.');
-      return res.status(200).json({ received: true, warning: 'no booking_id' });
-    }
-
     try {
-      await query(
-        `UPDATE bookings
-         SET status = 'confirmed', confirmed_at = now(),
-             stripe_payment_id = $1, amount_cents = $2
-         WHERE id = $3`,
-        [session.payment_intent, session.amount_total, bookingId]
-      );
+      if (bookingId) {
+        // Came from our own custom checkout flow (legacy path, kept for
+        // compatibility if ever re-enabled).
+        const tier = session.metadata?.tier;
+        const slotIso = session.metadata?.slot;
+        const clientName = session.metadata?.client_name;
 
-      const slotLabel = slotIso
-        ? new Date(slotIso).toLocaleString('en-US', {
+        await query(
+          `UPDATE bookings
+           SET status = 'confirmed', confirmed_at = now(),
+               stripe_payment_id = $1, amount_cents = $2
+           WHERE id = $3`,
+          [session.payment_intent, session.amount_total, bookingId]
+        );
+
+        const slotLabel = slotIso
+          ? new Date(slotIso).toLocaleString('en-US', {
+              weekday: 'short', month: 'short', day: 'numeric',
+              hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+            })
+          : 'your scheduled time';
+
+        if (email) {
+          await sendConfirmationEmail({ to: email, name: clientName, tier, slotLabel });
+        }
+      } else if (session.client_reference_id) {
+        // Came from a Stripe Payment Link — decode what the booking page
+        // packed into client_reference_id, then create the booking record
+        // directly as confirmed (payment already succeeded at this point).
+        let parsed;
+        try {
+          parsed = JSON.parse(decodeURIComponent(session.client_reference_id));
+        } catch (parseErr) {
+          console.error('Could not parse client_reference_id:', session.client_reference_id);
+          parsed = {};
+        }
+        const { tier, slot, name } = parsed;
+
+        if (tier && slot && email) {
+          const insertResult = await query(
+            `INSERT INTO bookings (tier, client_name, client_email, notes, slot_start, status, stripe_payment_id, amount_cents, confirmed_at)
+             VALUES ($1, $2, $3, $4, $5, 'confirmed', $6, $7, now())
+             ON CONFLICT (slot_start) WHERE status IN ('pending','confirmed') DO NOTHING
+             RETURNING id`,
+            [tier, name || '', email, '', slot, session.payment_intent, session.amount_total]
+          );
+
+          const slotLabel = new Date(slot).toLocaleString('en-US', {
             weekday: 'short', month: 'short', day: 'numeric',
             hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
-          })
-        : 'your scheduled time';
+          });
 
-      if (email) {
-        await sendConfirmationEmail({ to: email, name: clientName, tier, slotLabel });
+          if (insertResult.rows.length > 0) {
+            await sendConfirmationEmail({ to: email, name, tier, slotLabel });
+          } else {
+            console.error('Slot already booked at webhook time for Payment Link session:', session.id);
+          }
+        } else {
+          console.error('Payment Link session missing tier/slot/email, cannot create booking:', session.id);
+        }
+      } else {
+        console.error('Webhook received with no booking_id and no client_reference_id — cannot reconcile.');
       }
     } catch (err) {
       // Log but still return 200 — Stripe will retry on non-2xx, and retrying

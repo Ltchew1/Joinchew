@@ -152,49 +152,46 @@ async function loadSlots() {
 }
 loadSlots();
 
-document.getElementById('consult-form').addEventListener('submit', async function (e) {
+document.getElementById('consult-form').addEventListener('submit', function (e) {
   e.preventDefault();
-  var btn = document.getElementById('checkout-btn');
-  var status = this.querySelector('.form-status');
   var selectedTier = document.querySelector('input[name="consult-type"]:checked').value;
   var name = document.getElementById('b-name').value;
   var email = document.getElementById('b-email').value;
-  var notes = document.getElementById('b-notes').value;
+  var status = this.querySelector('.form-status');
 
   if (!selectedSlot) {
     status.textContent = 'Please select a time slot above.';
     status.classList.add('success', 'visible');
     return;
   }
-
-  btn.disabled = true;
-  btn.textContent = 'Redirecting to secure checkout...';
-
-  try {
-    var res = await fetch('/api/create-checkout-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tier: selectedTier, name: name, email: email, notes: notes, slot: selectedSlot })
-    });
-
-    var data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Checkout session request failed');
-    if (data.url) {
-      window.location = data.url;
-      return;
-    }
-    throw new Error('No checkout URL returned');
-  } catch (err) {
-    btn.disabled = false;
-    btn.textContent = 'Continue to secure checkout';
-    status.textContent = err.message.includes('taken')
-      ? 'That time slot was just taken — please choose another below.'
-      : "We couldn't start checkout just now — please email leroyt@joinchew.com to book directly in the meantime.";
+  if (!email) {
+    status.textContent = 'Please enter your email address.';
     status.classList.add('success', 'visible');
-    status.setAttribute('tabindex', '-1');
-    status.focus();
-    if (err.message.includes('taken')) loadSlots();
+    return;
   }
+
+  // Real, working Stripe Payment Links — one per tier. Created directly in
+  // the Stripe Dashboard, confirmed working end-to-end.
+  var PAYMENT_LINKS = {
+    strategy: 'https://buy.stripe.com/test_8x25kF7Zbg1q8lU85o77O00',
+    growth: 'https://buy.stripe.com/test_aFa4gBa7j3eEby6adw77O01',
+    executive: 'https://buy.stripe.com/test_8x2aEZcfr4iI59IgBU77O02'
+  };
+
+  var link = PAYMENT_LINKS[selectedTier];
+  if (!link) {
+    status.textContent = 'Something went wrong selecting that session type — please refresh and try again.';
+    status.classList.add('success', 'visible');
+    return;
+  }
+
+  // Pass along what we know so the webhook can create the booking record
+  // once payment succeeds: tier, chosen slot, and name — all packed into
+  // Stripe's client_reference_id field, plus a prefilled email.
+  var ref = encodeURIComponent(JSON.stringify({ tier: selectedTier, slot: selectedSlot, name: name }));
+  var url = link + '?prefilled_email=' + encodeURIComponent(email) + '&client_reference_id=' + ref;
+
+  window.location = url;
 });
 </script>
 <footer class="site-footer">

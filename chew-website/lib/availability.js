@@ -10,12 +10,14 @@
 const { query } = require('./db');
 
 // 0 = Sunday ... 6 = Saturday. Times are in the SITE_TIMEZONE below.
+// Availability: 12:00 PM – 5:00 PM, Monday through Friday only.
+// Last slot starts at 4:00 PM so even a longer session finishes by 5:00 PM.
 const WEEKLY_TEMPLATE = {
-  1: ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'], // Monday
-  2: ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'], // Tuesday
-  3: ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'], // Wednesday
-  4: ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'], // Thursday
-  5: ['09:00', '10:00', '11:00', '13:00'],                            // Friday (shorter day)
+  1: ['12:00', '13:00', '14:00', '15:00', '16:00'], // Monday
+  2: ['12:00', '13:00', '14:00', '15:00', '16:00'], // Tuesday
+  3: ['12:00', '13:00', '14:00', '15:00', '16:00'], // Wednesday
+  4: ['12:00', '13:00', '14:00', '15:00', '16:00'], // Thursday
+  5: ['12:00', '13:00', '14:00', '15:00', '16:00'], // Friday
 };
 
 const SITE_TIMEZONE = 'America/New_York'; // adjust to your actual business timezone

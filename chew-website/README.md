@@ -1,4 +1,4 @@
- # CHEW Website
+# CHEW Website
 
 A complete website and booking backend for CHEW LLC — 13 pages, real scheduling,
 Stripe payment, and automated email, built to deploy on Vercel.
