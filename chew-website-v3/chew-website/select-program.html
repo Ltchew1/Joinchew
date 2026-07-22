@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Choose Your Program | CHEW</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="brand">
+      <img src="assets/chew-icon-official.png" alt="" width="40" height="40">
+      CHEW
+    </a>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="hero-glow"></div>
+    <div class="container" style="position:relative;">
+      <span class="eyebrow">Welcome to CHEW</span>
+      <h1 style="max-width:20ch;">Choose your program.</h1>
+      <p class="max-prose" style="font-size:1.05rem; margin-top:16px;">
+        Each entry fee is credited toward your program's full cost.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div id="program-status" class="status-note" style="display:none; margin-bottom:24px;"></div>
+      <div class="grid grid--3">
+        <div class="glass card">
+          <h3>Infrastructure Program</h3>
+          <p style="color:var(--gold-light); font-weight:700; margin:10px 0;">$297 entry &middot; credited toward $1,997</p>
+          <p>Core program: education, strategy, and implementation accountability.</p>
+          <button type="button" class="btn btn-gold program-select" data-tier="infrastructure" style="margin-top:16px; width:100%; justify-content:center;">Select</button>
+        </div>
+        <div class="glass card">
+          <h3>Executive Advisory</h3>
+          <p style="color:var(--gold-light); font-weight:700; margin:10px 0;">$597 entry &middot; credited toward $4,997</p>
+          <p>Premium 1:1 advisory for more complex personal or business situations.</p>
+          <button type="button" class="btn btn-gold program-select" data-tier="executive" style="margin-top:16px; width:100%; justify-content:center;">Select</button>
+        </div>
+        <div class="glass card">
+          <h3>Membership</h3>
+          <p style="color:var(--gold-light); font-weight:700; margin:10px 0;">$147 entry &middot; then $97/month</p>
+          <p>Ongoing support after your program. Your first monthly charge begins 30 days after enrollment.</p>
+          <button type="button" class="btn btn-gold program-select" data-tier="membership" style="margin-top:16px; width:100%; justify-content:center;">Select</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var token = params.get('token') || '';
+  var statusEl = document.getElementById('program-status');
+
+  function showStatus(message) {
+    statusEl.textContent = message;
+    statusEl.style.display = 'block';
+  }
+
+  if (params.get('cancelled') === 'true') {
+    showStatus('Checkout was cancelled — you can select a program again below whenever you\'re ready.');
+  }
+
+  if (!token) {
+    showStatus('This page requires a valid invitation link from your acceptance email.');
+  }
+
+  document.querySelectorAll('.program-select').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (!token) return;
+      document.querySelectorAll('.program-select').forEach(function (b) { b.disabled = true; });
+      btn.textContent = 'Redirecting to secure checkout...';
+
+      fetch('/api/create-program-checkout-session', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ token: token, tier: btn.getAttribute('data-tier') }),
+      })
+        .then(function (res) {
+          if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Checkout failed'); });
+          return res.json();
+        })
+        .then(function (data) {
+          window.location = data.url;
+        })
+        .catch(function (err) {
+          showStatus(err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.');
+          document.querySelectorAll('.program-select').forEach(function (b) { b.disabled = false; });
+          btn.textContent = 'Select';
+        });
+    });
+  });
+})();
+</script>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-legal">
+      <span>&copy; 2026 CHEW LLC. All rights reserved.</span>
+      <span>CHEW LLC is a financial education and business-infrastructure company. CHEW does not provide credit repair services, does not promise or guarantee funding, approvals, score changes, or removal of information, and does not provide legal, tax, or investment advice. Results depend on individual circumstances, participation, and third-party decisions. See our <a href="disclaimer.html" style="color:inherit;">disclaimer</a>.</span>
+    </div>
+  </div>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>

@@ -31,7 +31,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const result = await query(`SELECT full_name, email FROM applications WHERE id = $1`, [id]);
+    const result = await query(`SELECT full_name, email, access_token FROM applications WHERE id = $1`, [id]);
     const application = result.rows[0];
     if (!application) {
       return res.status(404).json({ error: 'Application not found.' });
@@ -42,6 +42,7 @@ module.exports = async (req, res) => {
       name: application.full_name,
       decision,
       note: note ? String(note).slice(0, 2000) : '',
+      selectProgramUrl: `${process.env.SITE_URL}/select-program.html?token=${encodeURIComponent(application.access_token)}`,
     });
 
     await query(

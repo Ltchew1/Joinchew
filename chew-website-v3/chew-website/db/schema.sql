@@ -33,6 +33,7 @@ CREATE INDEX IF NOT EXISTS idx_bookings_slot_start ON bookings (slot_start);
 
 CREATE TABLE IF NOT EXISTS applications (
   id                  SERIAL PRIMARY KEY,
+  access_token        TEXT UNIQUE,
   full_name           TEXT NOT NULL,
   email               TEXT NOT NULL,
   phone               TEXT,
@@ -60,3 +61,47 @@ CREATE TABLE IF NOT EXISTS applications (
 
 CREATE INDEX IF NOT EXISTS idx_applications_status ON applications (status);
 CREATE INDEX IF NOT EXISTS idx_applications_created_at ON applications (created_at);
+
+-- CHEW post-acceptance program purchases
+-- Run this once to add the tier-selection + payment pipeline that begins
+-- after an application is accepted: entry fee -> (for Infrastructure/
+-- Executive) a separate remainder payment offering card/Klarna/Afterpay, or
+-- (for Membership) a $97/mo subscription that auto-starts 30 days after
+-- the entry fee.
+
+CREATE TABLE IF NOT EXISTS program_purchases (
+  id                          SERIAL PRIMARY KEY,
+  access_token                TEXT UNIQUE NOT NULL,
+  application_id              INTEGER REFERENCES applications (id),
+  tier                        TEXT NOT NULL CHECK (tier IN ('infrastructure', 'executive', 'membership')),
+  client_name                 TEXT NOT NULL,
+  client_email                TEXT NOT NULL,
+
+  -- Entry fee (all tiers)
+  entry_amount_cents          INTEGER NOT NULL,
+  entry_stripe_session_id     TEXT,
+  entry_paid_at               TIMESTAMPTZ,
+
+  -- Remainder payment (infrastructure/executive only)
+  remainder_amount_cents      INTEGER,
+  remainder_stripe_session_id TEXT,
+  remainder_paid_at           TIMESTAMPTZ,
+  remainder_payment_method    TEXT CHECK (remainder_payment_method IN ('card', 'klarna', 'afterpay_clearpay')),
+  bonus_session_earned        BOOLEAN NOT NULL DEFAULT FALSE,
+  bonus_session_scheduled     BOOLEAN NOT NULL DEFAULT FALSE,
+
+  -- Membership subscription (membership only)
+  stripe_customer_id          TEXT,
+  stripe_subscription_id      TEXT,
+  membership_first_charge_at  TIMESTAMPTZ,
+  membership_reminder_sent    BOOLEAN NOT NULL DEFAULT FALSE,
+  membership_status           TEXT CHECK (membership_status IN ('trialing', 'active', 'paused', 'cancelled')),
+
+  status                      TEXT NOT NULL DEFAULT 'pending_entry'
+                                CHECK (status IN ('pending_entry', 'pending_remainder', 'complete')),
+
+  created_at                  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_program_purchases_status ON program_purchases (status);
+CREATE INDEX IF NOT EXISTS idx_program_purchases_application ON program_purchases (application_id);

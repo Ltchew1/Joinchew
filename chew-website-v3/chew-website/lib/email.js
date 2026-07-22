@@ -83,25 +83,27 @@ const DECISION_CONTENT = {
   ACCEPT: {
     subject: 'Welcome to CHEW',
     heading: (name) => `You're in, ${name || 'there'}.`,
-    body: `
+    body: (selectProgramUrl) => `
       <p>After reviewing your application, we're glad to move forward with you.</p>
-      <p>We'll be in touch shortly with next steps to begin your Financial Blueprint
-      Assessment and get your program underway.</p>
+      <p>Choose your program to get started:</p>
+      <p><a href="${selectProgramUrl}" style="color: #8F7024; font-weight: bold;">Choose your program</a></p>
     `,
   },
   ACCEPT_WITH_CONDITIONS: {
     subject: 'Your CHEW application — accepted, with next steps',
     heading: (name) => `Good news, ${name || 'there'} — with a next step first.`,
-    body: `
+    body: (selectProgramUrl) => `
       <p>After reviewing your application, we'd like to move forward with you, with
       one or more conditions to put in place first. We'll lay those out directly in a
       follow-up so there's no ambiguity about what's needed.</p>
+      <p>Once that's settled, you can choose your program here:</p>
+      <p><a href="${selectProgramUrl}" style="color: #8F7024; font-weight: bold;">Choose your program</a></p>
     `,
   },
   WAITLIST: {
     subject: 'Your CHEW application — waitlisted',
     heading: (name) => `Thank you for applying, ${name || 'there'}.`,
-    body: `
+    body: () => `
       <p>We reviewed your application carefully. Rather than admit you before we're
       confident we can serve you well, we're placing you on our waitlist. We'd rather
       serve fewer clients completely than many clients poorly.</p>
@@ -111,7 +113,7 @@ const DECISION_CONTENT = {
   REFER_ELSEWHERE: {
     subject: 'Your CHEW application',
     heading: (name) => `Thank you for applying, ${name || 'there'}.`,
-    body: `
+    body: () => `
       <p>After reviewing your application, we don't think CHEW is the right fit for
       where you are right now — and we'd rather tell you that directly than take you
       on anyway.</p>
@@ -123,14 +125,14 @@ const DECISION_CONTENT = {
   REAPPLY_LATER: {
     subject: 'Your CHEW application — reapply soon',
     heading: (name) => `Thank you for applying, ${name || 'there'}.`,
-    body: `
+    body: () => `
       <p>We reviewed your application and think the timing isn't quite right yet.
       We'd genuinely welcome a reapplication once your situation develops further.</p>
     `,
   },
 };
 
-async function sendDecisionEmail({ to, name, decision, note }) {
+async function sendDecisionEmail({ to, name, decision, note, selectProgramUrl }) {
   const resend = getClient();
   const content = DECISION_CONTENT[decision];
   if (!content) throw new Error(`Unknown decision type: ${decision}`);
@@ -142,8 +144,121 @@ async function sendDecisionEmail({ to, name, decision, note }) {
     html: `
       <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
         <h2 style="color: #8F7024;">${content.heading(name)}</h2>
-        ${content.body}
+        ${content.body(selectProgramUrl)}
         ${note ? `<p>${note}</p>` : ''}
+        <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
+      </div>
+    `,
+  });
+}
+
+const PROGRAM_LABELS = {
+  infrastructure: 'Infrastructure Program',
+  executive: 'Executive Advisory',
+  membership: 'Membership',
+};
+
+function formatCents(cents) {
+  return `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 0 })}`;
+}
+
+function formatDate(date) {
+  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+async function sendProgramEntryConfirmationEmail({ to, name, tier, remainderAmountCents, payRemainderUrl }) {
+  const resend = getClient();
+  const programLabel = PROGRAM_LABELS[tier] || tier;
+
+  return resend.emails.send({
+    from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
+    to,
+    subject: `You're in — ${programLabel} entry fee received`,
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
+        <h2 style="color: #8F7024;">Welcome to the ${programLabel}, ${name || 'there'}.</h2>
+        <p>Your entry fee has been received. The remaining balance of
+        <strong>${formatCents(remainderAmountCents)}</strong> is credited from your entry fee against
+        the program's full cost.</p>
+        <p>When you're ready, you can pay the remainder in full by card (and receive a complimentary
+        1:1 strategy session as our thank-you — not a discount), or split it via Klarna or Afterpay:</p>
+        <p><a href="${payRemainderUrl}" style="color: #8F7024; font-weight: bold;">Pay your remaining balance</a></p>
+        <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
+      </div>
+    `,
+  });
+}
+
+async function sendMembershipWelcomeEmail({ to, name, firstChargeDate }) {
+  const resend = getClient();
+
+  return resend.emails.send({
+    from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
+    to,
+    subject: 'Welcome to CHEW Membership',
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
+        <h2 style="color: #8F7024;">Welcome, ${name || 'there'}.</h2>
+        <p>Your Membership entry fee has been received. Your $97/month membership begins on
+        <strong>${formatDate(firstChargeDate)}</strong> — nothing further is due before then.</p>
+        <p>We'll send a reminder a week before your first charge, with an easy way to pause or
+        cancel any time.</p>
+        <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
+      </div>
+    `,
+  });
+}
+
+async function sendRemainderConfirmationEmail({ to, name, tier, bonusEarned }) {
+  const resend = getClient();
+  const programLabel = PROGRAM_LABELS[tier] || tier;
+
+  return resend.emails.send({
+    from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
+    to,
+    subject: `${programLabel} — payment complete`,
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
+        <h2 style="color: #8F7024;">You're fully set up, ${name || 'there'}.</h2>
+        <p>Your ${programLabel} balance has been paid in full. We're glad to have you.</p>
+        ${bonusEarned ? '<p>As a thank-you for paying in full, you\'ve earned a complimentary 1:1 strategy session — we\'ll reach out directly to schedule it.</p>' : ''}
+        <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
+      </div>
+    `,
+  });
+}
+
+async function sendAdminBonusSessionNotice({ purchaseId, name, email, tier }) {
+  const resend = getClient();
+  const programLabel = PROGRAM_LABELS[tier] || tier;
+
+  return resend.emails.send({
+    from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
+    to: 'leroyt@joinchew.com',
+    subject: `Bonus session to schedule — purchase #${purchaseId}`,
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
+        <p><strong>${name}</strong> (${email}) paid the ${programLabel} remainder balance in full
+        by card and earned a complimentary 1:1 strategy session. Please reach out to schedule it.</p>
+      </div>
+    `,
+  });
+}
+
+async function sendMembershipReminderEmail({ to, name, firstChargeDate, portalUrl }) {
+  const resend = getClient();
+
+  return resend.emails.send({
+    from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
+    to,
+    subject: 'Your CHEW membership charge is coming up',
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
+        <h2 style="color: #8F7024;">A heads-up, ${name || 'there'}.</h2>
+        <p>Your first $97 monthly membership charge will process on
+        <strong>${formatDate(firstChargeDate)}</strong>.</p>
+        <p>If you'd like to pause or cancel before then, you can do that yourself here:</p>
+        <p><a href="${portalUrl}" style="color: #8F7024; font-weight: bold;">Manage your membership</a></p>
         <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
       </div>
     `,
@@ -155,5 +270,10 @@ module.exports = {
   sendReminderEmail,
   sendApplicationReceivedEmail,
   sendDecisionEmail,
+  sendProgramEntryConfirmationEmail,
+  sendMembershipWelcomeEmail,
+  sendRemainderConfirmationEmail,
+  sendAdminBonusSessionNotice,
+  sendMembershipReminderEmail,
   TIER_LABELS,
 };

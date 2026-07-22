@@ -7,17 +7,25 @@
 // SETUP REQUIRED IN STRIPE DASHBOARD:
 //   1. Go to Developers → Webhooks → Add endpoint
 //   2. Endpoint URL: https://www.joinchew.com/api/stripe-webhook
-//   3. Select event: checkout.session.completed
+//   3. Select events: checkout.session.completed, customer.subscription.updated,
+//      customer.subscription.deleted (the latter two keep membership pause/
+//      cancel state in sync when a client uses the Stripe Billing Portal)
 //   4. Copy the "Signing secret" (starts with whsec_...) into Vercel as
 //      STRIPE_WEBHOOK_SECRET — never in this file.
 //
 // Requires: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, DATABASE_URL,
-// RESEND_API_KEY, FROM_EMAIL
+// RESEND_API_KEY, FROM_EMAIL, SITE_URL
 
 const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const { query } = require('../lib/db');
-const { sendConfirmationEmail } = require('../lib/email');
+const {
+  sendConfirmationEmail,
+  sendProgramEntryConfirmationEmail,
+  sendMembershipWelcomeEmail,
+  sendRemainderConfirmationEmail,
+  sendAdminBonusSessionNotice,
+} = require('../lib/email');
 
 // Vercel needs the raw request body (unparsed) to verify the Stripe signature.
 module.exports.config = {
@@ -53,10 +61,95 @@ module.exports = async (req, res) => {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const bookingId = session.metadata?.booking_id;
+    const purchaseId = session.metadata?.purchase_id;
     const email = session.customer_email || session.customer_details?.email;
 
     try {
-      if (bookingId) {
+      if (purchaseId) {
+        // Came from the post-acceptance program-purchase flow (entry fee or
+        // remainder balance — see api/create-program-checkout-session.js
+        // and api/create-remainder-checkout-session.js).
+        const phase = session.metadata?.phase;
+        const purchaseResult = await query(
+          `SELECT id, access_token, tier, client_name, client_email, remainder_amount_cents
+           FROM program_purchases WHERE id = $1`,
+          [purchaseId]
+        );
+        const purchase = purchaseResult.rows[0];
+
+        if (!purchase) {
+          console.error('Webhook: program_purchases row not found for id', purchaseId);
+        } else if (phase === 'entry') {
+          if (purchase.tier === 'membership') {
+            const subscription = await stripe.subscriptions.retrieve(session.subscription);
+            const firstChargeAt = new Date(subscription.trial_end * 1000);
+
+            await query(
+              `UPDATE program_purchases
+               SET entry_paid_at = now(), status = 'complete',
+                   stripe_customer_id = $1, stripe_subscription_id = $2,
+                   membership_first_charge_at = $3, membership_status = 'trialing'
+               WHERE id = $4`,
+              [session.customer, session.subscription, firstChargeAt.toISOString(), purchase.id]
+            );
+
+            await sendMembershipWelcomeEmail({
+              to: purchase.client_email,
+              name: purchase.client_name,
+              firstChargeDate: firstChargeAt,
+            });
+          } else {
+            await query(
+              `UPDATE program_purchases SET entry_paid_at = now(), status = 'pending_remainder' WHERE id = $1`,
+              [purchase.id]
+            );
+
+            await sendProgramEntryConfirmationEmail({
+              to: purchase.client_email,
+              name: purchase.client_name,
+              tier: purchase.tier,
+              remainderAmountCents: purchase.remainder_amount_cents,
+              payRemainderUrl: `${process.env.SITE_URL}/pay-remainder.html?token=${encodeURIComponent(purchase.access_token)}`,
+            });
+          }
+        } else if (phase === 'remainder') {
+          let methodType = 'card';
+          try {
+            const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent);
+            if (paymentIntent.payment_method) {
+              const paymentMethod = await stripe.paymentMethods.retrieve(paymentIntent.payment_method);
+              methodType = paymentMethod.type;
+            }
+          } catch (pmErr) {
+            console.error('Could not determine remainder payment method:', pmErr.message);
+          }
+
+          const bonusEarned = methodType === 'card';
+          await query(
+            `UPDATE program_purchases
+             SET remainder_paid_at = now(), remainder_payment_method = $1,
+                 bonus_session_earned = $2, status = 'complete'
+             WHERE id = $3`,
+            [methodType, bonusEarned, purchase.id]
+          );
+
+          await sendRemainderConfirmationEmail({
+            to: purchase.client_email,
+            name: purchase.client_name,
+            tier: purchase.tier,
+            bonusEarned,
+          });
+
+          if (bonusEarned) {
+            await sendAdminBonusSessionNotice({
+              purchaseId: purchase.id,
+              name: purchase.client_name,
+              email: purchase.client_email,
+              tier: purchase.tier,
+            });
+          }
+        }
+      } else if (bookingId) {
         // Came from our own custom checkout flow (legacy path, kept for
         // compatibility if ever re-enabled).
         const tier = session.metadata?.tier;
@@ -124,6 +217,32 @@ module.exports = async (req, res) => {
       // a DB error that isn't transient just spams retries. Alerting on this
       // log line is a good future improvement (Admin Dashboard territory).
       console.error('Error processing checkout.session.completed:', err.message);
+    }
+  }
+
+  if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
+    // Keeps membership_status in sync when a client pauses/cancels via the
+    // Stripe Billing Portal (see api/send-membership-reminders.js for where
+    // that portal link is sent). There's no admin UI surfacing this yet —
+    // that's Admin Dashboard territory (Phase 4) — but the data is ready
+    // for it.
+    const subscription = event.data.object;
+    let membershipStatus = 'active';
+    if (event.type === 'customer.subscription.deleted' || subscription.status === 'canceled') {
+      membershipStatus = 'cancelled';
+    } else if (subscription.pause_collection) {
+      membershipStatus = 'paused';
+    } else if (subscription.status === 'trialing') {
+      membershipStatus = 'trialing';
+    }
+
+    try {
+      await query(
+        `UPDATE program_purchases SET membership_status = $1 WHERE stripe_subscription_id = $2`,
+        [membershipStatus, subscription.id]
+      );
+    } catch (err) {
+      console.error('Error syncing subscription status:', err.message);
     }
   }
 

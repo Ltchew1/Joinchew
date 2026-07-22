@@ -9,6 +9,7 @@
 // logged but never fail the submission itself — an application must always
 // be saved even if the AI or email provider is down or unconfigured.
 
+const crypto = require('crypto');
 const { query } = require('../lib/db');
 const { scoreApplication } = require('../lib/scoring');
 const { sendApplicationReceivedEmail } = require('../lib/email');
@@ -33,10 +34,16 @@ module.exports = async (req, res) => {
     }
 
     const insertResult = await query(
-      `INSERT INTO applications (full_name, email, phone, answers)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO applications (access_token, full_name, email, phone, answers)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING id`,
-      [String(fullName).trim(), String(email).trim(), phone ? String(phone).trim() : null, JSON.stringify(answers)]
+      [
+        crypto.randomUUID(),
+        String(fullName).trim(),
+        String(email).trim(),
+        phone ? String(phone).trim() : null,
+        JSON.stringify(answers),
+      ]
     );
     const applicationId = insertResult.rows[0].id;
 
