@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apply for Admission | CHEW</title>
+<meta name="description" content="CHEW is by application only. Apply for admission to begin your Financial Blueprint Assessment and readiness decision.">
+<link rel="canonical" href="https://www.joinchew.com/apply.html">
+<meta property="og:title" content="Apply for Admission | CHEW">
+<meta property="og:description" content="CHEW is by application only. Apply for admission to begin your Financial Blueprint Assessment and readiness decision.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="CHEW">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="brand">
+      <img src="assets/chew-icon-official.png" alt="" width="40" height="40">
+      CHEW
+    </a>
+    <nav class="nav" id="site-nav">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="philosophy.html">Philosophy</a>
+      <a href="services.html">Services</a>
+      <a href="how-it-works.html">How It Works</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="resources.html">Resources</a>
+      <a href="faq.html">FAQ</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="apply.html" class="btn btn-gold btn-sm">Apply for Admission</a>
+    </div>
+    <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="site-nav">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="hero-glow"></div>
+    <div class="container" style="position:relative;">
+      <span class="eyebrow">Apply for Admission</span>
+      <h1 style="max-width:20ch;">CHEW is by application only.</h1>
+      <p class="max-prose" style="font-size:1.05rem; margin-top:16px;">
+        Every applicant receives a readiness decision: accepted, accepted with conditions,
+        waitlisted, referred elsewhere, or invited to reapply. Answer honestly &mdash; it's
+        how we know whether we can serve you well.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container" style="max-width:720px;">
+
+      <div id="step-progress" style="display:flex; gap:8px; margin-bottom:32px;">
+        <div class="step-dot active" data-step-dot="1"></div>
+        <div class="step-dot" data-step-dot="2"></div>
+        <div class="step-dot" data-step-dot="3"></div>
+        <div class="step-dot" data-step-dot="4"></div>
+        <div class="step-dot" data-step-dot="5"></div>
+      </div>
+
+      <form novalidate id="apply-form">
+
+        <fieldset class="glass card apply-step" data-step="1">
+          <span class="eyebrow">Step 1 of 5 &middot; Vision</span>
+          <h3 style="margin-top:6px;">What are you building toward?</h3>
+
+          <div class="form-field">
+            <label for="q1">What life are you trying to build?</label>
+            <textarea id="q1" name="life_vision" required></textarea>
+          </div>
+          <div class="form-field">
+            <label for="q2">Your top three financial goals, ranked.</label>
+            <textarea id="q2" name="top_goals" required></textarea>
+          </div>
+          <div class="form-field">
+            <label for="q3">What income are you building toward?</label>
+            <input type="text" id="q3" name="income_target" required>
+          </div>
+          <div class="form-field">
+            <label for="q4">What assets do you want to own in 10 years?</label>
+            <textarea id="q4" name="assets_target" required></textarea>
+          </div>
+          <div class="form-field">
+            <label for="q5">What legacy do you want to create?</label>
+            <textarea id="q5" name="legacy" required></textarea>
+          </div>
+        </fieldset>
+
+        <fieldset class="glass card apply-step" data-step="2" style="display:none;">
+          <span class="eyebrow">Step 2 of 5 &middot; Current Position</span>
+          <h3 style="margin-top:6px;">Where you stand today.</h3>
+
+          <div class="form-field">
+            <label for="q6">Income range</label>
+            <select id="q6" name="income_range" required>
+              <option value="">Select one&hellip;</option>
+              <option value="under_50k">Under $50k</option>
+              <option value="50k_100k">$50k&ndash;$100k</option>
+              <option value="100k_250k">$100k&ndash;$250k</option>
+              <option value="250k_plus">$250k+</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Do you own a business?</label>
+            <div class="checkbox-row"><input type="radio" name="has_business" value="yes" id="q7-yes" required><label for="q7-yes" style="margin:0;">Yes</label></div>
+            <div class="checkbox-row"><input type="radio" name="has_business" value="no" id="q7-no"><label for="q7-no" style="margin:0;">No</label></div>
+            <input type="text" id="q7-stage" name="business_stage" placeholder="If yes, what stage is it at?" style="margin-top:8px;">
+          </div>
+          <div class="form-field">
+            <label for="q8">Current savings range</label>
+            <select id="q8" name="savings_range" required>
+              <option value="">Select one&hellip;</option>
+              <option value="under_5k">Under $5k</option>
+              <option value="5k_25k">$5k&ndash;$25k</option>
+              <option value="25k_100k">$25k&ndash;$100k</option>
+              <option value="100k_plus">$100k+</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="q9">Current debt range</label>
+            <select id="q9" name="debt_range" required>
+              <option value="">Select one&hellip;</option>
+              <option value="none">None</option>
+              <option value="under_10k">Under $10k</option>
+              <option value="10k_50k">$10k&ndash;$50k</option>
+              <option value="50k_plus">$50k+</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Do you use credit monitoring?</label>
+            <div class="checkbox-row"><input type="radio" name="uses_credit_monitoring" value="yes" id="q10-yes" required><label for="q10-yes" style="margin:0;">Yes</label></div>
+            <div class="checkbox-row"><input type="radio" name="uses_credit_monitoring" value="no" id="q10-no"><label for="q10-no" style="margin:0;">No</label></div>
+          </div>
+          <div class="form-field">
+            <label for="q11-score">How organized are your finances today? (1&ndash;10)</label>
+            <input type="number" id="q11-score" name="organization_score" min="1" max="10" required>
+          </div>
+          <div class="form-field">
+            <label for="q11-why">Why that number?</label>
+            <textarea id="q11-why" name="organization_why" required></textarea>
+          </div>
+        </fieldset>
+
+        <fieldset class="glass card apply-step" data-step="3" style="display:none;">
+          <span class="eyebrow">Step 3 of 5 &middot; Systems &amp; Habits</span>
+          <h3 style="margin-top:6px;">How you manage money today.</h3>
+
+          <div class="form-field">
+            <label for="q12">Describe your current money-management system, if any.</label>
+            <textarea id="q12" name="money_system" required></textarea>
+          </div>
+          <div class="form-field">
+            <label>Do you track cash flow?</label>
+            <div class="checkbox-row"><input type="radio" name="cash_flow_tracking" value="yes" id="q13-yes" required><label for="q13-yes" style="margin:0;">Yes</label></div>
+            <div class="checkbox-row"><input type="radio" name="cash_flow_tracking" value="no" id="q13-no"><label for="q13-no" style="margin:0;">No</label></div>
+            <input type="text" id="q13-how" name="cash_flow_how" placeholder="If yes, how?" style="margin-top:8px;">
+          </div>
+          <div class="form-field">
+            <label for="q14">What financial education have you pursued before?</label>
+            <textarea id="q14" name="prior_education" required></textarea>
+          </div>
+          <div class="form-field">
+            <label for="q15">What did you actually implement from it?</label>
+            <textarea id="q15" name="implementation_history" required></textarea>
+          </div>
+        </fieldset>
+
+        <fieldset class="glass card apply-step" data-step="4" style="display:none;">
+          <span class="eyebrow">Step 4 of 5 &middot; Readiness &amp; Coachability</span>
+          <h3 style="margin-top:6px;">Whether now is the right time.</h3>
+
+          <div class="form-field">
+            <label for="q16">Why CHEW, why now?</label>
+            <textarea id="q16" name="why_chew" required></textarea>
+          </div>
+          <div class="form-field">
+            <label for="q17">CHEW gives strategy and education; clients do the implementing. Describe your capacity to implement in the next 90 days.</label>
+            <textarea id="q17" name="implementation_capacity" required></textarea>
+          </div>
+          <div class="form-field">
+            <label for="q18">Hours per week you can commit</label>
+            <input type="number" id="q18" name="hours_per_week" min="0" required>
+          </div>
+          <div class="form-field">
+            <label for="q19">What would make you quit?</label>
+            <textarea id="q19" name="quit_reason" required></textarea>
+          </div>
+          <div class="form-field">
+            <label>Are you seeking guaranteed results?</label>
+            <div class="checkbox-row"><input type="radio" name="seeking_guarantees" value="yes" id="q20-yes" required><label for="q20-yes" style="margin:0;">Yes</label></div>
+            <div class="checkbox-row"><input type="radio" name="seeking_guarantees" value="no" id="q20-no"><label for="q20-no" style="margin:0;">No</label></div>
+            <div id="guarantee-note" class="status-note" style="display:none; margin-top:10px;">
+              CHEW does not guarantee funding, approvals, or score changes &mdash; no legitimate
+              financial company can. If that's what you're looking for, our
+              <a href="philosophy.html" style="color:inherit; text-decoration:underline;">Philosophy</a>
+              page explains why, and what we offer instead. You're welcome to continue applying.
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="glass card apply-step" data-step="5" style="display:none;">
+          <span class="eyebrow">Step 5 of 5 &middot; Logistics</span>
+          <h3 style="margin-top:6px;">How to reach you.</h3>
+
+          <div class="form-field">
+            <label for="full_name">Full name</label>
+            <input type="text" id="full_name" name="full_name" required autocomplete="name">
+          </div>
+          <div class="form-field">
+            <label for="email">Email address</label>
+            <input type="email" id="email" name="email" required autocomplete="email">
+          </div>
+          <div class="form-field">
+            <label for="phone">Phone (optional)</label>
+            <input type="tel" id="phone" name="phone" autocomplete="tel">
+          </div>
+          <div class="form-field">
+            <label for="timeline">What's your timeline to get started?</label>
+            <select id="timeline" name="timeline" required>
+              <option value="">Select one&hellip;</option>
+              <option value="immediately">Immediately</option>
+              <option value="1_3_months">1&ndash;3 months</option>
+              <option value="3_6_months">3&ndash;6 months</option>
+              <option value="just_exploring">Just exploring</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="referral_source">How did you hear about CHEW?</label>
+            <input type="text" id="referral_source" name="referral_source">
+          </div>
+          <div class="form-field">
+            <label for="additional_info">Anything else we should know?</label>
+            <textarea id="additional_info" name="additional_info"></textarea>
+          </div>
+        </fieldset>
+
+        <div class="btn-row" style="margin-top:8px;">
+          <button type="button" class="btn btn-outline" id="apply-back" style="display:none;">Back</button>
+          <button type="button" class="btn btn-gold" id="apply-next">Continue</button>
+          <button type="submit" class="btn btn-gold" id="apply-submit" style="display:none;">Submit Application</button>
+        </div>
+        <div class="form-status" role="status" id="apply-status"></div>
+      </form>
+
+      <div id="apply-success" class="glass card text-center" style="display:none;">
+        <h3>Application received.</h3>
+        <p>Thank you for applying. We review every application individually — you'll hear
+        from us directly once a decision has been made.</p>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<style>
+.step-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(245,243,238,0.18); }
+.step-dot.active { background: var(--gold-light); }
+.step-dot.done { background: var(--gold-deep); }
+</style>
+
+<script>
+(function () {
+  var steps = Array.prototype.slice.call(document.querySelectorAll('.apply-step'));
+  var dots = Array.prototype.slice.call(document.querySelectorAll('[data-step-dot]'));
+  var current = 1;
+  var total = steps.length;
+
+  function showStep(n) {
+    steps.forEach(function (el) {
+      el.style.display = (parseInt(el.getAttribute('data-step'), 10) === n) ? 'block' : 'none';
+    });
+    dots.forEach(function (dot) {
+      var dn = parseInt(dot.getAttribute('data-step-dot'), 10);
+      dot.classList.toggle('active', dn === n);
+      dot.classList.toggle('done', dn < n);
+    });
+    document.getElementById('apply-back').style.display = (n === 1) ? 'none' : 'inline-flex';
+    document.getElementById('apply-next').style.display = (n === total) ? 'none' : 'inline-flex';
+    document.getElementById('apply-submit').style.display = (n === total) ? 'inline-flex' : 'none';
+    window.scrollTo({ top: document.getElementById('apply-form').offsetTop - 100, behavior: 'smooth' });
+  }
+
+  function currentStepValid() {
+    var stepEl = steps[current - 1];
+    var fields = stepEl.querySelectorAll('[required]');
+    for (var i = 0; i < fields.length; i++) {
+      var field = fields[i];
+      if (field.type === 'radio') {
+        var group = stepEl.querySelectorAll('input[name="' + field.name + '"]');
+        var checked = Array.prototype.some.call(group, function (r) { return r.checked; });
+        if (!checked) { return false; }
+      } else if (!field.value || !field.value.trim()) {
+        field.reportValidity();
+        return false;
+      }
+    }
+    return true;
+  }
+
+  document.getElementById('apply-next').addEventListener('click', function () {
+    if (!currentStepValid()) return;
+    if (current < total) { current++; showStep(current); }
+  });
+
+  document.getElementById('apply-back').addEventListener('click', function () {
+    if (current > 1) { current--; showStep(current); }
+  });
+
+  document.querySelectorAll('input[name="seeking_guarantees"]').forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      document.getElementById('guarantee-note').style.display = (radio.value === 'yes' && radio.checked) ? 'block' : 'none';
+    });
+  });
+
+  document.getElementById('apply-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!currentStepValid()) return;
+
+    var form = e.target;
+    var formData = new FormData(form);
+    var answers = {};
+    formData.forEach(function (value, key) {
+      if (key !== 'full_name' && key !== 'email' && key !== 'phone') {
+        answers[key] = value;
+      }
+    });
+
+    var payload = {
+      fullName: formData.get('full_name'),
+      email: formData.get('email'),
+      phone: formData.get('phone'),
+      answers: answers,
+    };
+
+    var statusEl = document.getElementById('apply-status');
+    var submitBtn = document.getElementById('apply-submit');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+
+    fetch('/api/submit-application', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error('Submission failed');
+        return res.json();
+      })
+      .then(function () {
+        form.style.display = 'none';
+        document.getElementById('step-progress').style.display = 'none';
+        document.getElementById('apply-success').style.display = 'block';
+      })
+      .catch(function () {
+        statusEl.textContent = "Something went wrong submitting your application — please try again, or email leroyt@joinchew.com directly.";
+        statusEl.classList.add('success', 'visible');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Application';
+      });
+  });
+
+  showStep(current);
+})();
+</script>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a href="index.html" class="brand" style="margin-bottom:14px; display:inline-flex;">
+          <img src="assets/chew-icon-official.png" alt="" width="36" height="36">
+          CHEW
+        </a>
+        <p style="max-width:32ch; font-size:0.92rem;">
+          Creating Honest Economic Wealth &mdash; financial strategy, education, and technology
+          for individuals and entrepreneurs.
+        </p>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About CHEW</a></li>
+          <li><a href="philosophy.html">Philosophy</a></li>
+          <li><a href="services.html">Services</a></li>
+          <li><a href="how-it-works.html">How It Works</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="resources.html">Resource Library</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="contact.html">Contact</a></li>
+          <li><a href="book-consultation.html">Book a Consultation</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="privacy.html">Privacy Policy</a></li>
+          <li><a href="terms.html">Terms of Use</a></li>
+          <li><a href="disclaimer.html">Disclaimer</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-legal">
+      <span>&copy; 2026 CHEW LLC. All rights reserved.</span>
+      <span>CHEW LLC is a financial education and business-infrastructure company. CHEW does not provide credit repair services, does not promise or guarantee funding, approvals, score changes, or removal of information, and does not provide legal, tax, or investment advice. Results depend on individual circumstances, participation, and third-party decisions. See our <a href="disclaimer.html" style="color:inherit;">disclaimer</a>.</span>
+    </div>
+  </div>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>

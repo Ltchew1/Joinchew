@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admissions Queue | CHEW Admin</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="brand">
+      <img src="assets/chew-icon-official.png" alt="" width="40" height="40">
+      CHEW
+    </a>
+    <span style="color:var(--text-faint); font-size:0.85rem;">Admissions Queue (internal)</span>
+  </div>
+</header>
+
+<main>
+  <section class="section" style="padding-top:48px;">
+    <div class="container">
+      <h1 style="font-size:1.6rem;">Admissions Queue</h1>
+      <div id="queue-status" class="status-note" style="margin-top:16px;"></div>
+      <div id="queue-list" style="margin-top:24px; display:flex; flex-direction:column; gap:20px;"></div>
+    </div>
+  </section>
+</main>
+
+<style>
+  .app-card { padding: 24px; }
+  .app-meta { font-size: 0.85rem; color: var(--text-faint); margin-bottom: 12px; }
+  .app-score { display:inline-block; padding:4px 10px; border-radius:20px; font-size:0.8rem; font-weight:700; margin-right:8px; }
+  .app-score.high { background: rgba(74,181,120,0.15); color: #7fd9a4; }
+  .app-score.mid { background: rgba(200,166,60,0.15); color: var(--gold-light); }
+  .app-score.low { background: rgba(196,74,74,0.15); color: #e08a8a; }
+  .answers-toggle { cursor:pointer; color: var(--gold-light); font-size:0.85rem; margin-top:10px; display:inline-block; }
+  .answers-block { display:none; margin-top:12px; font-size:0.85rem; white-space:pre-wrap; background: rgba(0,0,0,0.2); padding:14px; border-radius:8px; max-height:300px; overflow-y:auto; }
+  .decision-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+  .decision-row button { font-size:0.8rem; padding:8px 14px; }
+  .decided-badge { display:inline-block; padding:4px 10px; border-radius:20px; font-size:0.78rem; background: rgba(255,255,255,0.08); }
+</style>
+
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var secret = params.get('secret') || '';
+  var statusEl = document.getElementById('queue-status');
+  var listEl = document.getElementById('queue-list');
+
+  var DECISIONS = [
+    { value: 'ACCEPT', label: 'Accept' },
+    { value: 'ACCEPT_WITH_CONDITIONS', label: 'Accept w/ Conditions' },
+    { value: 'WAITLIST', label: 'Waitlist' },
+    { value: 'REFER_ELSEWHERE', label: 'Refer Elsewhere' },
+    { value: 'REAPPLY_LATER', label: 'Reapply Later' },
+  ];
+
+  function scoreClass(score) {
+    if (score === null || score === undefined) return 'mid';
+    if (score >= 75) return 'high';
+    if (score >= 40) return 'mid';
+    return 'low';
+  }
+
+  function renderApplication(app) {
+    var card = document.createElement('div');
+    card.className = 'glass card app-card';
+
+    var decided = app.status === 'decided';
+    var scoreHtml = '';
+    if (app.ai_error) {
+      scoreHtml = '<span class="app-score low">AI scoring failed</span>';
+    } else if (app.ai_score !== null && app.ai_score !== undefined) {
+      scoreHtml = '<span class="app-score ' + scoreClass(app.ai_score) + '">Score: ' + app.ai_score + '</span>' +
+        '<span class="app-score ' + scoreClass(app.ai_score) + '">' + (app.ai_recommendation || '') + '</span>';
+    } else {
+      scoreHtml = '<span class="app-score mid">Scoring pending</span>';
+    }
+
+    var rationaleHtml = app.ai_rationale ? '<p style="margin-top:10px;"><strong>Rationale:</strong> ' + app.ai_rationale + '</p>' : '';
+    var flagHtml = app.ai_one_flag ? '<p><strong>Biggest risk:</strong> ' + app.ai_one_flag + '</p>' : '';
+    var strengthHtml = app.ai_one_strength ? '<p><strong>Biggest asset:</strong> ' + app.ai_one_strength + '</p>' : '';
+    var errorHtml = app.ai_error ? '<p style="color:#e08a8a;">' + app.ai_error + '</p>' : '';
+
+    var decisionHtml;
+    if (decided) {
+      decisionHtml = '<div class="decision-row"><span class="decided-badge">Decided: ' + app.decision + ' on ' + new Date(app.decided_at).toLocaleDateString() + '</span></div>';
+    } else {
+      decisionHtml = '<div class="form-field" style="margin-top:14px;"><label>Optional note (included in email)</label><textarea class="decision-note" rows="2"></textarea></div>' +
+        '<div class="decision-row">' +
+        DECISIONS.map(function (d) {
+          return '<button type="button" class="btn btn-outline btn-sm decision-btn" data-decision="' + d.value + '" data-id="' + app.id + '">' + d.label + '</button>';
+        }).join('') +
+        '</div>';
+    }
+
+    card.innerHTML =
+      '<div class="app-meta">#' + app.id + ' &middot; Submitted ' + new Date(app.created_at).toLocaleString() + '</div>' +
+      '<h3 style="margin-bottom:4px;">' + app.full_name + '</h3>' +
+      '<div class="app-meta">' + app.email + (app.phone ? ' &middot; ' + app.phone : '') + '</div>' +
+      '<div style="margin-top:10px;">' + scoreHtml + '</div>' +
+      rationaleHtml + flagHtml + strengthHtml + errorHtml +
+      '<span class="answers-toggle">Show full application &darr;</span>' +
+      '<div class="answers-block">' + JSON.stringify(app.answers, null, 2) + '</div>' +
+      decisionHtml;
+
+    card.querySelector('.answers-toggle').addEventListener('click', function () {
+      var block = card.querySelector('.answers-block');
+      var open = block.style.display === 'block';
+      block.style.display = open ? 'none' : 'block';
+      this.textContent = open ? 'Show full application ↓' : 'Hide full application ↑';
+    });
+
+    if (!decided) {
+      card.querySelectorAll('.decision-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          sendDecision(app.id, btn.getAttribute('data-decision'), card.querySelector('.decision-note').value, card);
+        });
+      });
+    }
+
+    return card;
+  }
+
+  function sendDecision(id, decision, note, card) {
+    var buttons = card.querySelectorAll('.decision-btn');
+    buttons.forEach(function (b) { b.disabled = true; });
+
+    fetch('/api/send-decision', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ secret: secret, id: id, decision: decision, note: note }),
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error('Failed to send decision');
+        return res.json();
+      })
+      .then(function () {
+        loadQueue();
+      })
+      .catch(function () {
+        statusEl.textContent = 'Failed to send decision for application #' + id + '. Please try again.';
+        statusEl.classList.add('visible');
+        buttons.forEach(function (b) { b.disabled = false; });
+      });
+  }
+
+  function loadQueue() {
+    if (!secret) {
+      statusEl.textContent = 'Missing ?secret= in the URL.';
+      statusEl.classList.add('visible');
+      return;
+    }
+    statusEl.textContent = 'Loading...';
+    statusEl.classList.add('visible');
+    listEl.innerHTML = '';
+
+    fetch('/api/admin-applications?secret=' + encodeURIComponent(secret))
+      .then(function (res) {
+        if (res.status === 401) throw new Error('Invalid secret.');
+        if (!res.ok) throw new Error('Failed to load applications.');
+        return res.json();
+      })
+      .then(function (data) {
+        statusEl.style.display = 'none';
+        if (!data.applications || data.applications.length === 0) {
+          listEl.innerHTML = '<p style="color:var(--text-faint);">No applications yet.</p>';
+          return;
+        }
+        data.applications.forEach(function (app) {
+          listEl.appendChild(renderApplication(app));
+        });
+      })
+      .catch(function (err) {
+        statusEl.textContent = err.message;
+        statusEl.classList.add('visible');
+      });
+  }
+
+  loadQueue();
+})();
+</script>
+</body>
+</html>
