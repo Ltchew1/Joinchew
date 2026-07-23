@@ -15,18 +15,6 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // TEMPORARY: admin-only cleanup of the test signature/purchase rows created
-  // while verifying the sign-agreement flow. Remove once done.
-  if (req.query && req.query.cleanup_test === process.env.ADMIN_SECRET) {
-    try {
-      await query(`DELETE FROM program_purchases WHERE agreement_signature_id = 1`);
-      await query(`DELETE FROM agreement_signatures WHERE id = 1`);
-      return res.status(200).json({ cleaned: true });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  }
-
   const { token } = req.query || {};
   if (!token) return res.status(400).json({ error: 'Missing token.' });
 
