@@ -15,12 +15,13 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // TEMPORARY: admin-only debug lookup to retrieve an existing application's
-  // access_token for manual flow testing. Remove once done.
-  if (req.query && req.query.debug_id && req.query.secret === process.env.ADMIN_SECRET) {
+  // TEMPORARY: admin-only cleanup of the test signature/purchase rows created
+  // while verifying the sign-agreement flow. Remove once done.
+  if (req.query && req.query.cleanup_test === process.env.ADMIN_SECRET) {
     try {
-      const debugResult = await query(`SELECT id, access_token, decision FROM applications WHERE id = $1`, [req.query.debug_id]);
-      return res.status(200).json({ application: debugResult.rows[0] || null });
+      await query(`DELETE FROM program_purchases WHERE agreement_signature_id = 1`);
+      await query(`DELETE FROM agreement_signatures WHERE id = 1`);
+      return res.status(200).json({ cleaned: true });
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }
