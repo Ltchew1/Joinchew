@@ -9,7 +9,10 @@
 
 const { query } = require('../lib/db');
 const { sendDecisionEmail } = require('../lib/email');
+const { createPortalInvitation } = require('../lib/clerk');
 const { VALID_RECOMMENDATIONS } = require('../lib/scoring');
+
+const PORTAL_DECISIONS = ['ACCEPT', 'ACCEPT_WITH_CONDITIONS'];
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -44,6 +47,17 @@ module.exports = async (req, res) => {
       note: note ? String(note).slice(0, 2000) : '',
       selectProgramUrl: `${process.env.SITE_URL}/select-program.html?token=${encodeURIComponent(application.access_token)}`,
     });
+
+    if (PORTAL_DECISIONS.includes(decision)) {
+      try {
+        await createPortalInvitation({ email: application.email, name: application.full_name });
+      } catch (invitationErr) {
+        // Don't fail the whole decision over a portal-invite hiccup — the
+        // applicant still got their decision email, and an admin can
+        // re-invite manually from Clerk's dashboard if needed.
+        console.error('Portal invitation error:', invitationErr.message);
+      }
+    }
 
     await query(
       `UPDATE applications

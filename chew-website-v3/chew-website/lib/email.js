@@ -87,6 +87,8 @@ const DECISION_CONTENT = {
       <p>After reviewing your application, we're glad to move forward with you.</p>
       <p>Choose your program to get started:</p>
       <p><a href="${selectProgramUrl}" style="color: #8F7024; font-weight: bold;">Choose your program</a></p>
+      <p>You'll also get a separate email inviting you to set up your CHEW Client Portal
+      account, where your Blueprint and roadmap will appear as your strategist puts them together.</p>
     `,
   },
   ACCEPT_WITH_CONDITIONS: {
@@ -98,6 +100,8 @@ const DECISION_CONTENT = {
       follow-up so there's no ambiguity about what's needed.</p>
       <p>Once that's settled, you can choose your program here:</p>
       <p><a href="${selectProgramUrl}" style="color: #8F7024; font-weight: bold;">Choose your program</a></p>
+      <p>You'll also get a separate email inviting you to set up your CHEW Client Portal
+      account, where your Blueprint and roadmap will appear as your strategist puts them together.</p>
     `,
   },
   WAITLIST: {
