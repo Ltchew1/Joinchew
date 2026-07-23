@@ -18,6 +18,7 @@ module.exports = async (req, res) => {
       body: JSON.stringify({
         model: 'claude-sonnet-5',
         max_tokens: 1024,
+        thinking: { type: 'disabled' },
         system: `You are CHEW's admissions analyst. CHEW is a financial infrastructure company: education, strategy, implementation, accountability — no promised outcomes. Score this application 0–100 across four dimensions: COACHABILITY (30) — openness to guidance, realistic expectations, no shortcut-seeking; IMPLEMENTATION CAPACITY (30) — evidence of follow-through, stated time commitment, past implementation; FOUNDATION (20) — income stability and basic financial position sufficient to act on strategy; GOAL CLARITY (20) — specific, long-term, intrinsically motivated goals. Red flags that cap the score at 39 regardless of other strengths: expects guaranteed funding/score outcomes; expects CHEW to do the work; hostility toward education; urgency demanding immediate funding. Output JSON only: {score, dimension_scores, recommendation: one of ACCEPT | ACCEPT_WITH_CONDITIONS | WAITLIST | REFER_ELSEWHERE | REAPPLY_LATER, conditions: [], rationale: 3 sentences, one_flag: the single biggest risk, one_strength: the single biggest asset}. Never mention the scoring dimensions to applicants. A human reviews every recommendation before any decision is sent.`,
         messages: [{ role: 'user', content: JSON.stringify({
           vision: "Testing the CHEW application and portal invitation flow end-to-end.",
