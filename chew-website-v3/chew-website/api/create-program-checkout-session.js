@@ -2,9 +2,12 @@
 //
 // Vercel serverless function. Creates the entry-fee Stripe Checkout Session
 // for an accepted applicant's chosen program tier. Reached from
-// select-program.html, which an applicant only gets to via the link in
-// their ACCEPT / ACCEPT_WITH_CONDITIONS decision email (see
-// lib/email.js DECISION_CONTENT and api/send-decision.js).
+// sign-agreement.html immediately after a signature is recorded — requires
+// a valid signatureId (see api/sign-agreement.js) tied to this application
+// and tier, so no checkout session can be created without one.
+// select-program.html -> sign-agreement.html -> here, all reached via the
+// link in the applicant's ACCEPT / ACCEPT_WITH_CONDITIONS decision email
+// (see lib/email.js DECISION_CONTENT and api/send-decision.js).
 //
 // Requires: STRIPE_SECRET_KEY, DATABASE_URL, SITE_URL, and per-tier Stripe
 // Price ids (see lib/programs.js) — STRIPE_PRICE_INFRASTRUCTURE_ENTRY,
@@ -24,8 +27,9 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { token, tier } = req.body || {};
+    const { token, tier, signatureId } = req.body || {};
     if (!token) return res.status(400).json({ error: 'Missing application token.' });
+    if (!signatureId) return res.status(400).json({ error: 'Please sign the Client Services Agreement first.' });
 
     let program;
     try {
@@ -46,6 +50,14 @@ module.exports = async (req, res) => {
       return res.status(403).json({ error: 'This application has not been accepted.' });
     }
 
+    const signatureResult = await query(
+      `SELECT id FROM agreement_signatures WHERE id = $1 AND application_id = $2 AND tier = $3`,
+      [signatureId, application.id, tier]
+    );
+    if (!signatureResult.rows[0]) {
+      return res.status(403).json({ error: 'Please sign the Client Services Agreement first.' });
+    }
+
     const entryPriceId = process.env[program.entryPriceEnv];
     if (!entryPriceId) {
       return res.status(503).json({ error: `${program.entryPriceEnv} is not configured yet.` });
@@ -53,8 +65,8 @@ module.exports = async (req, res) => {
 
     const purchaseToken = crypto.randomUUID();
     const insertResult = await query(
-      `INSERT INTO program_purchases (access_token, application_id, tier, client_name, client_email, entry_amount_cents, remainder_amount_cents)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO program_purchases (access_token, application_id, tier, client_name, client_email, entry_amount_cents, remainder_amount_cents, agreement_signature_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id`,
       [
         purchaseToken,
@@ -64,6 +76,7 @@ module.exports = async (req, res) => {
         application.email,
         program.entryAmountCents,
         program.hasRemainder ? program.remainderAmountCents : null,
+        signatureId,
       ]
     );
     const purchaseId = insertResult.rows[0].id;

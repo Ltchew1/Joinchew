@@ -105,3 +105,25 @@ CREATE TABLE IF NOT EXISTS program_purchases (
 
 CREATE INDEX IF NOT EXISTS idx_program_purchases_status ON program_purchases (status);
 CREATE INDEX IF NOT EXISTS idx_program_purchases_application ON program_purchases (application_id);
+
+-- CHEW Client Services Agreement e-signatures
+-- Run this once to add the signature step that sits between program
+-- selection and entry-fee payment (see sign-agreement.html,
+-- api/sign-agreement.js). create-program-checkout-session.js requires a
+-- matching row here before it will create a checkout session for a given
+-- application + tier.
+
+CREATE TABLE IF NOT EXISTS agreement_signatures (
+  id                 SERIAL PRIMARY KEY,
+  application_id     INTEGER NOT NULL REFERENCES applications (id),
+  tier               TEXT NOT NULL CHECK (tier IN ('infrastructure', 'executive', 'membership')),
+  signed_name        TEXT NOT NULL,
+  agreement_version  TEXT NOT NULL,
+  ip_address         TEXT,
+  user_agent         TEXT,
+  signed_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_agreement_signatures_application ON agreement_signatures (application_id);
+
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS agreement_signature_id INTEGER REFERENCES agreement_signatures (id);

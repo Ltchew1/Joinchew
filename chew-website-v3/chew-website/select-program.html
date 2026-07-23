@@ -81,26 +81,8 @@
   document.querySelectorAll('.program-select').forEach(function (btn) {
     btn.addEventListener('click', function () {
       if (!token) return;
-      document.querySelectorAll('.program-select').forEach(function (b) { b.disabled = true; });
-      btn.textContent = 'Redirecting to secure checkout...';
-
-      fetch('/api/create-program-checkout-session', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ token: token, tier: btn.getAttribute('data-tier') }),
-      })
-        .then(function (res) {
-          if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Checkout failed'); });
-          return res.json();
-        })
-        .then(function (data) {
-          window.location = data.url;
-        })
-        .catch(function (err) {
-          showStatus(err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.');
-          document.querySelectorAll('.program-select').forEach(function (b) { b.disabled = false; });
-          btn.textContent = 'Select';
-        });
+      var tier = btn.getAttribute('data-tier');
+      window.location = 'sign-agreement.html?token=' + encodeURIComponent(token) + '&tier=' + encodeURIComponent(tier);
     });
   });
 })();
