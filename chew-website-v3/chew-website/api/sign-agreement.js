@@ -21,6 +21,29 @@ function normalizeName(name) {
 }
 
 module.exports = async (req, res) => {
+  // TEMPORARY: one-time migration trampoline, piggybacked on this function's
+  // existing slot so we don't add a 13th file past the Vercel Hobby plan's
+  // per-deployment function limit. Remove this block once run.
+  if (req.method === 'GET' && req.query && req.query.migrate === process.env.ADMIN_SECRET) {
+    try {
+      await query(`CREATE TABLE IF NOT EXISTS agreement_signatures (
+        id                 SERIAL PRIMARY KEY,
+        application_id     INTEGER NOT NULL REFERENCES applications (id),
+        tier               TEXT NOT NULL CHECK (tier IN ('infrastructure', 'executive', 'membership')),
+        signed_name        TEXT NOT NULL,
+        agreement_version  TEXT NOT NULL,
+        ip_address         TEXT,
+        user_agent         TEXT,
+        signed_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+      )`);
+      await query(`CREATE INDEX IF NOT EXISTS idx_agreement_signatures_application ON agreement_signatures (application_id)`);
+      await query(`ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS agreement_signature_id INTEGER REFERENCES agreement_signatures (id)`);
+      return res.status(200).json({ migrated: true });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
