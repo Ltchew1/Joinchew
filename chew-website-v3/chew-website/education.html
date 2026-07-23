@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Booking Confirmed | CHEW</title>
-<meta name="description" content="Your CHEW consultation payment was successful.">
-<link rel="canonical" href="https://www.joinchew.com/booking-confirmed.html">
-<meta property="og:title" content="Booking Confirmed | CHEW">
-<meta property="og:description" content="Your CHEW consultation payment was successful.">
+<title>Education | CHEW</title>
+<meta name="description" content="Education is the first thing CHEW builds with every client — mapped to your roadmap, not generic content. The full CHEW Academy is coming; here's what exists today.">
+<link rel="canonical" href="https://www.joinchew.com/education.html">
+<meta property="og:title" content="Education | CHEW">
+<meta property="og:description" content="Education is the first thing CHEW builds with every client — mapped to your roadmap, not generic content. The full CHEW Academy is coming; here's what exists today.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="CHEW">
 <meta name="twitter:card" content="summary">
@@ -29,7 +29,7 @@
       <a href="services.html">Programs</a>
       <a href="blueprint.html">Blueprint</a>
       <a href="philosophy.html">Philosophy</a>
-      <a href="education.html">Education</a>
+      <a href="education.html" class="current" aria-current="page">Education</a>
       <a href="about.html">About</a>
       <a href="contact.html">Contact</a>
     </nav>
@@ -45,29 +45,53 @@
 <main>
   <section class="page-hero">
     <div class="hero-glow"></div>
-    <div class="container text-center" style="position:relative;">
-      <span class="eyebrow">Payment Confirmed</span>
-      <h1 style="max-width:18ch; margin:0 auto;">You're booked. Thank you.</h1>
-      <p class="max-prose mx-auto" style="margin-top:16px;">
-        Your payment went through successfully. You'll receive a confirmation email shortly
-        with next steps to schedule your session time, if it isn't already attached to a
-        specific slot you selected.
+    <div class="container" style="position:relative;">
+      <span class="eyebrow">Education</span>
+      <h1 style="max-width:20ch;">Education comes first &mdash; not as a pitch, as the foundation.</h1>
+      <p class="max-prose" style="font-size:1.05rem; margin-top:16px;">
+        Every CHEW roadmap maps specific education to specific goals. This page previews how
+        that works today, and what's coming as the full CHEW Academy is built.
       </p>
-      <div style="margin-top:28px;">
-        <a href="index.html" class="btn btn-outline">Back to homepage</a>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container max-prose">
+      <span class="eyebrow">How education fits the system</span>
+      <h2>Mapped to your roadmap, not generic content.</h2>
+      <p>
+        Once you're accepted, your education isn't a library you browse on your own &mdash;
+        it's selected around your Blueprint Assessment: your current position, your 90-day
+        actions, and your 12-month milestones. Credit is one component of that education, never
+        the whole subject.
+      </p>
+    </div>
+  </section>
+
+  <section class="section section--panel">
+    <div class="container max-prose">
+      <span class="eyebrow">What's Available Now</span>
+      <h2>The CHEW Academy is being built &mdash; deliberately.</h2>
+      <div class="status-note" style="margin-top:16px;">
+        The full structured Academy &mdash; modules, progress tracking, and achievements &mdash;
+        is a later phase we're building intentionally rather than rushing out. Today, our
+        <a href="resources.html">Resource Library</a> holds what's real and available right now,
+        and every accepted client gets education selected specifically for their roadmap through
+        their CHEW Advisor.
+      </div>
+    </div>
+  </section>
+
+  <section class="section text-center">
+    <div class="container">
+      <h2>Education starts with admission.</h2>
+      <div class="btn-row" style="justify-content:center; margin-top:20px;">
+        <a href="apply.html" class="btn btn-gold">Apply for Admission</a>
+        <a href="resources.html" class="btn btn-outline">See what's available now</a>
       </div>
     </div>
   </section>
 </main>
-
-<!--
-  ENGINEERING NOTE: This page currently just confirms payment happened (Stripe
-  redirected here after a successful charge). It does not yet look up the actual
-  session details via the session_id in the URL. A future improvement: call
-  Stripe's API server-side with that session_id to pull the client's name/tier
-  and personalize this confirmation, and to trigger the actual appointment
-  scheduling step (this is Phase 2 of the roadmap, not done yet).
--->
 <footer class="site-footer">
   <div class="container">
     <div class="footer-grid">
