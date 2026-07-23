@@ -8,8 +8,10 @@
 //   1. Go to Developers → Webhooks → Add endpoint
 //   2. Endpoint URL: https://www.joinchew.com/api/stripe-webhook
 //   3. Select events: checkout.session.completed, customer.subscription.updated,
-//      customer.subscription.deleted (the latter two keep membership pause/
-//      cancel state in sync when a client uses the Stripe Billing Portal)
+//      customer.subscription.deleted (the latter two keep membership status in
+//      sync — cancel is client self-service via the Billing Portal; pause is
+//      not a Billing Portal feature, so it only happens if CHEW sets
+//      pause_collection via the API/dashboard directly)
 //   4. Copy the "Signing secret" (starts with whsec_...) into Vercel as
 //      STRIPE_WEBHOOK_SECRET — never in this file.
 //
@@ -221,11 +223,12 @@ module.exports = async (req, res) => {
   }
 
   if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
-    // Keeps membership_status in sync when a client pauses/cancels via the
-    // Stripe Billing Portal (see api/send-membership-reminders.js for where
-    // that portal link is sent). There's no admin UI surfacing this yet —
-    // that's Admin Dashboard territory (Phase 4) — but the data is ready
-    // for it.
+    // Keeps membership_status in sync with Stripe: 'cancelled' when a client
+    // cancels via the Billing Portal (see api/send-membership-reminders.js for
+    // where that portal link is sent) or 'paused' if CHEW sets
+    // pause_collection directly (not a client-facing Billing Portal option).
+    // There's no admin UI surfacing this yet — that's Admin Dashboard
+    // territory (Phase 4) — but the data is ready for it.
     const subscription = event.data.object;
     let membershipStatus = 'active';
     if (event.type === 'customer.subscription.deleted' || subscription.status === 'canceled') {

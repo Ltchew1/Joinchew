@@ -201,8 +201,8 @@ async function sendMembershipWelcomeEmail({ to, name, firstChargeDate }) {
         <h2 style="color: #8F7024;">Welcome, ${name || 'there'}.</h2>
         <p>Your Membership entry fee has been received. Your $97/month membership begins on
         <strong>${formatDate(firstChargeDate)}</strong> — nothing further is due before then.</p>
-        <p>We'll send a reminder a week before your first charge, with an easy way to pause or
-        cancel any time.</p>
+        <p>We'll send a reminder a week before your first charge, with an easy way to cancel
+        any time.</p>
         <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
       </div>
     `,
@@ -257,7 +257,7 @@ async function sendMembershipReminderEmail({ to, name, firstChargeDate, portalUr
         <h2 style="color: #8F7024;">A heads-up, ${name || 'there'}.</h2>
         <p>Your first $97 monthly membership charge will process on
         <strong>${formatDate(firstChargeDate)}</strong>.</p>
-        <p>If you'd like to pause or cancel before then, you can do that yourself here:</p>
+        <p>If you'd like to cancel before then, you can do that yourself here:</p>
         <p><a href="${portalUrl}" style="color: #8F7024; font-weight: bold;">Manage your membership</a></p>
         <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
       </div>

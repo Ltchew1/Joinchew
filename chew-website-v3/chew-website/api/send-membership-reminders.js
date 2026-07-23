@@ -2,8 +2,9 @@
 //
 // Finds Membership purchases whose first $97/month charge is about a week
 // away and haven't had a reminder sent yet, sends one (with a Stripe
-// Billing Portal link so the client can pause/cancel themselves), and
-// marks them so they don't get a duplicate. Same manual-trigger pattern as
+// Billing Portal link so the client can cancel themselves — Stripe's
+// portal has no self-service pause option, only cancel), and marks them
+// so they don't get a duplicate. Same manual-trigger pattern as
 // api/send-reminders.js — wire this up to Vercel Cron (or trigger manually
 // via ?manual=<CRON_MANUAL_SECRET>) once the site is confirmed live.
 //
