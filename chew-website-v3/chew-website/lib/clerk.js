@@ -21,7 +21,14 @@ async function createPortalInvitation({ email, name }) {
     },
     body: JSON.stringify({
       email_address: email,
-      redirect_url: `${portalUrl}/dashboard`,
+      // Must point at the public sign-up page, not a protected route: the
+      // ticket-bearing link needs to hit /sign-up while signed out so Clerk's
+      // <SignUp/> can consume the ticket. Pointing this at /dashboard sends
+      // unauthenticated ticket requests through middleware's auth().protect(),
+      // which redirects to /sign-in and drops the ticket. chew-portal's own
+      // NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL already sends them to /dashboard
+      // once sign-up actually completes.
+      redirect_url: `${portalUrl}/sign-up`,
       public_metadata: name ? { full_name: name } : undefined,
       notify: true,
     }),
