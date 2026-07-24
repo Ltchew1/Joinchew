@@ -71,7 +71,6 @@ img { max-width: 100%; display: block; }
 .container { max-width: var(--max-width); margin: 0 auto; padding: 0 24px; }
 .section { padding: 96px 0; position: relative; }
 .section--tight { padding: 56px 0; }
-.section--dense { padding: 18px 0; }
 .section--panel { background: var(--black-soft); }
 
 .eyebrow {
@@ -125,7 +124,7 @@ img { max-width: 100%; display: block; }
   font-family: var(--font-display); font-weight: 700; color: var(--black); font-size: 1.05rem;
 }
 .nav { display: flex; align-items: center; gap: 28px; }
-.nav a { color: var(--text-muted); font-size: 0.85rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+.nav a { color: var(--text-muted); font-size: 0.92rem; font-weight: 500; }
 .nav a:hover { color: var(--gold-light); text-decoration: none; }
 .nav a.current { color: var(--gold-light); }
 .nav-cta { display: flex; align-items: center; gap: 14px; }
@@ -154,7 +153,6 @@ img { max-width: 100%; display: block; }
   font-weight: 600; font-size: 0.95rem; cursor: pointer;
   border: 1.5px solid transparent; transition: transform 0.15s ease, box-shadow 0.15s ease;
   font-family: var(--font-body);
-  text-transform: uppercase; letter-spacing: 0.03em;
 }
 .btn:hover { text-decoration: none; transform: translateY(-1px); }
 .btn-gold {
@@ -164,8 +162,6 @@ img { max-width: 100%; display: block; }
 }
 .btn-outline { background: transparent; border-color: rgba(245,243,238,0.3); color: var(--text); }
 .btn-outline:hover { border-color: var(--steel-light); }
-.btn-gold-outline { background: transparent; border-color: var(--gold); color: var(--gold-light); }
-.btn-gold-outline:hover { background: rgba(200,166,60,0.08); border-color: var(--gold-light); }
 .btn-steel { background: var(--steel); color: #fff; }
 .btn-row { display: flex; gap: 14px; flex-wrap: wrap; }
 .btn-sm { padding: 9px 18px; font-size: 0.86rem; }
@@ -288,32 +284,11 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   [data-reveal] { opacity: 1; transform: none; transition: none; }
 }
 
-/* ---------- Single-viewport homepage (no scroll, fills exactly one screen) ----------
-   Only locked on desktop widths, where the impact/pillar/values grids sit in a single
-   row per section (matching the reference composition). Below 1024px those grids stack
-   to one column per card (see the max-width:900/980/560 rules below) and would grow
-   taller than the screen, so scroll stays enabled there — otherwise content below the
-   fold would be clipped and completely unreachable on phones/tablets. */
-@media (min-width: 1024px) {
-  html.home-viewport, html.home-viewport body {
-    height: 100%; height: 100dvh; overflow: hidden; margin: 0;
-  }
-  html.home-viewport body { display: flex; flex-direction: column; }
-  html.home-viewport .site-header { flex: 0 0 auto; }
-  html.home-viewport main { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
-  html.home-viewport .hero-home { flex: 1 1 auto; min-height: 0; }
-  html.home-viewport .impact-strip,
-  html.home-viewport .pillar-strip,
-  html.home-viewport .values-strip,
-  html.home-viewport main > .section:not(.hero-home) { flex: 0 0 auto; }
-}
-
 /* ---------- Hero ---------- */
-.hero-home { min-height: 58vh; display: flex; align-items: center; padding: 108px 0 32px; }
-@media (max-width: 980px) { .hero-home { min-height: auto; padding: 100px 0 32px; } }
+.hero-home { min-height: 88vh; display: flex; align-items: center; padding: 140px 0 80px; }
+@media (max-width: 980px) { .hero-home { min-height: auto; padding: 130px 0 64px; } }
 
-.hero-home h1 { letter-spacing: -0.01em; font-size: clamp(1.9rem, 3.4vw, 2.85rem); }
-.hero-caps { text-transform: uppercase; }
+.hero-home h1 { letter-spacing: -0.01em; }
 .hero-eyebrow-line { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
 .hero-eyebrow-line .rule-short { width: 32px; height: 1.5px; background: var(--gold); opacity: 0.8; }
 
@@ -384,64 +359,22 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 .pillar-strip { position: relative; padding-top: 8px; }
 .pillar-strip .pillar-card--icon {
   background: transparent; border: none; backdrop-filter: none;
-  text-align: center; padding: 4px 16px 0;
+  text-align: center; padding: 8px 20px 0;
   border-right: 1px solid rgba(255,255,255,0.07);
 }
 .pillar-strip .pillar-grid > .pillar-card--icon:last-child { border-right: none; }
-@media (max-width: 980px) { .pillar-strip .pillar-card--icon { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); padding-bottom: 16px; } }
+@media (max-width: 980px) { .pillar-strip .pillar-card--icon { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); padding-bottom: 24px; } }
 .pillar-card--icon:hover { background: transparent; }
 .pillar-icon {
-  width: 44px; height: 44px; margin: 0 auto 10px;
+  width: 60px; height: 60px; margin: 0 auto 18px;
   display: flex; align-items: center; justify-content: center;
   border-radius: 50%; border: 1px solid var(--panel-border);
   transition: border-color 0.35s ease, transform 0.35s ease;
 }
-.pillar-icon svg { width: 22px; height: 22px; }
+.pillar-icon svg { width: 30px; height: 30px; }
 .pillar-card--icon:hover .pillar-icon { border-color: var(--gold); transform: scale(1.06); }
-.pillar-card--icon h3 { font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
-.pillar-card--icon p { font-size: 0.76rem; }
-
-/* ---------- Impact strip (3-up, icon+text inline) ---------- */
-.impact-strip { padding-top: 0; }
-.impact-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-@media (max-width: 900px) { .impact-grid { grid-template-columns: 1fr; } }
-.impact-card {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 16px;
-  background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border); border-radius: var(--radius);
-  transition: transform 0.35s cubic-bezier(.16,1,.3,1), border-color 0.35s ease;
-}
-.impact-card:hover { transform: translateY(-4px); border-color: var(--gold); }
-.impact-icon { flex: 0 0 auto; width: 30px; height: 30px; }
-.impact-icon svg { width: 100%; height: 100%; }
-.impact-card h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 2px; }
-.impact-card p { font-size: 0.78rem; margin: 0; }
-
-/* ---------- Founder quote card ---------- */
-.quote-card {
-  display: flex; align-items: center; justify-content: space-between; gap: 28px;
-  background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border); border-radius: var(--radius);
-  padding: 20px 26px;
-}
-@media (max-width: 760px) { .quote-card { flex-direction: column; text-align: center; } }
-.quote-mark { font-family: var(--font-display); font-size: 2rem; color: var(--gold-light); line-height: 1; display: block; margin-bottom: 4px; }
-.quote-card-text p { font-size: 0.95rem !important; }
-.quote-card-photo {
-  flex: 0 0 auto; width: 76px; height: 76px; border-radius: 50%;
-  border: 1px solid var(--panel-border); overflow: hidden;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
-}
-.quote-card-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
-
-/* ---------- Values strip (4-up, icon+text inline) ---------- */
-.values-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-@media (max-width: 900px) { .values-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 560px) { .values-grid { grid-template-columns: 1fr; } }
-.values-card { display: flex; align-items: flex-start; gap: 10px; }
-.values-icon { flex: 0 0 auto; width: 26px; height: 26px; margin-top: 2px; }
-.values-icon svg { width: 100%; height: 100%; }
-.values-card h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 2px; }
-.values-card p { font-size: 0.76rem; margin: 0; }
+.pillar-card--icon h3 { font-size: 0.9rem; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.pillar-card--icon p { font-size: 0.88rem; }
 
 /* ---------- Journey stage cards (elevated) ---------- */
 .stage-card {
