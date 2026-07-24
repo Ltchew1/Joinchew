@@ -5,6 +5,6 @@
 // agreement text materially changes, so existing signatures stay tied to
 // the exact version a client actually signed.
 
-const AGREEMENT_VERSION = '2026-07-24';
+const AGREEMENT_VERSION = '2026-07-24-r2';
 
 module.exports = { AGREEMENT_VERSION };
