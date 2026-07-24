@@ -44,26 +44,83 @@
 
 <main>
 
-  <section class="page-hero">
+  <section class="page-hero hero-home hero-cinematic">
+    <div class="hero-photo" aria-hidden="true"></div>
     <div class="hero-glow"></div>
     <div class="grid-lines"></div>
-    <div class="container" style="position:relative;">
-      <span class="eyebrow">Creating Honest Economic Wealth</span>
-      <h1 style="max-width:18ch;">We build financial infrastructure. <em style="color:var(--gold-light); font-style:normal;">You build wealth.</em></h1>
-      <p class="max-prose" style="font-size:1.12rem; margin-top:20px;">
-        CHEW is a financial infrastructure company for committed builders &mdash; education,
-        strategy, implementation, and accountability that turn disciplined people into
-        financially capable ones. By application only.
-      </p>
-      <div class="btn-row" style="margin-top:32px;">
-        <a href="apply.html" class="btn btn-gold">Apply for Admission</a>
-        <a href="services.html" class="btn btn-outline">Learn More</a>
+    <div class="container" style="position:relative; z-index:2;">
+      <div class="hero-cinematic-content">
+        <div class="hero-eyebrow-line"><span class="rule-short"></span><span class="eyebrow" style="margin-bottom:0;">Join The Movement</span></div>
+        <h1 style="max-width:16ch;">Creating Honest Economic <em style="color:var(--gold-light); font-style:normal;">Wealth</em></h1>
+        <p class="max-prose" style="font-size:1.12rem; margin-top:20px;">
+          CHEW is a financial infrastructure company for committed builders &mdash; education,
+          strategy, implementation, and accountability that turn disciplined people into
+          financially capable ones. By application only.
+        </p>
+        <div class="btn-row" style="margin-top:32px;">
+          <a href="apply.html" class="btn btn-gold">Apply for Admission</a>
+        </div>
       </div>
+    </div>
+    <div class="hero-wave" aria-hidden="true">
+      <svg viewBox="0 0 1200 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,120 C150,180 300,40 450,90 C600,140 750,60 900,110 C1020,150 1120,80 1200,100 L1200,200 L0,200 Z" fill="url(#waveGold)"/>
+        <defs>
+          <linearGradient id="waveGold" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#8F7024" stop-opacity="0.35"/>
+            <stop offset="0.5" stop-color="#E4C567" stop-opacity="0.5"/>
+            <stop offset="1" stop-color="#8F7024" stop-opacity="0.2"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  </section>
+
+  <section class="section section--tight pillar-strip">
+    <div class="container">
+      <div class="pillar-grid">
+        <div class="pillar-card pillar-card--icon" data-reveal style="--reveal-delay:0.05s;">
+          <div class="pillar-icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 6L4 16l20 10 20-10L24 6z" stroke="url(#iconGold)" stroke-width="2" stroke-linejoin="round"/><path d="M12 21v10c0 3 5.4 6 12 6s12-3 12-6V21" stroke="url(#iconGold)" stroke-width="2" stroke-linejoin="round"/><path d="M40 18v12" stroke="url(#iconGold)" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <h3>Education</h3>
+          <p>Knowledge mapped to your specific roadmap &mdash; not generic content.</p>
+        </div>
+        <div class="pillar-card pillar-card--icon" data-reveal style="--reveal-delay:0.15s;">
+          <div class="pillar-icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="16" stroke="url(#iconGold2)" stroke-width="2"/><circle cx="24" cy="24" r="9" stroke="url(#iconGold2)" stroke-width="2"/><circle cx="24" cy="24" r="2.5" fill="url(#iconGold2)"/></svg>
+          </div>
+          <h3>Strategy</h3>
+          <p>A Blueprint built around your real numbers, not a template.</p>
+        </div>
+        <div class="pillar-card pillar-card--icon" data-reveal style="--reveal-delay:0.25s;">
+          <div class="pillar-icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="18" cy="18" r="7" stroke="url(#iconGold3)" stroke-width="2"/><circle cx="32" cy="30" r="5" stroke="url(#iconGold3)" stroke-width="2"/><path d="M18 11v-4M18 25v4M11 18h-4M25 18h4M13 13l-3-3M23 23l3 3" stroke="url(#iconGold3)" stroke-width="2" stroke-linecap="round"/><path d="M32 25v-2M32 35v2M27 30h-2M37 30h2" stroke="url(#iconGold3)" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <h3>Implementation</h3>
+          <p>You do the work. We provide the plan &mdash; and the pressure.</p>
+        </div>
+        <div class="pillar-card pillar-card--icon" data-reveal style="--reveal-delay:0.35s;">
+          <div class="pillar-icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 38l10-12 8 6 12-16 6 7" stroke="url(#iconGold4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M34 15h8v8" stroke="url(#iconGold4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Accountability</h3>
+          <p>Advisory that adjusts as your systems mature, not a one-time handoff.</p>
+        </div>
+      </div>
+      <svg width="0" height="0" style="position:absolute;">
+        <defs>
+          <linearGradient id="iconGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E4C567"/><stop offset="1" stop-color="#8F7024"/></linearGradient>
+          <linearGradient id="iconGold2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E4C567"/><stop offset="1" stop-color="#8F7024"/></linearGradient>
+          <linearGradient id="iconGold3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E4C567"/><stop offset="1" stop-color="#8F7024"/></linearGradient>
+          <linearGradient id="iconGold4" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E4C567"/><stop offset="1" stop-color="#8F7024"/></linearGradient>
+        </defs>
+      </svg>
     </div>
   </section>
 
   <section class="stat-strip">
-    <div class="container max-prose text-center" style="padding:48px 0;">
+    <div class="container max-prose text-center" style="padding:48px 0;" data-reveal>
       <p style="font-size:1.2rem; line-height:1.6;">
         The biggest obstacle to financial progress isn't a score. It's systems &mdash; the
         habits, structure, and knowledge behind the number. That's what we build. Credit is
@@ -74,26 +131,26 @@
 
   <section class="section">
     <div class="container">
-      <span class="eyebrow">What We Are</span>
-      <h2>We say what we mean, and we mean what we say.</h2>
+      <div class="chapter-label" data-reveal><span class="chapter-index">01</span> Chapter One &mdash; Standard</div>
+      <h2 data-reveal>We say what we mean, and we mean what we say.</h2>
       <hr class="rule">
       <div class="grid grid--2" style="margin-top:12px; gap:24px;">
-        <div class="glass card">
+        <div class="glass card" data-reveal style="--reveal-delay:0.1s;">
           <h3 style="color:var(--gold-light);">We are</h3>
           <p>Educators, strategists, builders of systems, and accountability partners.</p>
         </div>
-        <div class="glass card">
+        <div class="glass card" data-reveal style="--reveal-delay:0.2s;">
           <h3>We are not</h3>
           <p>A shortcut, a score-promiser, a funding guarantee, or a done-for-you service.</p>
         </div>
       </div>
-      <div class="max-prose" style="margin-top:28px;">
+      <div class="max-prose" style="margin-top:28px;" data-reveal>
         <p style="font-size:1.05rem;">
           CHEW provides expertise. You provide implementation. Both are required. If that
           sounds like work &mdash; it is. That's why it works.
         </p>
       </div>
-      <div style="margin-top:32px;">
+      <div style="margin-top:32px;" data-reveal>
         <a href="services.html" class="btn btn-outline">See all services &rarr;</a>
       </div>
     </div>
@@ -101,28 +158,28 @@
 
   <section class="section section--panel">
     <div class="container">
-      <span class="eyebrow">The Journey</span>
-      <h2 style="max-width:24ch;">Ten stages. One long-term relationship.</h2>
+      <div class="chapter-label" data-reveal><span class="chapter-index">02</span> Chapter Two &mdash; Infrastructure</div>
+      <h2 style="max-width:24ch;" data-reveal>Ten stages. One long-term relationship.</h2>
       <div style="display:flex; flex-wrap:wrap; gap:14px; margin-top:32px;">
-        <div class="glass card" style="padding:16px 20px; flex:1 1 160px;"><span class="tag tag--gold">1</span><h3 style="font-size:0.98rem; margin-top:6px;">Application</h3></div>
-        <div class="glass card" style="padding:16px 20px; flex:1 1 160px;"><span class="tag tag--gold">2</span><h3 style="font-size:0.98rem; margin-top:6px;">Qualification</h3></div>
-        <div class="glass card" style="padding:16px 20px; flex:1 1 160px;"><span class="tag tag--gold">3</span><h3 style="font-size:0.98rem; margin-top:6px;">Blueprint</h3></div>
-        <div class="glass card" style="padding:16px 20px; flex:1 1 160px;"><span class="tag tag--gold">4</span><h3 style="font-size:0.98rem; margin-top:6px;">Acceptance</h3></div>
-        <div class="glass card" style="padding:16px 20px; flex:1 1 160px;"><span class="tag tag--gold">5</span><h3 style="font-size:0.98rem; margin-top:6px;">Education</h3></div>
-        <div class="glass card" style="padding:16px 20px; flex:1 1 160px;"><span class="tag tag--gold">6</span><h3 style="font-size:0.98rem; margin-top:6px;">Implementation</h3></div>
-        <div class="glass card" style="padding:16px 20px; flex:1 1 160px;"><span class="tag tag--gold">7</span><h3 style="font-size:0.98rem; margin-top:6px;">Progress</h3></div>
-        <div class="glass card" style="padding:16px 20px; flex:1 1 160px;"><span class="tag tag--gold">8</span><h3 style="font-size:0.98rem; margin-top:6px;">Optimization</h3></div>
-        <div class="glass card" style="padding:16px 20px; flex:1 1 160px;"><span class="tag tag--gold">9</span><h3 style="font-size:0.98rem; margin-top:6px;">Capital Readiness</h3></div>
-        <div class="glass card" style="padding:16px 20px; flex:1 1 160px;"><span class="tag tag--gold">10</span><h3 style="font-size:0.98rem; margin-top:6px;">Long-Term Advisory</h3></div>
+        <div class="glass stage-card" data-reveal style="--reveal-delay:0.02s;"><span class="tag tag--gold">1</span><h3 style="font-size:0.98rem; margin-top:6px;">Application</h3></div>
+        <div class="glass stage-card" data-reveal style="--reveal-delay:0.06s;"><span class="tag tag--gold">2</span><h3 style="font-size:0.98rem; margin-top:6px;">Qualification</h3></div>
+        <div class="glass stage-card" data-reveal style="--reveal-delay:0.10s;"><span class="tag tag--gold">3</span><h3 style="font-size:0.98rem; margin-top:6px;">Blueprint</h3></div>
+        <div class="glass stage-card" data-reveal style="--reveal-delay:0.14s;"><span class="tag tag--gold">4</span><h3 style="font-size:0.98rem; margin-top:6px;">Acceptance</h3></div>
+        <div class="glass stage-card" data-reveal style="--reveal-delay:0.18s;"><span class="tag tag--gold">5</span><h3 style="font-size:0.98rem; margin-top:6px;">Education</h3></div>
+        <div class="glass stage-card" data-reveal style="--reveal-delay:0.22s;"><span class="tag tag--gold">6</span><h3 style="font-size:0.98rem; margin-top:6px;">Implementation</h3></div>
+        <div class="glass stage-card" data-reveal style="--reveal-delay:0.26s;"><span class="tag tag--gold">7</span><h3 style="font-size:0.98rem; margin-top:6px;">Progress</h3></div>
+        <div class="glass stage-card" data-reveal style="--reveal-delay:0.30s;"><span class="tag tag--gold">8</span><h3 style="font-size:0.98rem; margin-top:6px;">Optimization</h3></div>
+        <div class="glass stage-card" data-reveal style="--reveal-delay:0.34s;"><span class="tag tag--gold">9</span><h3 style="font-size:0.98rem; margin-top:6px;">Capital Readiness</h3></div>
+        <div class="glass stage-card" data-reveal style="--reveal-delay:0.38s;"><span class="tag tag--gold">10</span><h3 style="font-size:0.98rem; margin-top:6px;">Long-Term Advisory</h3></div>
       </div>
     </div>
   </section>
 
   <section class="section">
     <div class="container">
-      <span class="eyebrow">Admission</span>
-      <h2 style="max-width:24ch;">We don't onboard. We admit.</h2>
-      <div class="max-prose" style="margin-top:16px;">
+      <div class="chapter-label" data-reveal><span class="chapter-index">03</span> Chapter Three &mdash; Admission</div>
+      <h2 style="max-width:24ch;" data-reveal>We don't onboard. We admit.</h2>
+      <div class="max-prose" style="margin-top:16px;" data-reveal>
         <p>
           Every applicant receives a <a href="blueprint.html">Financial Blueprint Assessment</a>
           and a readiness decision: accepted, accepted with conditions, waitlisted, referred
@@ -133,10 +190,12 @@
     </div>
   </section>
 
-  <section class="section text-center">
-    <div class="container">
-      <h2>Ready to build real financial infrastructure?</h2>
-      <div class="btn-row" style="justify-content:center; margin-top:24px;">
+  <section class="section legacy-close text-center">
+    <div class="hero-glow"></div>
+    <div class="container" style="position:relative;">
+      <div class="chapter-label" style="justify-content:center;" data-reveal><span class="chapter-index">04</span> Chapter Four &mdash; Legacy</div>
+      <h2 data-reveal>Ready to build real financial infrastructure?</h2>
+      <div class="btn-row" style="justify-content:center; margin-top:24px;" data-reveal>
         <a href="apply.html" class="btn btn-gold">Apply for Admission</a>
         <a href="contact.html" class="btn btn-outline">Ask a question first</a>
       </div>
