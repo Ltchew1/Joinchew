@@ -127,9 +127,13 @@ Planned: dashboard, appointments, messages, documents/secure vault, progress, ac
 plans, resources, notifications, billing, profile. Requires auth provider (Clerk
 recommended) and a database (Postgres) — neither is provisioned yet.
 
-**Credit Access Center note:** when built, must never request/store passwords for
-external credit monitoring accounts. Secure document upload + manual profile entry only,
-consistent with the standing security directive.
+**CHEW Credit Lab note:** education and self-serve tooling only — teaches clients to
+review their own credit report and file their own disputes directly with the bureaus.
+Never files, submits, or transmits a dispute on a client's behalf, and never disputes
+accurate information. Must never request/store passwords for external credit monitoring
+accounts. Secure document upload + manual profile entry only, consistent with the
+standing security directive. Do not name or describe this feature as "Credit Repair,"
+"Dispute Center," or "Credit Restoration" anywhere in product or marketing copy.
 
 ---
 
