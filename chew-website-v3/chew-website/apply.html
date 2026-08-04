@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Apply for Admission | CHEW</title>
-<meta name="description" content="CHEW is by application only. Apply for admission to begin your Financial Blueprint Assessment and readiness decision.">
+<title>Start Your Assessment | CHEW</title>
+<meta name="description" content="A short assessment so we understand your situation before we talk. No pressure, no obligation — just clarity on whether CHEW is the right fit.">
 <link rel="canonical" href="https://www.joinchew.com/apply.html">
-<meta property="og:title" content="Apply for Admission | CHEW">
-<meta property="og:description" content="CHEW is by application only. Apply for admission to begin your Financial Blueprint Assessment and readiness decision.">
+<meta property="og:title" content="Start Your Assessment | CHEW">
+<meta property="og:description" content="A short assessment so we understand your situation before we talk. No pressure, no obligation — just clarity on whether CHEW is the right fit.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="CHEW">
 <meta name="twitter:card" content="summary">
@@ -34,7 +34,7 @@
       <a href="contact.html">Contact</a>
     </nav>
     <div class="nav-cta">
-      <a href="apply.html" class="btn btn-gold btn-sm">Apply for Admission</a>
+      <a href="apply.html" class="btn btn-gold btn-sm">See If You Qualify</a>
     </div>
     <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="site-nav">
       <span></span><span></span><span></span>
@@ -46,12 +46,13 @@
   <section class="page-hero">
     <div class="hero-glow"></div>
     <div class="container" style="position:relative;">
-      <span class="eyebrow">Apply for Admission</span>
-      <h1 style="max-width:20ch;">CHEW is by application only.</h1>
+      <span class="eyebrow">Start Your Assessment</span>
+      <h1 style="max-width:20ch;">See if CHEW is right for you.</h1>
       <p class="max-prose" style="font-size:1.05rem; margin-top:16px;">
-        Every applicant receives a readiness decision: accepted, accepted with conditions,
-        waitlisted, referred elsewhere, or invited to reapply. Answer honestly &mdash; it's
-        how we know whether we can serve you well.
+        A short assessment so we understand your situation before we talk &mdash; no pressure,
+        no obligation. Answer honestly; it's the only way we can tell you the truth about fit.
+        You'll hear back with a clear answer: a fit, a conditional fit, the waitlist, a referral
+        elsewhere, or an invitation to revisit later.
       </p>
     </div>
   </section>
@@ -96,7 +97,7 @@
         </fieldset>
 
         <fieldset class="glass card apply-step" data-step="2" style="display:none;">
-          <span class="eyebrow">Step 2 of 5 &middot; Current Position</span>
+          <span class="eyebrow">Step 2 of 5 &middot; Where You Stand</span>
           <h3 style="margin-top:6px;">Where you stand today.</h3>
 
           <div class="form-field">
@@ -151,7 +152,7 @@
         </fieldset>
 
         <fieldset class="glass card apply-step" data-step="3" style="display:none;">
-          <span class="eyebrow">Step 3 of 5 &middot; Systems &amp; Habits</span>
+          <span class="eyebrow">Step 3 of 5 &middot; How You Manage Money</span>
           <h3 style="margin-top:6px;">How you manage money today.</h3>
 
           <div class="form-field">
@@ -175,7 +176,7 @@
         </fieldset>
 
         <fieldset class="glass card apply-step" data-step="4" style="display:none;">
-          <span class="eyebrow">Step 4 of 5 &middot; Readiness &amp; Coachability</span>
+          <span class="eyebrow">Step 4 of 5 &middot; Readiness</span>
           <h3 style="margin-top:6px;">Whether now is the right time.</h3>
 
           <div class="form-field">
@@ -202,13 +203,14 @@
               CHEW does not guarantee funding, approvals, or score changes &mdash; no legitimate
               financial company can. If that's what you're looking for, our
               <a href="philosophy.html" style="color:inherit; text-decoration:underline;">Philosophy</a>
-              page explains why, and what we offer instead. You're welcome to continue applying.
+              page explains why, and what we offer instead. You're welcome to continue your
+              assessment.
             </div>
           </div>
         </fieldset>
 
         <fieldset class="glass card apply-step" data-step="5" style="display:none;">
-          <span class="eyebrow">Step 5 of 5 &middot; Logistics</span>
+          <span class="eyebrow">Step 5 of 5 &middot; Let's Connect</span>
           <h3 style="margin-top:6px;">How to reach you.</h3>
 
           <div class="form-field">
@@ -246,15 +248,15 @@
         <div class="btn-row" style="margin-top:8px;">
           <button type="button" class="btn btn-outline" id="apply-back" style="display:none;">Back</button>
           <button type="button" class="btn btn-gold" id="apply-next">Continue</button>
-          <button type="submit" class="btn btn-gold" id="apply-submit" style="display:none;">Submit Application</button>
+          <button type="submit" class="btn btn-gold" id="apply-submit" style="display:none;">Submit My Assessment</button>
         </div>
         <div class="form-status" role="status" id="apply-status"></div>
       </form>
 
       <div id="apply-success" class="glass card text-center" style="display:none;">
-        <h3>Application received.</h3>
-        <p>Thank you for applying. We review every application individually — you'll hear
-        from us directly once a decision has been made.</p>
+        <h3>Assessment received.</h3>
+        <p>Thank you for taking the time to be honest with us. We review every assessment
+        individually — you'll hear from us directly with a clear answer.</p>
       </div>
 
     </div>
@@ -361,10 +363,10 @@
         document.getElementById('apply-success').style.display = 'block';
       })
       .catch(function () {
-        statusEl.textContent = "Something went wrong submitting your application — please try again, or email leroyt@joinchew.com directly.";
+        statusEl.textContent = "Something went wrong submitting your assessment — please try again, or email leroyt@joinchew.com directly.";
         statusEl.classList.add('success', 'visible');
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit Application';
+        submitBtn.textContent = 'Submit My Assessment';
       });
   });
 
@@ -381,8 +383,8 @@
           CHEW
         </a>
         <p style="max-width:32ch; font-size:0.92rem;">
-          Creating Honest Economic Wealth &mdash; financial strategy, education, and technology
-          for individuals and entrepreneurs.
+          Creating Honest Economic Wealth &mdash; the structure behind the income you're
+          already earning.
         </p>
       </div>
       <div>
