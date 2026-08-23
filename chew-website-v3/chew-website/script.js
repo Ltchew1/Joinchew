@@ -26,6 +26,27 @@ document.addEventListener('DOMContentLoaded', function () {
     revealEls.forEach(function (el) { el.classList.add('is-visible'); });
   }
 
+  // Gentle parallax on the hero glow layers — restrained, scroll-linked, never bouncy.
+  var parallaxEls = document.querySelectorAll('[data-parallax]');
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (parallaxEls.length && !reduceMotion) {
+    var ticking = false;
+    var applyParallax = function () {
+      var y = window.scrollY || window.pageYOffset;
+      parallaxEls.forEach(function (el) {
+        var speed = parseFloat(el.getAttribute('data-parallax')) || 0.12;
+        el.style.transform = 'translateY(' + (y * speed).toFixed(1) + 'px)';
+      });
+      ticking = false;
+    };
+    window.addEventListener('scroll', function () {
+      if (!ticking) {
+        window.requestAnimationFrame(applyParallax);
+        ticking = true;
+      }
+    }, { passive: true });
+  }
+
   // Forms are not yet connected to a backend, payment processor, or CRM.
   // This shows an honest status message instead of silently failing.
   var forms = document.querySelectorAll('form[data-form]');
