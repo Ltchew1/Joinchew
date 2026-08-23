@@ -13,7 +13,7 @@
 <meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -77,15 +77,15 @@
       <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="heroBarGold" x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0" stop-color="#8F7024"/>
-            <stop offset="1" stop-color="#E4C567"/>
+            <stop offset="0" stop-color="#8A6E1C"/>
+            <stop offset="1" stop-color="#E8CE7A"/>
           </linearGradient>
-          <linearGradient id="heroBarSteel" x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0" stop-color="#1D4A5F"/>
-            <stop offset="1" stop-color="#4A93B5"/>
+          <linearGradient id="heroBarAsh" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0" stop-color="#3A362E"/>
+            <stop offset="1" stop-color="#8A857A"/>
           </linearGradient>
         </defs>
-        <rect class="bar" x="30" y="120" width="26" height="60" rx="3" fill="url(#heroBarSteel)" style="animation-delay:0.1s"/>
+        <rect class="bar" x="30" y="120" width="26" height="60" rx="3" fill="url(#heroBarAsh)" style="animation-delay:0.1s"/>
         <rect class="bar" x="87" y="70" width="26" height="110" rx="3" fill="url(#heroBarGold)" style="animation-delay:0.3s"/>
         <rect class="bar" x="144" y="95" width="26" height="85" rx="3" fill="url(#heroBarGold)" style="animation-delay:0.5s"/>
       </svg>
@@ -95,12 +95,23 @@
         <path d="M0,120 C150,180 300,40 450,90 C600,140 750,60 900,110 C1020,150 1120,80 1200,100 L1200,200 L0,200 Z" fill="url(#waveGold)"/>
         <defs>
           <linearGradient id="waveGold" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stop-color="#8F7024" stop-opacity="0.35"/>
-            <stop offset="0.5" stop-color="#E4C567" stop-opacity="0.5"/>
-            <stop offset="1" stop-color="#8F7024" stop-opacity="0.2"/>
+            <stop offset="0" stop-color="#8A6E1C" stop-opacity="0.35"/>
+            <stop offset="0.5" stop-color="#E8CE7A" stop-opacity="0.5"/>
+            <stop offset="1" stop-color="#8A6E1C" stop-opacity="0.2"/>
           </linearGradient>
         </defs>
       </svg>
+    </div>
+  </section>
+
+  <section class="stat-strip">
+    <div class="container max-prose text-center" style="padding:48px 0;" data-reveal>
+      <span class="eyebrow">The Real Problem</span>
+      <p style="font-size:1.2rem; line-height:1.6; margin-top:12px;">
+        Broke means not enough coming in. Unorganized means plenty comes in &mdash; and leaves.
+        Most people who feel behind aren't earning too little; they're running real income with
+        no structure. That's not a flaw. It's a missing framework. CHEW builds the framework.
+      </p>
     </div>
   </section>
 
@@ -131,22 +142,11 @@
       </div>
       <svg width="0" height="0" style="position:absolute;">
         <defs>
-          <linearGradient id="iconGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E4C567"/><stop offset="1" stop-color="#8F7024"/></linearGradient>
-          <linearGradient id="iconGold2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E4C567"/><stop offset="1" stop-color="#8F7024"/></linearGradient>
-          <linearGradient id="iconGold4" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E4C567"/><stop offset="1" stop-color="#8F7024"/></linearGradient>
+          <linearGradient id="iconGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8CE7A"/><stop offset="1" stop-color="#8A6E1C"/></linearGradient>
+          <linearGradient id="iconGold2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8CE7A"/><stop offset="1" stop-color="#8A6E1C"/></linearGradient>
+          <linearGradient id="iconGold4" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8CE7A"/><stop offset="1" stop-color="#8A6E1C"/></linearGradient>
         </defs>
       </svg>
-    </div>
-  </section>
-
-  <section class="stat-strip">
-    <div class="container max-prose text-center" style="padding:48px 0;" data-reveal>
-      <span class="eyebrow">The Real Problem</span>
-      <p style="font-size:1.2rem; line-height:1.6; margin-top:12px;">
-        Broke means not enough coming in. Unorganized means plenty comes in &mdash; and leaves.
-        Most people who feel behind aren't earning too little; they're running real income with
-        no structure. That's not a flaw. It's a missing framework. CHEW builds the framework.
-      </p>
     </div>
   </section>
 
@@ -212,7 +212,11 @@
         </div>
       </div>
 
-      <div class="text-center" style="margin-top:44px;" data-reveal>
+      <p class="text-center" style="font-size:0.85rem; color:var(--text-faint); margin-top:28px;" data-reveal>
+        More rooms &mdash; Real Estate among them &mdash; are on the way.
+      </p>
+
+      <div class="text-center" style="margin-top:28px;" data-reveal>
         <p class="max-prose mx-auto" style="font-size:1rem;">Qualifying is where your work with us begins &mdash; and this is the direction we're building it toward.</p>
         <div class="btn-row" style="justify-content:center; margin-top:16px;">
           <a href="apply.html" class="btn btn-gold">See If You Qualify</a>
@@ -246,6 +250,20 @@
       <div style="margin-top:32px;" data-reveal>
         <a href="services.html" class="btn btn-outline">See all programs &rarr;</a>
       </div>
+    </div>
+  </section>
+
+  <section class="section text-center">
+    <div class="container max-prose mx-auto" data-reveal>
+      <span class="eyebrow">The Partnership</span>
+      <h2>With you, never for you.</h2>
+      <p style="font-size:1.05rem;">
+        We bring expertise, structure, and accountability. You bring implementation. That's
+        the whole partnership &mdash; and it's the only kind that actually works.
+      </p>
+      <p style="font-size:1.1rem; color:var(--gold-light); font-family:var(--font-display); font-style:italic; margin-top:22px;">
+        Learn it, own it, pass it on.
+      </p>
     </div>
   </section>
 
@@ -292,6 +310,14 @@
         <a href="apply.html" class="btn btn-gold">See If You Qualify</a>
         <a href="contact.html" class="btn btn-outline">Ask a question first</a>
       </div>
+    </div>
+  </section>
+
+  <section class="text-center" style="padding:36px 0 64px;">
+    <div class="container">
+      <p data-reveal style="font-family:var(--font-body); font-size:0.78rem; letter-spacing:0.24em; text-transform:uppercase; color:var(--gold-light); opacity:0.85;">
+        We all Chew. You eat. Then you feed the next.
+      </p>
     </div>
   </section>
 
