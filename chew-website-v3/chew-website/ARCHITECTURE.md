@@ -229,17 +229,33 @@ directive requires to be explainable, not a black box.
 - Privacy: SENSITIVE (references specific facts/constraints).
 - Phase: MVP.
 
-### Action / Task (conceptual, partially covered by `action_if_unmet`)
+### Action / Task (MVP — implemented as `actions`, closing Gap 7)
 The directive treats Action and Task as first-class trackable entities
 (something the subject can mark done, that feeds back into state).
-- Phase: **conceptual only** for a dedicated `actions`/`tasks` table with
-  status tracking. The MVP's `action_if_unmet` text is a *description*
-  of the next step, not a trackable object — there's no "mark complete"
-  flow, no task list. Building that requires deciding how a completed
-  action updates `current_state_facts` (does completing "provide 3
-  months of bank statements" auto-create a `verified` fact, or does a
-  human review it?) — a real product decision, not an architecture
-  detail, so it's named as a gap (Gap 7) rather than guessed.
+- Fields: `id`, `subject_id`, `goal_id`, `transition_requirement_id`
+  (nullable), `recommendation_id` (nullable — which recommendation call
+  produced it), `description` (copied from `action_if_unmet` at creation
+  time, so it stays accurate even if the requirement's text changes
+  later), `status` (`pending`/`completed`/`skipped`), `resulting_fact_id`
+  (nullable), `created_at`, `completed_at`.
+- `computeRecommendation()` creates or reuses a `pending` action for the
+  chosen unmet requirement on every call — no duplicate rows spawn from
+  recomputing the same gap repeatedly (verified in testing: calling it
+  twice in a row against an unchanged state returns the same action id).
+- The product decision this entity required (previously left open as
+  Gap 7) is now made and enforced in code, not just documented: a
+  `boolean_true` requirement's completion **is** the fact (self-reported,
+  `user_provided` — never silently upgraded to `verified`) and
+  auto-creates a `current_state_facts` row. A threshold requirement's
+  (`gte`/`lte`/`eq`) completion is **not** treated as evidence of the new
+  value — "did the activity" is not "knows the resulting number" — so no
+  fact is created; the caller gets honest `guidance` asking for an
+  updated fact instead. Both paths verified end-to-end: completing a
+  `boolean_true` action created a real fact and the next recommendation
+  moved to the following requirement; completing a threshold action left
+  the underlying fact (credit score, still `580`) untouched and CHEW
+  kept recommending the same real gap rather than pretending it closed.
+- Phase: MVP.
 
 ### Outcome (conceptual)
 What actually happened after a recommendation was acted on — needed for
@@ -416,23 +432,33 @@ The directive's 10-step loop, annotated with what's real in this pass:
 7. Recommend best next move — **built**, with the honesty caveat that
    "best" means "highest-priority unmet requirement by author-assigned
    order," not an optimized best.
-8. Record action — **not built** (Gap 7 — no action/task tracking).
-9. Observe new state — **partially built**: re-running
-   `computeRecommendation()` against updated `current_state_facts`
-   naturally reflects new state (verified in testing — see "Testing
-   performed" below), but
-   nothing automatically prompts re-observation or records that a state
-   changed because of a specific action (Gap 8).
-10. Recalculate path — **built** in the narrow sense that the engine is
-    stateless and idempotent (call it again, get a fresh answer from
-    current data) — not built in the sense of proactively noticing a
-    change and pushing a new recommendation.
+8. Record action — **built** (`actions`, closing Gap 7 — see the
+   Action/Task entity above). `completeAction()` records completion and,
+   for a `boolean_true` requirement, the resulting fact.
+9. Observe new state — **built for the pull case**: `api/intelligence-actions.js`'s
+   `POST` handler calls `completeAction()` and then immediately
+   re-invokes `computeRecommendation()` for the same goal in the same
+   round trip, so a caller always sees the post-completion state without
+   a second request — verified end-to-end. What's still not built: a
+   change that happens *outside* an action completion (a subject just
+   reports a new fact directly) doesn't automatically trigger anything;
+   nothing observes it until something calls `computeRecommendation()`
+   again (Gap 8 narrows to this: no push/event trigger, not "can't
+   observe new state" generally).
+10. Recalculate path — **built**: the engine is stateless and
+    idempotent, and now demonstrated live — completing the
+    `bookkeeping_current` action caused the very next recommendation for
+    that goal to move on to `has_business_bank_account`, the correct
+    next unmet requirement by `sequence_order`. Still not built:
+    proactively noticing a change and pushing a new recommendation
+    without being asked (Gap 12).
 
 The loop is **not a background process** in this pass — there's no
 scheduler, no event system, no push notification path in this
-repository. `computeRecommendation()` is a pull-based function, called
-on demand. Making it push-based (steps 8–10 as an actual live loop) is
-Phase 2+ infrastructure this repo doesn't have yet (Gap 12).
+repository. `computeRecommendation()` and `completeAction()` are both
+pull-based, called on demand. Making the loop push-based end-to-end
+(react to any new fact, not just an action completion routed through
+this API) is Phase 2+ infrastructure this repo doesn't have yet (Gap 12).
 
 ## 14. Explainability / audit requirements
 
@@ -471,13 +497,15 @@ a bare string.
 
 ## 16. MVP vs. later phases
 
-**MVP (built across this pass and the Opportunity Engine follow-up):**
-`intel_subjects`, `transitions`, `transition_requirements` (now with
-`capability_id`), `goals`, `current_state_facts`, `constraints`,
-`recommendations` (now with `related_capability`);
-`lib/intelligenceEngine.js` (`computeRecommendation`, now wired to
+**MVP (built across this pass, the Opportunity Engine follow-up, and the
+action/task tracking follow-up):** `intel_subjects`, `transitions`,
+`transition_requirements` (with `capability_id`), `goals`,
+`current_state_facts`, `constraints`, `recommendations` (with
+`related_capability`), `actions`; `lib/intelligenceEngine.js`
+(`computeRecommendation`, `completeAction`, `listActions`, wired to
 `lib/capabilityGraph.js`); two illustrative, clearly-labeled test
-transitions + one test subject; an internal (non-public) API endpoint.
+transitions + one test subject; two internal (non-public) API endpoints
+(`api/intelligence-recommendation.js`, `api/intelligence-actions.js`).
 
 **Phase 2 (needs more platform maturity or real data, not more design):**
 real subject identity/auth (Gap 1); typed fact columns or a validated
@@ -486,19 +514,25 @@ field-level encryption / access control for SENSITIVE data (Gap 3);
 transitions authorable outside a code deploy (Gap 4) — likely an admin
 UI once there's more than one real transition; compound requirement
 logic (AND/OR, conditional requirements) beyond simple threshold
-comparison; goal conflict detection; Opportunity Engine wired to the
-capability registry (Gap 10, §11); action/task tracking with a defined
-completion → fact update flow (Gap 7); household/multi-subject support;
+comparison; goal conflict detection; household/multi-subject support;
 Education/Skill/Credential as real tables once `education_programs` has
-data.
+data; a completion flow for `gte`/`lte`/`eq` requirements that prompts
+for the actual updated value rather than just returning `guidance` text
+(today the guidance is generated but nothing captures the follow-up fact
+in the same interaction — the subject has to make a separate call to
+whatever writes `current_state_facts`, which this pass doesn't build a
+public entry point for at all).
 
 **Phase 3+ (advanced automation, integration, prediction):** outcome
-tracking and recommendation evaluation (Gap 8); a live/push decision
-loop (scheduler, notifications) (Gap 12); true leverage-based constraint
-ranking (a real dependency graph across requirements); risk modeling;
-document storage and verification pipelines (Gap 9); any ML-based
-inference — and even then, only with a disclosed confidence/evidence
-model, never a bare "AI score."
+tracking beyond action completion — did the *transition itself* actually
+happen, evaluated over time (Gap 8, narrowed — action-level outcome
+tracking is now built, transition-level is not); a live/push decision
+loop reacting to any new fact, not just ones routed through
+`completeAction()` (Gap 12); true leverage-based constraint ranking (a
+real dependency graph across requirements); risk modeling; document
+storage and verification pipelines (Gap 9); any ML-based inference — and
+even then, only with a disclosed confidence/evidence model, never a bare
+"AI score."
 
 ## 17–19. Reuse / modify / new
 
@@ -530,26 +564,42 @@ is additive.
 
 ## 20. Recommended next implementation milestone
 
-**Done** (this was the milestone recommended when this document was
-first written, and it's now built — see §11 and the Opportunity Engine
-row in §12's table). `transition_requirements.capability_id` links a
-requirement to a real `capabilities` row; `computeRecommendation()`
-calls `lib/capabilityGraph.js`'s existing `getRoutingRecommendation()`
-directly; verified live by seeding a real provider mid-test and watching
-the next recommendation call pick it up with zero code change.
+**Done #1** — Opportunity Engine wired to the capability registry (§11,
+the Opportunity Engine row in §12's table). `transition_requirements
+.capability_id` links a requirement to a real `capabilities` row;
+`computeRecommendation()` calls `lib/capabilityGraph.js`'s existing
+`getRoutingRecommendation()` directly; verified live by seeding a real
+provider mid-test and watching the next recommendation call pick it up
+with zero code change.
 
-**Next candidate milestone:** close Gap 7 — action/task tracking with a
-defined completion → fact update flow. Right now the loop stops at step
-7 (recommend); nothing lets a subject mark `action_if_unmet` done, and
-nothing defines whether that should auto-write a `current_state_facts`
-row or require a human/verification step first. This is the natural
-continuation of what's already built (steps 1–7 of the decision loop
-work end-to-end; 8–10 don't), and unlike Gap 1 (real identity/auth) or
-Gap 10 (already closed), it doesn't require a product decision outside
-engineering — the open question is narrowly: does a completed action
-create a `user_provided` fact automatically, or a `computed`/`inferred`
-one pending confirmation? That's worth deciding explicitly before
-building it, rather than defaulting silently.
+**Done #2** — action/task tracking with a completion → fact-update flow
+(closed Gap 7; see the Action/Task entity above and decision-loop steps
+8–10). The open question this milestone was blocked on — does a
+completed action create a fact automatically, or require confirmation
+first — is now answered and enforced in code, not left as a silent
+default: `boolean_true` completions auto-create a `user_provided` fact
+(the action *is* the fact); threshold (`gte`/`lte`/`eq`) completions
+never do (doing the work isn't knowing the result), returning honest
+`guidance` instead. Verified end-to-end for both branches, including
+that a threshold completion leaves the real fact value genuinely
+unchanged rather than fabricating progress.
+
+**Next candidate milestone:** give threshold-requirement completions
+somewhere to actually send the follow-up value. Right now
+`completeAction()` correctly *refuses* to guess a new credit score or
+savings balance, but there's no public entry point in this repository
+for a subject to then report that updated number — the only way a
+`current_state_facts` row gets written today is a direct database
+insert (as the seed files do) or an auto-created `boolean_true`
+completion. A small `POST /api/intelligence-facts` (or extending
+`api/intelligence-actions.js`'s completion payload to optionally accept
+`{ factValue }` for threshold requirements) would close that gap without
+touching the comparison/evaluation logic already built and tested. This
+is a smaller, narrower milestone than Gap 1 (real identity) or Gap 4
+(transitions authorable outside a deploy) and doesn't require a new
+product decision — the honesty rule (never infer a threshold value) is
+already decided; this just gives the subject a legitimate way to supply
+it themselves.
 
 ## Testing performed
 
@@ -600,5 +650,31 @@ with real, scripted tests against a live local PostgreSQL 16 database:
   proof the engine reads the registry live rather than caching a stale
   answer. Re-ran the full prior test suite afterward to confirm no
   regressions.
+- **Action/task tracking, re-verified after adding it:** applied the
+  updated schema (`actions` table plus its two `CHECK` constraints) and
+  confirmed both reject an invalid row (a `pending` action with
+  `completed_at` set; a `completed` action without it) as well as a
+  `resulting_fact_id` set on a still-`pending` action. Exercised the
+  full loop against the live seeded data: `computeRecommendation()`
+  creates a pending action for `bookkeeping_current`; calling it again
+  unchanged reuses the same action id rather than duplicating it;
+  completing that (`boolean_true`) action auto-created a real
+  `current_state_facts` row and the *next* `computeRecommendation()`
+  call correctly advanced to `has_business_bank_account`, the following
+  requirement by `sequence_order`; attempting to complete the same
+  action twice correctly raised an error instead of silently
+  succeeding. Separately verified the threshold branch: completing the
+  `credit_score` (`gte`) action returned `factCreated: false` and honest
+  `guidance` text, and a follow-up recommendation call confirmed the
+  underlying `credit_score` fact was genuinely untouched (still `580`)
+  and CHEW kept recommending the same real gap. `api/intelligence-actions.js`
+  verified for `GET` (list, with and without a status filter, `400` on
+  an invalid one), `POST` (completion + recomputed recommendation in one
+  response, `404` on a nonexistent action, `409` on a not-pending one),
+  and `405` on an unsupported method — plus confirmed the flag-gate
+  itself (not just application logic) produces the `404` when
+  `intelligence_engine` is `internal`, by first hitting it un-flipped and
+  getting `{"error":"Not found"}` before flipping the flag for the rest
+  of the test.
 - No local test infrastructure (Postgres cluster, scratch database) is
   part of this repository.

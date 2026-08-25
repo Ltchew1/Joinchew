@@ -562,3 +562,47 @@ CREATE INDEX IF NOT EXISTS idx_recommendations_goal ON recommendations (goal_id)
 -- result.
 ALTER TABLE transition_requirements ADD COLUMN IF NOT EXISTS capability_id INTEGER REFERENCES capabilities (id);
 ALTER TABLE recommendations ADD COLUMN IF NOT EXISTS related_capability JSONB;
+
+-- ============================================================
+-- Action / Task tracking — ARCHITECTURE.md §20 milestone (Gap 7)
+-- ============================================================
+-- Closes decision-loop steps 8-9 (ARCHITECTURE.md §13): a subject can
+-- now mark a recommended action complete, and that completion can
+-- become a new current_state_facts row that the next
+-- computeRecommendation() call will see.
+--
+-- The honesty decision this schema encodes (previously left as an open
+-- question in ARCHITECTURE.md's Gap 7):
+--   - For a `boolean_true` requirement, completing its action IS the
+--     fact — e.g. "open a dedicated business bank account," once done,
+--     directly means has_business_bank_account = true. Completion
+--     auto-creates a `user_provided` fact (self-reported, same
+--     epistemic weight as any other user_provided fact — NOT upgraded
+--     to 'verified' just because it came through this flow).
+--   - For a `gte` / `lte` / `eq` requirement (a threshold, e.g. "raise
+--     your credit score toward 620"), completing the *activity* does
+--     NOT tell CHEW the new value — doing the work is not the same as
+--     knowing the resulting number. Completion does NOT auto-create a
+--     fact in this case; it returns honest guidance asking for an
+--     updated fact instead. Never infer a threshold value from activity
+--     completion.
+-- lib/intelligenceEngine.js's completeAction() is the only code path
+-- that writes resulting_fact_id — do not set it by hand.
+
+CREATE TABLE IF NOT EXISTS actions (
+  id                        SERIAL PRIMARY KEY,
+  subject_id                INTEGER NOT NULL REFERENCES intel_subjects (id),
+  goal_id                   INTEGER NOT NULL REFERENCES goals (id),
+  transition_requirement_id INTEGER REFERENCES transition_requirements (id),
+  recommendation_id         INTEGER REFERENCES recommendations (id),
+  description               TEXT NOT NULL,  -- copied from action_if_unmet at creation time; immutable record of what was asked
+  status                    TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'skipped')),
+  resulting_fact_id         INTEGER REFERENCES current_state_facts (id),
+  created_at                TIMESTAMPTZ NOT NULL DEFAULT now(),
+  completed_at              TIMESTAMPTZ,
+  CHECK ((status = 'pending') = (completed_at IS NULL)),
+  CHECK (resulting_fact_id IS NULL OR status = 'completed')
+);
+
+CREATE INDEX IF NOT EXISTS idx_actions_subject_status ON actions (subject_id, status);
+CREATE INDEX IF NOT EXISTS idx_actions_goal ON actions (goal_id);

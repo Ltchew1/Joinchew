@@ -21,6 +21,14 @@
 // lib/capabilityGraph.js's already-tested getRoutingRecommendation() to
 // report real provider availability for it — never a second, invented
 // data model. See db/schema.sql's "Opportunity Engine wiring" comment.
+//
+// Action/task tracking (ARCHITECTURE.md §20 milestone, Gap 7): every
+// recommendation with a chosen unmet requirement creates or reuses a
+// pending `actions` row. completeAction() below is the only place a
+// completed action can turn into a new fact, and it only does so for
+// boolean_true requirements — see db/schema.sql's "Action / Task
+// tracking" comment for why a threshold requirement's action completion
+// must NOT be treated as evidence of the new value.
 
 const { query } = require('./db');
 const { getRoutingRecommendation } = require('./capabilityGraph');
@@ -208,7 +216,123 @@ async function computeRecommendation({ subjectId, goalId }) {
 
   result.id = insertResult.rows[0].id;
   result.computedAt = insertResult.rows[0].computed_at;
+
+  // Create or reuse a pending action for the chosen requirement, so
+  // there's something a subject can actually mark complete — decision
+  // loop step 8 ("record action"). Reuses an existing pending action for
+  // the same subject+requirement rather than spawning a duplicate every
+  // time the recommendation is recomputed against the same unmet gap.
+  result.action = null;
+  if (chosenRequirement) {
+    const existingActionResult = await query(
+      `SELECT id, description, status FROM actions
+       WHERE subject_id = $1 AND transition_requirement_id = $2 AND status = 'pending'`,
+      [subjectId, chosenRequirement.id]
+    );
+    if (existingActionResult.rows[0]) {
+      await query('UPDATE actions SET recommendation_id = $1 WHERE id = $2', [result.id, existingActionResult.rows[0].id]);
+      result.action = {
+        id: existingActionResult.rows[0].id,
+        description: existingActionResult.rows[0].description,
+        status: existingActionResult.rows[0].status,
+      };
+    } else {
+      const actionInsertResult = await query(
+        `INSERT INTO actions (subject_id, goal_id, transition_requirement_id, recommendation_id, description)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, description, status`,
+        [subjectId, goalId, chosenRequirement.id, result.id, chosenRequirement.action_if_unmet]
+      );
+      result.action = actionInsertResult.rows[0];
+    }
+  }
+
   return result;
 }
 
-module.exports = { computeRecommendation, evaluateRequirement };
+// Marks a pending action completed. Only a boolean_true requirement's
+// completion is treated as evidence of the fact itself (the action IS
+// the fact — see db/schema.sql). A threshold requirement's completion
+// records that the activity happened, but returns honest `guidance`
+// asking for the actual updated value instead of inferring one.
+async function completeAction({ actionId, subjectId }) {
+  const actionResult = await query(
+    'SELECT * FROM actions WHERE id = $1 AND subject_id = $2',
+    [actionId, subjectId]
+  );
+  const action = actionResult.rows[0];
+  if (!action) {
+    throw new Error('Action not found for this subject.');
+  }
+  if (action.status !== 'pending') {
+    throw new Error(`Action is already ${action.status}, not pending.`);
+  }
+
+  let requirement = null;
+  if (action.transition_requirement_id) {
+    const reqResult = await query(
+      'SELECT * FROM transition_requirements WHERE id = $1',
+      [action.transition_requirement_id]
+    );
+    requirement = reqResult.rows[0] || null;
+  }
+
+  let resultingFactId = null;
+  let factCreated = false;
+  let guidance = null;
+
+  if (requirement && requirement.comparison === 'boolean_true') {
+    const factInsertResult = await query(
+      `INSERT INTO current_state_facts (subject_id, fact_key, fact_value, fact_type, source_note)
+       VALUES ($1, $2, 'true', 'user_provided', $3)
+       RETURNING id`,
+      [subjectId, requirement.requirement_key, `Self-reported by completing action #${action.id}.`]
+    );
+    resultingFactId = factInsertResult.rows[0].id;
+    factCreated = true;
+  } else if (requirement) {
+    guidance = `Completing this action doesn't tell CHEW your new value for "${requirement.label}" — `
+      + `doing the work isn't the same as knowing the result. Please provide an updated fact for `
+      + `"${requirement.requirement_key}" so your recommendation can reflect it.`;
+  } else {
+    guidance = 'This action has no linked requirement, so completing it does not update any stored fact.';
+  }
+
+  await query(
+    'UPDATE actions SET status = $1, completed_at = now(), resulting_fact_id = $2 WHERE id = $3',
+    ['completed', resultingFactId, action.id]
+  );
+
+  return {
+    actionId: action.id,
+    goalId: action.goal_id,
+    status: 'completed',
+    factCreated,
+    resultingFactId,
+    guidance,
+  };
+}
+
+async function listActions({ subjectId, status }) {
+  const params = [subjectId];
+  let sql = 'SELECT * FROM actions WHERE subject_id = $1';
+  if (status) {
+    params.push(status);
+    sql += ` AND status = $${params.length}`;
+  }
+  sql += ' ORDER BY created_at DESC';
+  const result = await query(sql, params);
+  return result.rows.map((row) => ({
+    id: row.id,
+    goalId: row.goal_id,
+    transitionRequirementId: row.transition_requirement_id,
+    recommendationId: row.recommendation_id,
+    description: row.description,
+    status: row.status,
+    resultingFactId: row.resulting_fact_id,
+    createdAt: row.created_at,
+    completedAt: row.completed_at,
+  }));
+}
+
+module.exports = { computeRecommendation, evaluateRequirement, completeAction, listActions };
