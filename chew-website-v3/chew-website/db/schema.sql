@@ -254,3 +254,106 @@ CREATE TABLE IF NOT EXISTS jobs (
   status                     TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'expired', 'filled')),
   created_at                 TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- ============================================================
+-- CHEW Capability Network — routing, affiliation & disclosure model
+-- ============================================================
+-- Foundation for routing a client to the right execution capability
+-- (an affiliated company, a licensed specialist, an outside provider)
+-- without collapsing the identity of separately operated companies into
+-- "CHEW Partners," and without ever hiding a material affiliation.
+--
+-- Data-honesty / disclosure rules this design enforces:
+--   - relationship_classification records the true legal/operational
+--     relationship for every provider. It is never invented — a
+--     provider row must not exist until someone with real authority to
+--     classify that relationship has done so.
+--   - An 'affiliated_enterprise' provider MUST carry disclosure_text
+--     (enforced by CHECK below). There is no path to route a client to
+--     an affiliated company without a disclosure to show them.
+--   - status controls exposure, not just labeling: only 'active'
+--     providers are ever returned by lib/capabilityGraph.js queries.
+--     'coming_soon' and 'hidden' providers are filtered out in SQL, so
+--     they cannot leak through the API even via a direct/crafted
+--     request — see CAPABILITY_NETWORK.md.
+--   - As of this migration, network_providers is intentionally EMPTY.
+--     Do not seed a provider row with an invented company, licensing
+--     status, or disclosure — that data can only come from whoever
+--     actually holds the business relationship. See
+--     CAPABILITY_NETWORK.md for exactly what is and isn't populated.
+
+CREATE TABLE IF NOT EXISTS capabilities (
+  id          SERIAL PRIMARY KEY,
+  slug        TEXT UNIQUE NOT NULL,  -- e.g. 'insurance_risk_review', 'digital_business_infrastructure'
+  name        TEXT NOT NULL,
+  category    TEXT,                  -- freeform grouping, e.g. 'risk', 'infrastructure', 'real_assets', 'tax_accounting'
+  description TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS network_providers (
+  id                         SERIAL PRIMARY KEY,
+  slug                       TEXT UNIQUE NOT NULL,
+  name                       TEXT NOT NULL,
+  relationship_classification TEXT NOT NULL CHECK (relationship_classification IN
+                                 ('chew_direct', 'affiliated_enterprise', 'independent_professional',
+                                  'external_provider', 'future_managed_service')),
+  status                     TEXT NOT NULL DEFAULT 'hidden' CHECK (status IN ('active', 'coming_soon', 'hidden')),
+  jurisdiction_id            INTEGER REFERENCES jurisdictions (id),  -- NULL if not jurisdiction-limited
+  licensing_notes            TEXT,
+  disclosure_text            TEXT,  -- shown to the client before/at handoff when material
+  contact_method             TEXT,  -- how a handoff actually reaches this provider
+  intake_process_notes       TEXT,
+  data_sharing_notes         TEXT,  -- what client data this provider needs, in plain language
+  is_ready                   BOOLEAN NOT NULL DEFAULT FALSE,  -- all PROVIDER READINESS checks passed
+  created_at                 TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at                 TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (relationship_classification <> 'affiliated_enterprise' OR disclosure_text IS NOT NULL)
+);
+
+CREATE INDEX IF NOT EXISTS idx_network_providers_status ON network_providers (status);
+
+CREATE TABLE IF NOT EXISTS capability_provider_links (
+  id                 SERIAL PRIMARY KEY,
+  capability_id      INTEGER NOT NULL REFERENCES capabilities (id),
+  provider_id        INTEGER NOT NULL REFERENCES network_providers (id),
+  eligibility_notes  TEXT,   -- what client profile this fits
+  prerequisite_notes TEXT,   -- what must be true/done before this becomes relevant
+  documents_needed   JSONB,
+  priority           INTEGER NOT NULL DEFAULT 0,  -- lower routes first when multiple providers match
+  created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (capability_id, provider_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_capability_provider_links_capability ON capability_provider_links (capability_id);
+
+-- Consent log for sharing client data with an external/affiliated provider.
+-- A row here is the record that a specific client was shown what would be
+-- shared and agreed to it, before any handoff occurred.
+CREATE TABLE IF NOT EXISTS routing_consents (
+  id                  SERIAL PRIMARY KEY,
+  application_id      INTEGER REFERENCES applications (id),
+  capability_id       INTEGER NOT NULL REFERENCES capabilities (id),
+  provider_id         INTEGER NOT NULL REFERENCES network_providers (id),
+  data_shared_summary TEXT NOT NULL,  -- plain-language description shown to the client at consent time
+  consented_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ip_address          TEXT,
+  user_agent          TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_routing_consents_application ON routing_consents (application_id);
+
+-- Routing analytics stub: one row per routing decision, including the
+-- honest "not needed yet" and "no provider available" outcomes — this is
+-- not just a success log.
+CREATE TABLE IF NOT EXISTS routing_events (
+  id             SERIAL PRIMARY KEY,
+  capability_id  INTEGER REFERENCES capabilities (id),
+  provider_id    INTEGER REFERENCES network_providers (id),  -- NULL when outcome isn't a routed match
+  application_id INTEGER REFERENCES applications (id),
+  outcome        TEXT NOT NULL CHECK (outcome IN ('routed', 'not_yet_needed', 'no_provider_available')),
+  notes          TEXT,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_routing_events_capability ON routing_events (capability_id);
