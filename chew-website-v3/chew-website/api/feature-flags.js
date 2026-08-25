@@ -1,20 +1,23 @@
 // /api/feature-flags.js
 //
-// Public read of a fixed, safe allowlist of feature statuses, so the
-// site's coming-soon UI can switch itself from "Coming Soon" to
-// "Explore" when a flag is flipped 'active' — without a redesign or a
-// deploy. This endpoint only ever reveals status ('locked' /
-// 'coming_soon' / 'active'), never anything about what a feature does
-// internally. It is not the enforcement point — each real feature's own
-// API checks lib/featureFlags.js itself; this just drives the marketing
-// UI's CTA state.
+// The single source of truth the homepage's "What's Next" cards read
+// from — no card is hard-coded per page. A row is only ever returned
+// here if public_teaser_enabled = TRUE in the database (checked by
+// lib/featureFlags.getPublicFlags, not by this handler), so an
+// 'internal' feature is invisible even if someone adds its slug to the
+// allowlist below by mistake. Each card's title/description/status
+// switches "Coming Soon" to "Explore" automatically once status reaches
+// 'preview'/'beta'/'live' — no redesign or deploy needed. This is not
+// the enforcement point — each real feature's own API checks
+// lib/featureFlags.js itself; this just drives the marketing UI.
 //
 // GET /api/feature-flags
 
 const { getPublicFlags } = require('../lib/featureFlags');
 
-// Fixed allowlist — do not make this dynamic/unbounded. Only flags that
-// are meant to be publicly visible as a UI state belong here.
+// Fixed allowlist — do not make this dynamic/unbounded. Only slugs that
+// are meant to ever be publicly visible as a UI state belong here; the
+// database's public_teaser_enabled flag still has final say per-row.
 const PUBLIC_FLAG_SLUGS = [
   'path_engine',
   'capability_network',

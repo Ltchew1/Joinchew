@@ -1,136 +1,167 @@
 # Feature Flags & Visual Expansion — Status Report
 
-Companion to `PATH_ENGINE.md` and `CAPABILITY_NETWORK.md`. This covers
-two things from the same directive: the server-side feature-flag system
-("hidden UI is not security") and the premium visual/coming-soon pass on
-the homepage. It says plainly what's real, what's a deliberately smaller
-slice of a much bigger visual doctrine, and what's still ahead.
+Companion to `PATH_ENGINE.md` and `CAPABILITY_NETWORK.md`. Covers the
+shared feature-status registry ("hidden UI is not security," "do not
+hard-code future feature cards") and the homepage visual/coming-soon
+pass built against three successive directives in this session — a
+visual/coming-soon directive, then a "Complete Master Build Directive"
+that expanded the status vocabulary and the registry requirement, then
+a duplicate of the first and a shorter follow-up reinforcing the same
+rules. This file reflects the current, final state — the vocabulary
+below superseded an earlier three-state version (`locked`/`coming_soon`/
+`active`) partway through this work; nothing below describes that
+earlier version except where noted for migration history.
 
-## Feature flags: real server-side enforcement
+## The registry: real server-side enforcement, real public metadata
 
-- **Schema** (`db/schema.sql`, `feature_flags` table): `slug`, `status`
-  (`locked` / `coming_soon` / `active`), `release_note`. A flag is a real
-  launch decision, not a cosmetic label.
-- **`lib/featureFlags.js`**: `isFeatureActive(slug)` — fails closed. An
-  unregistered slug, or a database error, is treated as NOT active.
-  Verified in testing: `isFeatureActive('unknown_slug')` returns `false`.
+- **Schema** (`db/schema.sql`, `feature_flags` table) uses the
+  5-state vocabulary the directive specified: `internal` → `locked` →
+  `preview` → `beta` → `live`. A separate `public_teaser_enabled`
+  boolean controls whether a feature is shown publicly at all — a
+  feature can be built and even API-accessible while
+  `public_teaser_enabled = FALSE` (not shown), and a feature can be
+  publicly teased as "Coming Soon" while still fully `locked` at the
+  API. Two `CHECK` constraints enforce the directive's own rules at the
+  database layer, not just in code: an `internal` feature can never have
+  `public_teaser_enabled = TRUE`, and a teased feature must carry
+  `public_title` + `public_description` — a row simply cannot be
+  inserted in a state that violates either rule. Verified in testing:
+  both invalid inserts were rejected by Postgres.
+- **`lib/featureFlags.js`**: `isFeatureActive(slug)` grants API access
+  for `preview`, `beta`, and `live` only — never `internal` or `locked`.
+  Fails closed on an unregistered slug or a database error. Verified:
+  `isFeatureActive('unknown_slug')` returns `false`.
 - **Real enforcement, not hidden UI**: `api/business-path.js` and
-  `api/capability-routing.js` both call `isFeatureActive()` before doing
-  any work and return a genuine `404 {"error":"Not found"}` when the flag
-  isn't `active` — not a 403 with an explanatory message, not an empty
-  success response. Verified end-to-end: with the flag `active`, a real
-  Florida LLC query returns `200` with real data; flipped to
-  `coming_soon`, the identical request returns `404`; flipped back,
-  `200` again. This was tested by directly calling the handler
-  functions, the same way a real request would reach them — not by
-  checking the flag value in isolation.
-- **`api/feature-flags.js`**: a public, read-only, fixed-allowlist
-  endpoint (`path_engine`, `capability_network`,
-  `business_intelligence_suite`, `education_careers`,
-  `asset_intelligence`, `chew_connections_suite`) that only ever reveals
-  a status string, never internal detail. This is what drives the
-  homepage's coming-soon badges — it is not the enforcement point itself.
-- **Current flag state**: `path_engine` and `capability_network` are
-  `active` — that scope was built, tested, and already shipped as an
-  honestly-labeled early preview in prior work, so this directive's
-  "not yet approved" language is treated as applying to genuinely new
-  work, not as a reason to pull back something already delivered. The
-  four homepage teaser flags (`business_intelligence_suite`,
-  `education_careers`, `asset_intelligence`, `chew_connections_suite`)
-  are all `coming_soon` — there is no backend for any of them yet, only
-  the marketing card. Flip a flag only on an actual launch decision.
+  `api/capability-routing.js` call `isFeatureActive()` before doing any
+  work and return a genuine `404 {"error":"Not found"}` when not
+  accessible. Verified end-to-end by flipping `path_engine` through
+  `preview → locked → beta` against a live database and calling the
+  handler directly at each step: `200` → `404` → `200`.
+- **`api/feature-flags.js`** is now the single source of truth the
+  homepage reads to render its cards — titles, descriptions, and status
+  live in the database, not in `index.html`. It returns only rows with
+  `public_teaser_enabled = TRUE` (enforced in `getPublicFlags()`'s SQL,
+  not by this handler), each with `isAccessible` computed from status.
+  An `internal` feature is invisible even if its slug were mistakenly
+  added to the handler's allowlist, because the database-level
+  constraint means it can never have `public_teaser_enabled = TRUE` in
+  the first place.
+- **Homepage cards are no longer hard-coded.** `index.html`'s
+  `#expansion-grid` starts empty (with a `<noscript>` static fallback
+  carrying the same copy, for no-JS/SEO); `script.js` fetches
+  `/api/feature-flags` and builds each card's markup from the response.
+  A card's badge reads "Coming Soon" while status is
+  `internal`/`locked` and switches to "Explore" the instant status
+  reaches `preview`/`beta`/`live` — verified live by flipping
+  `business_intelligence_suite` from `locked` to `live` against the
+  database mid-test and confirming the badge updated with zero
+  JavaScript errors and no code change.
+- **Current registry state**: `path_engine` and `capability_network` are
+  `preview` (not `live` — that's an honest description: one Florida LLC
+  path, a capability taxonomy with zero providers) with
+  `public_teaser_enabled = FALSE`, since each already has its own
+  honestly-scoped link elsewhere on the homepage and a generic card
+  would duplicate or understate that. The four "What's Next" teasers
+  (`business_intelligence_suite`, `education_careers`,
+  `asset_intelligence`, `chew_connections_suite`) are `locked` with
+  `public_teaser_enabled = TRUE` — real cards, zero backend, true to
+  what they are. Flip a flag only on an actual launch decision — never
+  on inference from a document's tone.
 
 ## Visual pass: what was actually built
 
-The directive describes a full 12-scene cinematic rebuild across every
-page, five proprietary signature visual elements, full mobile
-recomposition, portal visual continuity, and more. Rebuilding the entire
-site in one pass would mean shallow, unverified work spread thin across
-many pages rather than a few things done well and tested — so this pass
-delivered a concrete, tested slice on the homepage, the page that
-carries the most weight:
+Multiple directives in this session asked for a full cinematic,
+multi-scene visual rebuild across the entire site. Attempting that in
+full, in text-only passes with no live design iteration, risks shallow
+work claimed as done rather than a few things built and actually
+verified — so each pass added one honestly-scoped, tested slice to the
+homepage rather than attempting the whole site:
 
-- **"The System Is Expanding" section** — the four coming-soon cards
-  from the directive's own copy (Business Intelligence, Education &
-  Careers, Asset Intelligence, CHEW Connections), styled as elegant
-  locked states (restrained lock icon, subtle radial gold glow, pill
-  badge) rather than gray disabled boxes, and driven live by
-  `/api/feature-flags` so a card's badge switches from "Coming Soon" to
-  "Explore" the instant its flag is flipped `active` — verified in a
-  real browser by flipping `chew_connections_suite` to `active` and
-  confirming the badge switched live, with zero JavaScript errors and no
-  page redesign needed.
-- **Intelligence Pulse** (`.intelligence-pulse` in `styles.css`) — the
-  directive's requested "subtle motion signature when CHEW reveals
-  something important." Applied to three real reveal moments: the
-  coming-soon cards' lock icons, the constellation's center CHEW node,
-  and the rerouted-path endpoint in the "Path Reconstruction" diagram.
-  Respects `prefers-reduced-motion`, matching every other animation on
-  the site.
-- **Economic Constellation** naming — the existing 8-node diagram (built
-  in an earlier phase) is now explicitly labeled "The Economic
-  Constellation" as its own badge, separate from the section's existing
-  locked headline copy, which was left untouched.
-- **Path Reconstruction** naming — the existing plan-interruption/reroute
-  diagram (also from an earlier phase) is now labeled with that eyebrow,
-  matching the directive's named signature element for the same concept.
-- Fixed a real layout bug caught only by rendering the change in an
-  actual browser: the constellation's new label, first placed inside a
+- **"The System Is Expanding" section**, now fully registry-driven (see
+  above), styled as elegant locked states (restrained lock icon, subtle
+  radial gold glow, pill badge) rather than gray disabled boxes.
+- **Intelligence Pulse** (`.intelligence-pulse` in `styles.css`) — a
+  reduced-motion-safe reveal animation applied to three real moments:
+  the coming-soon cards' lock icons, the constellation's center CHEW
+  node, and the rerouted-path endpoint in the "Path Reconstruction"
+  diagram.
+- **"Economic Constellation"** and **"Path Reconstruction"** — named
+  badges added to two diagrams that already existed from earlier phases
+  (an 8-node connected-domains diagram; a plan-interruption/reroute
+  diagram), matching two of the directive's named signature elements.
+- A real layout bug was caught and fixed only by rendering the change in
+  an actual browser: the constellation's label, first placed inside a
   `display: flex` container, stretched to the SVG's full height and
-  painted as an oversized gold block instead of a small badge. Moving it
-  outside that flex container fixed it — screenshotted before and after.
+  painted as an oversized gold block instead of a small badge — moved
+  outside the flex wrap, reverified with a screenshot.
+- Verified responsive behavior at a real mobile viewport (390×844): the
+  four cards recompose to a single column and remain fully readable —
+  not merely a shrunk desktop layout, though this relies on the site's
+  pre-existing responsive grid breakpoints rather than new mobile-only
+  interaction (no swipe gesture was built).
 
-## What this pass deliberately did not attempt
+## What was deliberately not attempted, across all of these directives
 
-Rebuilding these properly needs real design iteration, not one more pass
-squeezed into an already-long session — attempting them now would mean
-either shallow versions across many pages or claiming completion I
-couldn't verify:
+Naming these explicitly matters more than leaving them implied — none of
+the following exist in this repository yet:
 
-- The other four named signature elements (CHEW Intelligence Line as a
-  distinct component, CHEW Halo as its own named treatment beyond the
-  existing hero ring-pulse, a WebGL/canvas-driven visualization layer).
-- The 12-scene cinematic homepage restructure as literally specified —
-  several scenes already exist from earlier phases (fragmentation →
-  connection → goal path → interference/reroute → decision intelligence
-  → secret-weapon teaser → founder → final invitation), but they weren't
-  restructured into the directive's exact scene order or given new
-  cinematic composition/3D depth treatment.
-- Applying the visual doctrine to every other page (about, pricing,
-  services, apply, sign-in, contact, education, legal pages), plus
-  error/loading/empty states.
-- Mobile-specific recomposition beyond the existing responsive CSS
-  (swipeable coming-soon cards, vertical path visuals, native-feeling
-  navigation).
-- Site/portal visual continuity — there is no portal in this repository
-  to share a design system with yet.
-- `ComingSoonFeature`/`FeaturePreview`/`ReleaseStatus` as generalized,
-  reusable components in a component framework — this repo has no
-  templating system or build step, so the current implementation is
-  hand-written HTML/CSS/JS following a consistent pattern (the four
-  cards share identical markup shape and the same `data-feature-slug` /
-  `data-status-badge` JS contract), copy-pasteable to another page, but
-  not a literal reusable component in the React/Vue sense.
-- Analytics tracking for coming-soon card views/clicks — no analytics
-  provider is wired into this site at all yet, for anything.
+- The other three named signature elements as distinct components (CHEW
+  Intelligence Line, CHEW Halo beyond the pre-existing hero ring-pulse,
+  Locked Reveal as its own visual system) and any WebGL/canvas layer.
+- The 12–15-scene cinematic homepage restructure as literally specified.
+  Several scenes' underlying content already existed from earlier
+  phases (fragmentation → connection → goal path → interference/reroute
+  → decision intelligence → secret-weapon teaser → founder → final
+  invitation), but none were restructured into the directive's exact
+  scene numbering, and no scene received new cinematic composition, 3D
+  depth, or a dedicated "CHEW Noticed" / Decision Lab / CHEW BUILD
+  treatment — those concepts have no page presence at all yet.
+- Applying any visual standard to other pages (about, services, apply,
+  contact, education, legal pages) or to error/loading/empty states
+  beyond what already existed.
+- Site/portal visual continuity — no authenticated portal exists in this
+  repository to share a design system with.
+- A generalized `ComingSoonFeature`/`FeaturePreview` component in a
+  component framework — this repo has no templating system or build
+  step, so the real implementation is a hand-written render function in
+  `script.js` reading from the registry API, not a literal reusable
+  component in the React/Vue sense, though the pattern (one render path,
+  driven entirely by data) is the architectural equivalent.
+- Analytics instrumentation (CTA clicks, teaser views, etc.) — no
+  analytics provider is wired into this site at all yet, for anything.
+- SEO infrastructure beyond what already existed (sitemap, schema
+  markup, systematic Open Graph audit across pages) and design-token
+  centralization beyond the existing CSS custom properties in
+  `styles.css`'s `:root`.
+- The 5-status vocabulary is currently consumed only by this website.
+  There is no authenticated portal in this repository yet for it to be
+  "shared" with — the registry is built as if that consumer exists
+  (nothing here is website-specific), but that's unverified until a
+  portal actually reads from it.
 
 ## Testing performed
 
-No automated test suite or build step exists in this repo (same as
-`PATH_ENGINE.md` and `CAPABILITY_NETWORK.md`). Verified instead with:
+No automated test suite or build step exists in this repo. Verified
+instead with real, scripted tests against a live local PostgreSQL 16
+database and a real Chromium/Playwright browser session each time this
+system changed:
 
-- Full `db/schema.sql` (including `feature_flags`) applied cleanly
-  against a live local Postgres 16 database.
-- A Node harness calling `api/business-path.js` and
-  `api/capability-routing.js` directly: 200 while their flag is
-  `active`, a genuine 404 the moment the flag is flipped to
-  `coming_soon`/`locked`, 200 again once restored — plus
-  `isFeatureActive()` confirmed to fail closed on an unregistered slug.
-- A real Chromium/Playwright session against a local dev server proxying
-  the real handler functions: screenshotted the new "What's Next"
-  section, the fixed constellation label, and the Path Reconstruction
-  diagram; flipped `chew_connections_suite` live via the database and
-  confirmed the card's badge switched from "Coming Soon" to "Explore" in
-  the rendered page with zero console errors.
+- Full `db/schema.sql` applied cleanly from scratch, including both
+  `CHECK` constraints on `feature_flags`; both constraints confirmed to
+  reject an invalid insert (`internal` + teased; teased without
+  title/description).
+- `isFeatureActive()` and the gated APIs exercised through every status
+  transition (`preview → locked → beta → preview`), confirming 200/404
+  at exactly the right points, by calling the handler functions
+  directly — the same call path a real request takes.
+- `api/feature-flags.js` confirmed to hide `path_engine`/
+  `capability_network` (teaser disabled) while showing the four teased
+  features with correct metadata; confirmed a flipped-to-`live` feature
+  reports `isAccessible: true`.
+- A real browser session confirmed the homepage renders all four cards
+  from the API response (not hard-coded HTML), at both a 1280px desktop
+  viewport and a 390px mobile viewport, with zero JavaScript console
+  errors, and confirmed a live flag flip updates a card's badge with no
+  code change.
 - No local test infrastructure (Postgres cluster, scratch database, dev
   server) is part of this repository.

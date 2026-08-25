@@ -36,7 +36,9 @@ Update it whenever a real provider is added — do not let it go stale.
 - **A working API** (`api/capability-routing.js`), gated server-side by
   the `capability_network` feature flag (see `FEATURE_FLAGS.md`) — a
   real 404 when off, not just an unlinked page. Currently seeded
-  `active` since this narrow scope was already tested and shipped.
+  `preview` status (API-accessible, not `live`), `public_teaser_enabled
+  = FALSE` since it has its own honestly-scoped link elsewhere on the
+  homepage rather than a generic teaser card.
   `GET /api/capability-routing` (no params) lists the capability taxonomy;
   `GET /api/capability-routing?capability=<slug>` returns that
   capability's real routing recommendation. Both paths tested against a

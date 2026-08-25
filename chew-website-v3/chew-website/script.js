@@ -47,27 +47,43 @@ document.addEventListener('DOMContentLoaded', function () {
     }, { passive: true });
   }
 
-  // Coming-soon capability cards: read real server-side feature status and
-  // switch a card's badge from "Coming Soon" to "Explore" when a feature is
-  // flipped active — no redesign needed. Fails safe: a fetch error or an
-  // unrecognized slug just leaves the default "Coming Soon" badge in place.
-  var featureCards = document.querySelectorAll('[data-feature-slug]');
-  if (featureCards.length) {
+  // "What's Next" expansion cards: rendered entirely from the shared
+  // feature-flag registry (/api/feature-flags), not hard-coded per page.
+  // A card's badge reads "Coming Soon" while status is 'internal'/'locked'
+  // and switches itself to "Explore" the moment status reaches
+  // 'preview'/'beta'/'live' — no redesign needed. The <noscript> block in
+  // the HTML covers no-JS/SEO with the same copy as a static fallback.
+  var LOCK_ICON_SVG = '<svg class="lock-icon intelligence-pulse" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" stroke="var(--gold-light)" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="var(--gold-light)" stroke-width="1.6"/></svg>';
+
+  var expansionGrid = document.getElementById('expansion-grid');
+  if (expansionGrid) {
     fetch('/api/feature-flags')
       .then(function (res) { return res.ok ? res.json() : null; })
       .then(function (data) {
-        if (!data || !data.flags) return;
-        var statusBySlug = {};
-        data.flags.forEach(function (f) { statusBySlug[f.slug] = f.status; });
-        featureCards.forEach(function (card) {
-          var slug = card.getAttribute('data-feature-slug');
-          var badge = card.querySelector('[data-status-badge]');
-          if (!badge || statusBySlug[slug] !== 'active') return;
-          badge.textContent = 'Explore';
-          badge.classList.add('is-active');
+        if (!data || !data.flags || !data.flags.length) return;
+        expansionGrid.innerHTML = '';
+        data.flags.forEach(function (feature, i) {
+          var card = document.createElement('div');
+          card.className = 'glass card coming-soon-card';
+          card.setAttribute('data-reveal', '');
+          card.style.setProperty('--reveal-delay', (i * 0.06).toFixed(2) + 's');
+
+          var badgeText = feature.isAccessible ? 'Explore' : 'Coming Soon';
+          var badgeClass = feature.isAccessible ? 'status-badge is-active' : 'status-badge';
+
+          card.innerHTML = LOCK_ICON_SVG +
+            '<h4></h4><p></p>' +
+            '<span class="' + badgeClass + '"></span>';
+          card.querySelector('h4').textContent = feature.title || '';
+          card.querySelector('p').textContent = feature.description || '';
+          card.querySelector('.status-badge').textContent = badgeText;
+
+          expansionGrid.appendChild(card);
+          card.classList.add('is-visible'); // already in view by the time data arrives; skip the reveal race
         });
+        expansionGrid.removeAttribute('aria-busy');
       })
-      .catch(function () { /* leave default Coming Soon state */ });
+      .catch(function () { expansionGrid.removeAttribute('aria-busy'); /* <noscript> fallback covers this visually via CSS below */ });
   }
 
   // Forms are not yet connected to a backend, payment processor, or CRM.

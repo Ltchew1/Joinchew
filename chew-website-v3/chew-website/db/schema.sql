@@ -359,7 +359,7 @@ CREATE TABLE IF NOT EXISTS routing_events (
 CREATE INDEX IF NOT EXISTS idx_routing_events_capability ON routing_events (capability_id);
 
 -- ============================================================
--- CHEW Feature Flags — server-side production-access gate
+-- CHEW Feature Flags — shared feature-status registry
 -- ============================================================
 -- "Hidden UI is not security." Any not-yet-launched feature must be
 -- unreachable at the API layer, not merely unlinked from navigation.
@@ -367,22 +367,47 @@ CREATE INDEX IF NOT EXISTS idx_routing_events_capability ON routing_events (capa
 -- handlers call isFeatureActive(slug) and return 404 when false, so a
 -- disabled feature is genuinely unreachable, not just hard to find.
 --
--- status meanings:
---   locked       — not yet built for production use / explicitly held back
---   coming_soon  — publicly teased (e.g. a locked card), but the API
---                  behind it still 404s until flipped to 'active'
---   active       — really live; the API serves real requests
+-- This is also the single source of truth for the homepage's
+-- "coming soon" cards — see api/feature-flags.js and index.html. A
+-- card's title/description/status is READ from this table, not
+-- hard-coded per page, so a launch is one row update, not a redesign.
 --
--- Flipping a row to 'active' is a real launch decision — do not change
--- a flag's status without being told to, and never seed a flag as
--- 'active' for a feature that hasn't actually been verified working.
+-- status meanings (least to most available):
+--   internal — not built for production, not publicly teased at all,
+--              regardless of public_teaser_enabled
+--   locked   — publicly teased (a "Coming Soon" card) but the API
+--              behind it still 404s
+--   preview  — a narrow, honestly-labeled early-access slice is real
+--              and API-accessible (e.g. one jurisdiction, zero
+--              seeded providers) — this is NOT "fully live"
+--   beta     — broader real access, still flagged as evolving
+--   live     — fully live, no caveats
+--
+-- API access (lib/featureFlags.js isFeatureActive) is granted for
+-- 'preview', 'beta', and 'live' — never for 'internal' or 'locked'.
+--
+-- public_teaser_enabled is a SEPARATE axis from status: a feature can
+-- be built and even API-accessible while still not shown publicly
+-- (public_teaser_enabled = FALSE), and a feature can be publicly
+-- teased as "Coming Soon" while still 100% locked at the API
+-- (status = 'locked', public_teaser_enabled = TRUE). Do not flip
+-- status or public_teaser_enabled without being told to, and never
+-- seed 'preview'/'beta'/'live' for something that hasn't actually
+-- been verified working.
 
 CREATE TABLE IF NOT EXISTS feature_flags (
-  id           SERIAL PRIMARY KEY,
-  slug         TEXT UNIQUE NOT NULL,
-  name         TEXT NOT NULL,
-  status       TEXT NOT NULL DEFAULT 'locked' CHECK (status IN ('locked', 'coming_soon', 'active')),
-  release_note TEXT,
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+  id                   SERIAL PRIMARY KEY,
+  slug                 TEXT UNIQUE NOT NULL,
+  name                 TEXT NOT NULL,  -- internal name, not shown publicly
+  status               TEXT NOT NULL DEFAULT 'internal'
+                          CHECK (status IN ('internal', 'locked', 'preview', 'beta', 'live')),
+  public_teaser_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  public_title         TEXT,   -- required if public_teaser_enabled; shown on the "What's Next" card
+  public_description   TEXT,   -- required if public_teaser_enabled; shown on the "What's Next" card
+  category             TEXT,
+  release_note         TEXT,
+  updated_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (NOT public_teaser_enabled OR (public_title IS NOT NULL AND public_description IS NOT NULL)),
+  CHECK (status <> 'internal' OR NOT public_teaser_enabled)
 );
