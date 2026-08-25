@@ -42,6 +42,7 @@ async function getRoutingRecommendation({ capabilitySlug }) {
     slug: row.slug,
     name: row.name,
     relationshipClassification: row.relationship_classification,
+    entityType: row.entity_type,
     disclosureText: row.disclosure_text,
     jurisdictionId: row.jurisdiction_id,
     licensingNotes: row.licensing_notes,

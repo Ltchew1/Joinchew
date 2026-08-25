@@ -313,6 +313,19 @@ CREATE TABLE IF NOT EXISTS network_providers (
 
 CREATE INDEX IF NOT EXISTS idx_network_providers_status ON network_providers (status);
 
+-- One registry, two audiences: `status` gates public-website exposure;
+-- `portal_visibility` is a SEPARATE gate for a future authenticated
+-- portal, so a provider can be shown to existing clients in the portal
+-- before (or without ever) appearing on the public marketing site, or
+-- vice versa. No portal exists in this repository yet to consume this —
+-- it's added now so the registry doesn't need a breaking schema change
+-- when one does. entity_type is free-text (e.g. 'llc', 'individual',
+-- 'nonprofit') since real values depend on real providers that don't
+-- exist yet; do not invent a CHECK-constrained enum for values nobody
+-- has confirmed.
+ALTER TABLE network_providers ADD COLUMN IF NOT EXISTS entity_type TEXT;
+ALTER TABLE network_providers ADD COLUMN IF NOT EXISTS portal_visibility BOOLEAN NOT NULL DEFAULT FALSE;
+
 CREATE TABLE IF NOT EXISTS capability_provider_links (
   id                 SERIAL PRIMARY KEY,
   capability_id      INTEGER NOT NULL REFERENCES capabilities (id),

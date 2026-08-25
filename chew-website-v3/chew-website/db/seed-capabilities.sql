@@ -20,5 +20,15 @@ INSERT INTO capabilities (slug, name, category, description) VALUES
   ('real_asset_execution', 'Real-Asset Execution', 'real_assets',
    'Execution support for property and other real-asset transactions.'),
   ('accounting_tax', 'Accounting / Tax', 'tax_accounting',
-   'Licensed accounting and tax preparation/filing support.')
+   'Licensed accounting and tax preparation/filing support.'),
+  ('event_production', 'Event Production', 'life_events',
+   'Planning and coordination support for weddings and other major events.'),
+  ('transportation_logistics', 'Transportation / Logistics', 'life_events',
+   'Coordinating transportation for a major event, move, or business need.'),
+  ('security_protection', 'Security / Protection', 'risk',
+   'Physical or digital security support where a client''s situation calls for it.'),
+  ('property_care', 'Property Care', 'real_assets',
+   'Cleaning, upkeep, or management support for a property a client owns or occupies.'),
+  ('relocation_logistics', 'Relocation / Storage', 'life_events',
+   'Coordination support for moving households or belongings.')
 ON CONFLICT (slug) DO NOTHING;

@@ -45,12 +45,30 @@ Update it whenever a real provider is added — do not let it go stale.
   live database, including the "capability exists but has zero active
   providers" case, which correctly returns `available: false` rather
   than inventing a placeholder.
-- **Four seeded capability categories** (`db/seed-capabilities.sql`):
-  `insurance_risk_review`, `digital_business_infrastructure`,
-  `real_asset_execution`, `accounting_tax` — taken directly from this
-  doctrine's own examples. These are category labels only. Seeding them
-  is not a claim that CHEW has a provider for any of them; it gives the
-  graph a taxonomy to route against once real providers exist.
+- **Nine seeded capability categories** (`db/seed-capabilities.sql`):
+  the original four (`insurance_risk_review`,
+  `digital_business_infrastructure`, `real_asset_execution`,
+  `accounting_tax`) plus five added for the "Final Master Build
+  Directive"'s broader enterprise-category list (`event_production`,
+  `transportation_logistics`, `security_protection`, `property_care`,
+  `relocation_logistics`). All nine are category labels only — seeding
+  them is not a claim that CHEW has a provider for any of them; it gives
+  the graph a taxonomy to route against once real providers exist, built
+  as a scalable category model rather than hard-coded around any one
+  operating company's name (per that directive's "do not hard-code the
+  product around today's names" instruction).
+- **Registry enrichment**: `network_providers` gained `entity_type`
+  (free text — `'llc'`, `'individual'`, etc. — left unconstrained since
+  no real provider exists yet to confirm valid values against) and
+  `portal_visibility` (a boolean gate separate from `status`, since a
+  future authenticated portal may need to show a provider to existing
+  clients independently of whether it's exposed on the public website).
+  No portal exists in this repository yet to consume `portal_visibility`
+  — it's added now so the registry doesn't need a breaking change later,
+  not because anything reads it today. Verified end-to-end: seeded a
+  test provider with both fields set, linked it to a capability, and
+  confirmed `entityType` flows correctly through
+  `getRoutingRecommendation()`'s output.
 - **A one-line, honest homepage mention** (index.html, "Bigger Picture"
   section): states that CHEW is expanding the network of vetted
   capability available through the platform and that any material
@@ -122,14 +140,20 @@ To add a first real provider once that information exists:
   jurisdictions, disclosure language, contact/intake process. This is
   the single largest gap and can only be closed with input from whoever
   holds those business relationships.
-- Feature flags / permissions system referenced by the doctrine
-  ("permissions," "feature flags") — no flag system exists in this
-  codebase; `status` on `network_providers` currently serves as the only
-  gate, which is sufficient for the current scale but not a general
-  feature-flag system.
 - Full data-sharing consent UI (show exactly what will be shared, get
   explicit consent, display it back to the client) — backend is ready;
   no frontend exists.
+- Everything speculative in the "Final Master Build Directive" beyond
+  the registry itself — the CHEW Life Map, the Opportunity Ladder, and
+  the Unlock Engine are pure vision with **zero backend**: no schema, no
+  API, no page. They describe future storytelling concepts, not
+  features, and there is no honest way to build "architecture" for them
+  yet because there's no real data model behind any of the three (unlike
+  Path Engine or this registry, which map onto concrete rows and
+  queries). Building empty scaffolding for them now would be
+  indistinguishable from pretending they're further along than they are
+  — so nothing was built, and this line exists so that omission is
+  explicit rather than silently assumed.
 
 ## Testing performed
 
@@ -155,5 +179,10 @@ tests against a live local PostgreSQL 16 database:
   param → 200 with the taxonomy list, a real capability with zero
   providers → 200 with `available: false`, a capability with an active
   provider → 200 with that provider's data.
+- Re-verified after the registry enrichment: schema (including the two
+  new `network_providers` columns) applied cleanly, the expanded
+  9-category taxonomy seeded correctly, and a seeded test provider's
+  `entity_type` was confirmed to flow through
+  `getRoutingRecommendation()`'s output end-to-end.
 - No local test infrastructure (Postgres cluster, scratch database) is
   part of this repository.
