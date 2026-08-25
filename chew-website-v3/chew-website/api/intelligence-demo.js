@@ -25,8 +25,18 @@
 // completeAction() or writes to the database. A public, repeatable demo
 // endpoint must never mutate the shared illustrative subject's state,
 // or it would silently corrupt this same demo for every future visitor.
+//
+// Also returns capabilityOverview: every real capability from the
+// registry with a LIVE count of active/ready providers (see
+// lib/capabilityGraph.js's getCapabilityOverview) — used by the public
+// "Opportunity Radar." No capability here ever carries a fabricated
+// "expiring soon" or "newly opened" state; nothing in this schema
+// tracks capability freshness, so the radar only ever shows what's
+// actually true right now: connected to this scenario or not, and
+// whether a real provider exists.
 
 const { computeRecommendation } = require('../lib/intelligenceEngine');
+const { getCapabilityOverview } = require('../lib/capabilityGraph');
 const { isFeatureActive } = require('../lib/featureFlags');
 const { query } = require('../lib/db');
 
@@ -88,12 +98,15 @@ module.exports = async (req, res) => {
       capabilityName: row.capability_name,
     }));
 
+    const capabilityOverview = await getCapabilityOverview();
+
     return res.status(200).json({
       isExample: true,
       disclaimer: 'This is a demo experience using an illustrative example scenario, not your personal data. Numeric thresholds shown are examples for testing CHEW\'s logic, not verified financial or lending guidance.',
       scenarioLabel: scenario.label,
       recommendation,
       requirementSequence,
+      capabilityOverview,
     });
   } catch (err) {
     console.error('intelligence-demo error:', err.message);

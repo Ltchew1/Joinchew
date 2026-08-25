@@ -396,6 +396,85 @@ document.addEventListener('DOMContentLoaded', function () {
       dominoTriggerEl.addEventListener('click', runDomino);
     }
 
+    // CHEW Opportunity Radar: every real capability in the registry
+    // (api/intelligence-demo.js -> lib/capabilityGraph.js
+    // getCapabilityOverview), positioned radially. "Connected" means this
+    // capability is actually linked (capability_id) to a requirement in
+    // this example's real sequence, not a guess. "Available" means a live
+    // COUNT of active, ready providers is greater than zero. There is no
+    // fabricated freshness/urgency state anywhere in this feature.
+    var radarSectionEl = document.getElementById('radar-section');
+    var radarTriggerEl = document.getElementById('radar-trigger');
+    var radarWrapEl = document.getElementById('radar-wrap');
+    var radarNodesEl = document.getElementById('radar-nodes');
+    var radarDetailEl = document.getElementById('radar-detail');
+    var lastCapabilityOverview = null;
+
+    function radarConnectedSlugs() {
+      if (!lastRequirementSequence) return [];
+      return lastRequirementSequence
+        .filter(function (t) { return t.capabilitySlug; })
+        .map(function (t) { return t.capabilitySlug; });
+    }
+
+    function showRadarDetail(cap, connectedSlugs) {
+      var isConnected = connectedSlugs.indexOf(cap.slug) !== -1;
+      var matchedTile = isConnected && lastRequirementSequence
+        ? lastRequirementSequence.filter(function (t) { return t.capabilitySlug === cap.slug; })[0]
+        : null;
+      var html = '<span class="radar-detail-name">' + escapeHtml(cap.name) + '</span>';
+      html += '<p>' + (cap.available
+        ? cap.activeProviderCount + ' active provider' + (cap.activeProviderCount === 1 ? '' : 's') + ' in the network right now.'
+        : 'No active provider in the network yet.') + '</p>';
+      if (matchedTile) {
+        html += '<p>Connected to this example\'s real requirement: <strong>' + escapeHtml(matchedTile.label) + '</strong>.</p>';
+      } else {
+        html += '<p>Not tied to any requirement in this example\'s sequence.</p>';
+      }
+      radarDetailEl.innerHTML = html;
+      radarDetailEl.hidden = false;
+    }
+
+    function layoutRadarNode(el, index, total, radius) {
+      var angle = (360 / total) * index - 90;
+      var rad = angle * Math.PI / 180;
+      el.style.left = (210 + radius * Math.cos(rad)) + 'px';
+      el.style.top = (210 + radius * Math.sin(rad)) + 'px';
+    }
+
+    function runRadar() {
+      if (!lastCapabilityOverview || !lastCapabilityOverview.length) return;
+      var connectedSlugs = radarConnectedSlugs();
+      radarDetailEl.hidden = true;
+      radarDetailEl.innerHTML = '';
+
+      radarNodesEl.innerHTML = lastCapabilityOverview.map(function (cap, i) {
+        var isConnected = connectedSlugs.indexOf(cap.slug) !== -1;
+        var cls = 'radar-node' + (isConnected ? ' is-connected' : '') + (isConnected && cap.available ? ' is-available' : '');
+        return '<button type="button" class="' + cls + '" data-index="' + i + '">' + escapeHtml(cap.name) + '</button>';
+      }).join('');
+      radarWrapEl.hidden = false;
+
+      var nodeEls = radarNodesEl.querySelectorAll('.radar-node');
+      nodeEls.forEach(function (el, i) {
+        layoutRadarNode(el, i, lastCapabilityOverview.length, 165);
+        el.addEventListener('click', function () {
+          nodeEls.forEach(function (n) { n.classList.remove('is-selected'); });
+          el.classList.add('is-selected');
+          showRadarDetail(lastCapabilityOverview[i], connectedSlugs);
+        });
+      });
+
+      if (connectedSlugs.length === 0) {
+        radarDetailEl.innerHTML = '<p>None of these real capabilities are connected to this particular example\'s requirement sequence &mdash; honestly, because this scenario doesn\'t currently route through the network. Tap any node to see its own live status.</p>';
+        radarDetailEl.hidden = false;
+      }
+    }
+
+    if (radarTriggerEl) {
+      radarTriggerEl.addEventListener('click', runRadar);
+    }
+
     goalButtons.forEach(function (btn) {
       btn.addEventListener('click', function () {
         clearPendingTimeouts();
@@ -403,6 +482,11 @@ document.addEventListener('DOMContentLoaded', function () {
         dominoSectionEl.hidden = true;
         dominoRowEl.hidden = true;
         dominoRowEl.innerHTML = '';
+        radarSectionEl.hidden = true;
+        radarWrapEl.hidden = true;
+        radarNodesEl.innerHTML = '';
+        radarDetailEl.hidden = true;
+        radarDetailEl.innerHTML = '';
         goalButtons.forEach(function (b) { b.classList.remove('is-active'); });
         btn.classList.add('is-active');
         statusEl.textContent = 'CHEW is thinking...';
@@ -433,12 +517,15 @@ document.addEventListener('DOMContentLoaded', function () {
             lastRequirementSequence = data.requirementSequence || null;
             lastBasedOnFacts = rec.basedOnFacts;
             lastChosenRequirementKey = rec.chosenRequirementKey;
+            lastCapabilityOverview = data.capabilityOverview || null;
             if (revealReduceMotion) {
               chainEl.classList.add('is-visible');
               dominoSectionEl.hidden = false;
+              radarSectionEl.hidden = false;
             } else {
               pendingTimeouts.push(setTimeout(function () { chainEl.classList.add('is-visible'); }, 1700));
               pendingTimeouts.push(setTimeout(function () { dominoSectionEl.hidden = false; }, 2000));
+              pendingTimeouts.push(setTimeout(function () { radarSectionEl.hidden = false; }, 2300));
             }
             resultEl.scrollIntoView({ behavior: revealReduceMotion ? 'auto' : 'smooth', block: 'nearest' });
           })

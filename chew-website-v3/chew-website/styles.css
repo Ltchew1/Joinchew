@@ -819,6 +819,62 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 @media (prefers-reduced-motion: reduce) { .domino-tile, .domino-connector { transition: none !important; } }
 @media (max-width: 640px) { .domino-row { flex-direction: column; align-items: center; } .domino-connector { transform: rotate(90deg); padding: 2px 0; } }
 
+/* CHEW Opportunity Radar: every real capability from the registry
+   (lib/capabilityGraph.js getCapabilityOverview), positioned by JS-computed
+   inline left/top so the ring works at any node count. No fabricated
+   "expiring"/"newly opened" states — only connected-to-this-example (real
+   capability_id link) and has-an-active-provider (live COUNT), both true. */
+.radar-section { text-align: center; margin-top: 40px; }
+.radar-caveat { font-size: 0.8rem; color: var(--text-faint); margin: 14px auto 0; max-width: 50ch; font-style: italic; }
+.radar-wrap {
+  position: relative; width: 420px; height: 420px; margin: 40px auto 0;
+  border-radius: 50%; border: 1px solid var(--panel-border-soft);
+  background: radial-gradient(circle, rgba(201,162,39,0.05) 0%, rgba(201,162,39,0) 70%);
+}
+.radar-sweep {
+  position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(from 0deg, rgba(232,206,122,0.25), rgba(232,206,122,0) 30%);
+  animation: radar-spin 6s linear infinite;
+}
+@keyframes radar-spin { to { transform: rotate(360deg); } }
+.radar-hub {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2;
+  width: 96px; height: 96px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  text-align: center; background: var(--panel); border: 1px solid var(--gold-light);
+  font-family: var(--font-display); font-style: italic; font-size: 0.86rem; color: var(--gold-light);
+  line-height: 1.25; box-shadow: 0 0 26px rgba(232,206,122,0.18);
+}
+.radar-nodes { position: absolute; inset: 0; }
+.radar-node {
+  position: absolute; top: 50%; left: 50%; width: 84px; height: 84px; margin: -42px 0 0 -42px; z-index: 3;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 8px;
+  text-align: center; font-size: 0.72rem; font-weight: 600; line-height: 1.25; color: var(--text-muted);
+  background: var(--panel); border: 1px solid var(--panel-border); cursor: pointer;
+  transition: border-color 0.4s ease, background 0.4s ease, color 0.4s ease, box-shadow 0.4s ease, transform 0.2s ease;
+}
+.radar-node:hover, .radar-node:focus-visible { transform: translate(-50%, -50%) scale(1.08); }
+.radar-node.is-connected { border-color: var(--gold); color: var(--text); }
+.radar-node.is-connected.is-available {
+  border-color: var(--gold-light); background: rgba(201,162,39,0.14); color: var(--gold-light);
+  box-shadow: 0 0 18px rgba(232,206,122,0.2);
+}
+.radar-node.is-selected { border-width: 2px; }
+.radar-detail {
+  margin: 30px auto 0; max-width: 480px; padding: 22px 26px; text-align: left;
+  border-radius: var(--radius); background: var(--panel); border: 1px solid var(--panel-border-soft);
+}
+.radar-detail-name { display: block; font-family: var(--font-display); font-size: 1.05rem; font-style: italic; color: var(--gold-light); margin-bottom: 8px; }
+.radar-detail p { margin: 0 0 6px; font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; }
+.radar-detail p:last-child { margin-bottom: 0; }
+@media (prefers-reduced-motion: reduce) { .radar-sweep { animation: none; } .radar-node { transition: none; } }
+@media (max-width: 640px) {
+  .radar-wrap { width: 100%; height: auto; margin-top: 30px; border-radius: var(--radius); border: none; background: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .radar-sweep { display: none; }
+  .radar-hub { position: static; transform: none; margin: 0 0 10px; width: auto; height: auto; padding: 10px 18px; border-radius: var(--radius); flex-basis: 100%; }
+  .radar-nodes { position: static; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .radar-node { position: static !important; margin: 0; width: 130px; height: auto; min-height: 84px; border-radius: var(--radius); transform: none !important; }
+}
+
 /* ---------- Closing / legacy section ---------- */
 .legacy-close { position: relative; overflow: hidden; padding: 112px 0; }
 .legacy-close .hero-glow { opacity: 0.7; }

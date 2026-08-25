@@ -60,6 +60,37 @@ async function getRoutingRecommendation({ capabilitySlug }) {
   };
 }
 
+// One row per capability, with a live count of active/ready providers —
+// used by the public "Opportunity Radar" (see script.js) to show every
+// capability's real state in a single query instead of N round trips.
+// Deliberately has no "expiring" or "newly opened" concept: nothing in
+// this schema tracks a deadline or freshness window for a capability,
+// and inventing one to make the radar feel more dynamic would be
+// exactly the fabricated urgency every directive in this build has
+// forbidden. availability here is always a live COUNT, never cached or
+// guessed.
+async function getCapabilityOverview() {
+  const result = await query(
+    `SELECT c.id, c.slug, c.name, c.category,
+            COUNT(p.id) FILTER (WHERE p.status = 'active' AND p.is_ready = TRUE) AS active_provider_count
+     FROM capabilities c
+     LEFT JOIN capability_provider_links l ON l.capability_id = c.id
+     LEFT JOIN network_providers p ON p.id = l.provider_id
+     GROUP BY c.id, c.slug, c.name, c.category
+     ORDER BY c.id ASC`
+  );
+  return result.rows.map((row) => {
+    const activeProviderCount = parseInt(row.active_provider_count, 10) || 0;
+    return {
+      slug: row.slug,
+      name: row.name,
+      category: row.category,
+      activeProviderCount,
+      available: activeProviderCount > 0,
+    };
+  });
+}
+
 async function recordRoutingEvent({ capabilitySlug, providerId, applicationId, outcome, notes }) {
   const capabilityResult = await query('SELECT id FROM capabilities WHERE slug = $1', [capabilitySlug]);
   const capabilityId = capabilityResult.rows[0] ? capabilityResult.rows[0].id : null;
@@ -84,4 +115,4 @@ async function recordConsent({ applicationId, capabilitySlug, providerId, dataSh
   return result.rows[0].id;
 }
 
-module.exports = { getCapabilities, getRoutingRecommendation, recordRoutingEvent, recordConsent };
+module.exports = { getCapabilities, getRoutingRecommendation, getCapabilityOverview, recordRoutingEvent, recordConsent };

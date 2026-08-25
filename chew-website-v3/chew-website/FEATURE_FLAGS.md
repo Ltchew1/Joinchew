@@ -297,6 +297,78 @@ behavior with zero animation under `prefers-reduced-motion`, and
 confirmed the capability connection line ("Connected to: Accounting /
 Tax") renders correctly on the funding scenario's first tile.
 
+## CHEW Opportunity Radar — every real capability, live, with no fabricated freshness
+
+The directive's "Opportunity Radar" concept implies capabilities appearing,
+expiring, or becoming newly available over time. Nothing in this schema
+tracks a capability's freshness or a deadline — `network_providers` only
+ever holds a current `status`/`is_ready` state, not a history of when that
+became true. Inventing an "expiring soon" or "just opened" label would have
+meant fabricating urgency the data doesn't support, which every directive in
+this build has forbidden. So the Radar shows exactly what's real right now,
+nothing more: all 9 capabilities from the registry, each honestly marked
+**connected** (this example's real `requirementSequence` actually links a
+`capability_id` to it) or not, and **available** (a live
+`COUNT(...) FILTER (WHERE status='active' AND is_ready=TRUE)` is greater
+than zero) or not.
+
+`lib/capabilityGraph.js` gained `getCapabilityOverview()` — one aggregate
+query returning all capabilities with their live active-provider count, so
+the frontend gets every capability's state in the same round trip as the
+rest of the demo response rather than 9 separate calls to the existing
+single-capability routing endpoint. `api/intelligence-demo.js` now also
+returns `capabilityOverview`. The frontend positions the 9 nodes radially
+around a "This Example" hub using real trigonometry
+(`angle = (360/n)*i - 90`), cross-references each against the real
+`requirementSequence`, and — critically — never writes anything or calls
+`completeAction()`, same hard rule as Domino.
+
+For the funding scenario, exactly one of the 9 capabilities
+(`accounting_tax`, via the real `bookkeeping_current` requirement link) is
+connected; the home scenario connects to zero, and the detail panel says so
+plainly rather than hiding the empty state: *"None of these real
+capabilities are connected to this particular example's requirement
+sequence — honestly, because this scenario doesn't currently route through
+the network."* With no providers seeded in this environment, every node
+honestly shows "No active provider yet" — leaning into that as the honest
+signal rather than treating it as a visual weakness to paper over.
+
+Building the mobile fallback caught a real bug: the radial layout's node
+wrapper (`#radar-nodes`) kept `position: absolute; inset: 0` on mobile even
+though the base `.radar-wrap` rule was overridden to a normal wrapped flex
+row, which collapsed all 9 node buttons onto the exact same coordinates as
+the hub (confirmed via `document.elementFromPoint()` returning the hub, not
+a node, at a node's own bounding-box center). Fixed by also setting
+`.radar-nodes { position: static; display: flex; flex-wrap: wrap; }` inside
+the `max-width: 640px` query, verified afterward by the same
+`elementFromPoint` check now correctly resolving to the node itself, and by
+screenshot showing a clean two-column wrapped card grid with no overlap.
+
+Verified the live-update claim directly rather than assuming it from the
+query logic: seeded one real `network_providers` row (`status='active',
+is_ready=TRUE`) and linked it to the `accounting_tax` capability via
+`capability_provider_links` in the scratch database mid-test, re-fetched
+`/api/intelligence-demo`, and confirmed `accounting_tax` flipped from
+`activeProviderCount: 0, available: false` to `activeProviderCount: 1,
+available: true` — then confirmed in the browser that the corresponding
+radar node visually gained the `is-connected is-available` gold-highlighted
+state and its detail panel correctly reported "1 active provider in the
+network right now," before removing the seeded row and confirming the
+node and API both reverted to the honest zero-state. This is the same
+"prove it flips, don't just trust the SQL" standard applied to every prior
+moment in this build.
+
+Also confirmed goal-switching resets Radar state cleanly (hidden section,
+cleared node list, cleared detail panel) mirroring the existing Domino reset
+pattern, and confirmed zero JavaScript console errors across a 1280px
+desktop viewport, a 375px mobile viewport, and under
+`prefers-reduced-motion` (the sweep animation and node hover transforms are
+disabled; a real click still fires the same handler and populates the same
+detail panel — confirmed via a raw DOM-dispatched click after Playwright's
+synthetic mouse-coordinate click proved unreliable specifically under
+Chromium's reduced-motion test emulation, which is a test-tooling quirk,
+not a product bug: the click listener itself fires correctly regardless).
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
@@ -356,10 +428,10 @@ the following exist in this repository yet:
     which is different from labeling a single static scenario as an
     example).
   - **Just not built yet, execution-bandwidth only**: Parallel Futures,
-    Future-Back Planning, Opportunity Radar, the five "browseable
-    rooms," sound design, and a bespoke mobile choreography beyond the
-    existing responsive breakpoints (CHEW Blind Spot and CHEW Domino are
-    no longer on this list — see above, both now built). None
+    Future-Back Planning, the five "browseable rooms," sound design, and
+    a bespoke mobile choreography beyond the existing responsive
+    breakpoints (CHEW Blind Spot, CHEW Domino, and the Opportunity Radar
+    are no longer on this list — see above, all three now built). None
     of these need a capability this repo lacks to build as a
     clearly-labeled demo/sample exhibit — they're exactly the kind of
     thing this directive now explicitly permits. They weren't built in
