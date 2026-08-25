@@ -736,6 +736,38 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   .move-collapse-label, .move-chip { transition: none !important; }
 }
 
+/* CHEW Blind Spot: a deliberate interrupt in the reveal flow. Built from
+   real data only — the "assumed" line is the engine's own deferred
+   (unmet, non-chosen) requirement; the "actual" line is the real
+   chosenRequirementKey. Visually distinct from the soft glass cards on
+   purpose: sharp left edge, high-contrast dark field, one-shot entrance
+   — this should read as an interruption, not another panel in the list. */
+.blind-spot {
+  margin: 0 0 32px; padding: 28px 30px; text-align: left; position: relative;
+  background: #050504; border-left: 3px solid var(--gold-light);
+  opacity: 0; transform: scale(0.97);
+  transition: opacity 0.5s cubic-bezier(0.22,1,0.36,1), transform 0.5s cubic-bezier(0.22,1,0.36,1), box-shadow 0.6s ease;
+}
+.blind-spot.is-visible {
+  opacity: 1; transform: scale(1); box-shadow: -18px 0 40px -20px rgba(232,206,122,0.35);
+}
+.blind-spot-eyebrow {
+  display: block; font-size: 0.76rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--gold-light); margin-bottom: 16px;
+}
+.blind-spot-assumed {
+  font-size: 0.92rem; color: var(--text-faint); margin: 0 0 18px; line-height: 1.5;
+  text-decoration: line-through; text-decoration-color: rgba(138,133,122,0.5); text-decoration-thickness: 1px;
+}
+.blind-spot-assumed strong { font-weight: 600; color: var(--text-muted); }
+.blind-spot-caveat { text-decoration: none; font-size: 0.8rem; font-style: italic; }
+.blind-spot-actual {
+  font-family: var(--font-display); font-size: 1.15rem; font-style: italic; color: var(--gold-light);
+  line-height: 1.4; margin: 0;
+}
+.blind-spot-actual span { display: block; font-family: var(--font-body); font-style: normal; font-size: 0.88rem; color: var(--text-muted); margin-top: 8px; }
+@media (prefers-reduced-motion: reduce) { .blind-spot { transition: none; } }
+
 .reveal-chain { display: flex; flex-direction: column; gap: 0; opacity: 0; transition: opacity 0.5s ease; }
 .reveal-chain.is-visible { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .reveal-chain { transition: none; } }

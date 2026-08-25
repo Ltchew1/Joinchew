@@ -255,6 +255,47 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
 
+    // CHEW Blind Spot: a deliberate interrupt built from real data only.
+    // "Assumed" is any other real unmet requirement besides the one the
+    // engine actually chose (chosenRequirementKey) — framed as "a common
+    // focus," never as a claim about what this specific visitor thinks,
+    // since no personalization exists. If there's no second unmet
+    // requirement to contrast against, the panel is skipped entirely
+    // rather than forced.
+    var blindSpotEl = document.getElementById('blind-spot');
+    var blindSpotAssumedLabelEl = document.getElementById('blind-spot-assumed-label');
+    var blindSpotActualLabelEl = document.getElementById('blind-spot-actual-label');
+    var blindSpotActualNoteEl = document.getElementById('blind-spot-actual-note');
+
+    function findAssumedKey(basedOnFacts, chosenRequirementKey) {
+      var keys = Object.keys(basedOnFacts);
+      for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        if (key !== chosenRequirementKey && !basedOnFacts[key].met) return key;
+      }
+      return null;
+    }
+
+    function showBlindSpotIfApplicable(basedOnFacts, chosenRequirementKey, recommendedAction) {
+      blindSpotEl.classList.remove('is-visible');
+      blindSpotEl.hidden = true;
+      if (!chosenRequirementKey) return;
+      var assumedKey = findAssumedKey(basedOnFacts, chosenRequirementKey);
+      if (!assumedKey) return;
+
+      blindSpotAssumedLabelEl.textContent = formatFactKey(assumedKey);
+      blindSpotActualLabelEl.textContent = formatFactKey(chosenRequirementKey);
+      blindSpotActualNoteEl.textContent = 'This is what CHEW\'s evaluation actually found standing between this example and the goal' + (recommendedAction ? ' — not the thing that usually gets the attention.' : '.');
+      blindSpotEl.hidden = false;
+
+      var reveal = function () { blindSpotEl.classList.add('is-visible'); };
+      if (revealReduceMotion) {
+        reveal();
+      } else {
+        pendingTimeouts.push(setTimeout(reveal, 1000));
+      }
+    }
+
     goalButtons.forEach(function (btn) {
       btn.addEventListener('click', function () {
         clearPendingTimeouts();
@@ -284,10 +325,11 @@ document.addEventListener('DOMContentLoaded', function () {
               + '<div class="reveal-stage chew-move intelligence-pulse">' + buildMoveStage(rec.recommendedAction, rec.rationale) + '</div>';
             resultEl.hidden = false;
             buildAndResolveMoveCollapse(rec.basedOnFacts, rec.chosenRequirementKey);
+            showBlindSpotIfApplicable(rec.basedOnFacts, rec.chosenRequirementKey, rec.recommendedAction);
             if (revealReduceMotion) {
               chainEl.classList.add('is-visible');
             } else {
-              pendingTimeouts.push(setTimeout(function () { chainEl.classList.add('is-visible'); }, 1150));
+              pendingTimeouts.push(setTimeout(function () { chainEl.classList.add('is-visible'); }, 1700));
             }
             resultEl.scrollIntoView({ behavior: revealReduceMotion ? 'auto' : 'smooth', block: 'nearest' });
           })

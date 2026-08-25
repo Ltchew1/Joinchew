@@ -196,6 +196,43 @@ rather than attempting all twelve shallowly:
   scales correctly, and the chip row wraps to its own line with the
   highlighted chip still clearly readable.
 
+## CHEW Blind Spot — the interrupt moment, built from real data with zero new backend
+
+The directive's own example — "User thinks: Raise score. Then CHEW
+detects: BLIND SPOT" — maps almost exactly onto data the intelligence
+engine already returns, so this needed no new API and no fabricated
+content:
+
+- **"Assumed"** is the real deferred requirement — any other requirement
+  in `basedOnFacts` that's unmet but *isn't* `chosenRequirementKey`.
+  Framed explicitly as *"a common focus in this situation (not
+  necessarily yours)"* rather than a claim about what the actual visitor
+  is thinking — there is no personalization in this repo to back a
+  stronger claim, and the copy says so.
+- **"Actual"** is the real `chosenRequirementKey` the engine already
+  computed — the same value already highlighted in the CHEW Move
+  collapse chips, so the Blind Spot panel and the collapse animation
+  never contradict each other (they're reading the same field).
+- If there's no second unmet requirement to contrast against, the panel
+  stays hidden rather than being forced to show something — verified
+  this is the only condition that suppresses it (`chosenRequirementKey`
+  null, or every other requirement already met).
+- Deliberately distinct visual language from the soft glass `.reveal-stage`
+  cards it sits next to — sharp left border, near-black field,
+  struck-through "assumed" text against bold italic gold "actual" text —
+  so it reads as an interruption in the flow, not another card in a
+  list, per the directive's explicit ask.
+- Verified end-to-end against the live database and in a real browser
+  for both seeded scenarios: housing correctly shows "Down Payment
+  Savings Cents" as assumed vs. "Credit Score" as actual; the business
+  scenario correctly shows "Has Business Bank Account" as assumed vs.
+  "Bookkeeping Current" as actual — both cross-checked against the raw
+  API response, not eyeballed. Confirmed the panel appears after the
+  CHEW Move chips resolve and before the full detail chain fades in, not
+  simultaneously with either. Confirmed instant with zero animation
+  under `prefers-reduced-motion`, and readable at a 390px mobile
+  viewport.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
@@ -254,10 +291,11 @@ the following exist in this repository yet:
     as "demo" would mean fabricating a history that was never seeded,
     which is different from labeling a single static scenario as an
     example).
-  - **Just not built yet, execution-bandwidth only**: CHEW Blind Spot,
-    CHEW Domino, Parallel Futures, Future-Back Planning, Opportunity
-    Radar, the five "browseable rooms," sound design, and a bespoke
-    mobile choreography beyond the existing responsive breakpoints. None
+  - **Just not built yet, execution-bandwidth only**: CHEW Domino,
+    Parallel Futures, Future-Back Planning, Opportunity Radar, the five
+    "browseable rooms," sound design, and a bespoke mobile choreography
+    beyond the existing responsive breakpoints (CHEW Blind Spot is no
+    longer on this list — see above, now built). None
     of these need a capability this repo lacks to build as a
     clearly-labeled demo/sample exhibit — they're exactly the kind of
     thing this directive now explicitly permits. They weren't built in
@@ -304,5 +342,16 @@ system changed:
   instantly, chain visible instantly — no animation, no delay. Verified
   both at a 390px mobile viewport: activation scales correctly, chip row
   wraps with the highlighted chip still clearly readable.
+- **CHEW Blind Spot, verified in a real browser against both seeded
+  scenarios:** confirmed via a direct `curl` of `/api/intelligence-demo`
+  that housing's real `chosenRequirementKey` is `credit_score` with
+  `down_payment_savings_cents` the only other unmet requirement, and
+  funding's is `bookkeeping_current` with `has_business_bank_account`
+  the only other one — then confirmed the rendered panel's "assumed" and
+  "actual" labels matched exactly for both, not merely that *a* panel
+  appeared. Confirmed the panel is hidden until data arrives and reveals
+  itself after the CHEW Move chips resolve, before the full chain fades
+  in. Confirmed instant with zero animation under
+  `prefers-reduced-motion`, and readable at a 390px mobile viewport.
 - No local test infrastructure (Postgres cluster, scratch database, dev
   server) is part of this repository.
