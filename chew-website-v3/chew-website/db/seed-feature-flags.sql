@@ -24,5 +24,7 @@ INSERT INTO feature_flags (slug, name, status, public_teaser_enabled, public_tit
   ('asset_intelligence', 'Asset Intelligence', 'locked', TRUE,
    'Asset Intelligence', 'Understand what you own and how it may fit into your larger strategy.', 'assets', NULL),
   ('chew_connections_suite', 'CHEW Connections', 'locked', TRUE,
-   'CHEW Connections', 'Access specialized capabilities when your plan calls for them.', 'network', NULL)
+   'CHEW Connections', 'Access specialized capabilities when your plan calls for them.', 'network', NULL),
+  ('intelligence_engine', 'CHEW Intelligence System (MVP recommendation slice)', 'internal', FALSE, NULL, NULL, 'intelligence',
+   'No real subject/user identity behind this yet (ARCHITECTURE.md Gap 1). Internal/test use only until that exists — do not flip to preview/beta/live without real identity in place first.')
 ON CONFLICT (slug) DO NOTHING;

@@ -424,3 +424,125 @@ CREATE TABLE IF NOT EXISTS feature_flags (
   CHECK (NOT public_teaser_enabled OR (public_title IS NOT NULL AND public_description IS NOT NULL)),
   CHECK (status <> 'internal' OR NOT public_teaser_enabled)
 );
+
+-- ============================================================
+-- CHEW Intelligence System — MVP slice
+-- ============================================================
+-- Implements exactly one bounded, end-to-end-testable slice of the
+-- architecture in ARCHITECTURE.md: Goal + Current State + Constraint +
+-- Transition + explainable Recommended Next Action. Read
+-- ARCHITECTURE.md before extending this — it documents what's
+-- deliberately simplified (sequence_order standing in for true
+-- leverage ranking; no goal-conflict detection; no Opportunity Engine
+-- wiring yet) and why, so the next person doesn't "fix" a boundary that
+-- was intentional.
+--
+-- Data-honesty rules this design enforces:
+--   - intel_subjects has NO real authentication behind it. Every row
+--     created against this schema in this repository is synthetic
+--     test/example data — see db/seed-intelligence.sql's header. Do
+--     not attach a real person's facts to this schema until real
+--     identity/auth exists (ARCHITECTURE.md Gap 1).
+--   - current_state_facts.fact_type distinguishes user_provided /
+--     verified / computed / inferred and must never be mixed or
+--     silently upgraded. A 'verified' fact must cite what verified it
+--     (enforced by CHECK below) — there is no automated verification
+--     pipeline in this repository, so any 'verified' row anyone adds is
+--     only as trustworthy as the human who labeled it that way.
+--   - recommendations always stores its own evidence (based_on_facts /
+--     based_on_constraints / missing_information) — there is no code
+--     path that returns a recommendation without it. No confidence
+--     score field exists anywhere in this schema; do not add one
+--     without a real statistical basis behind it.
+
+CREATE TABLE IF NOT EXISTS intel_subjects (
+  id         SERIAL PRIMARY KEY,
+  label      TEXT NOT NULL,  -- e.g. "TEST SUBJECT — illustrative only", never a real name until real auth exists
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS transitions (
+  id               SERIAL PRIMARY KEY,
+  slug             TEXT UNIQUE NOT NULL,
+  name             TEXT NOT NULL,
+  from_state_label TEXT NOT NULL,
+  to_state_label   TEXT NOT NULL,
+  description      TEXT,
+  category         TEXT,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS transition_requirements (
+  id               SERIAL PRIMARY KEY,
+  transition_id    INTEGER NOT NULL REFERENCES transitions (id),
+  requirement_key  TEXT NOT NULL,  -- matches a current_state_facts.fact_key
+  label            TEXT NOT NULL,
+  comparison       TEXT NOT NULL CHECK (comparison IN ('gte', 'lte', 'eq', 'boolean_true')),
+  required_value   TEXT NOT NULL,  -- compared against the fact's value per `comparison`; cast at read time
+  unit             TEXT,
+  sequence_order   INTEGER NOT NULL DEFAULT 0,  -- the MVP's entire leverage model — see ARCHITECTURE.md
+  action_if_unmet  TEXT NOT NULL,  -- author-written next-step text; no NLG
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_transition_requirements_lookup
+  ON transition_requirements (transition_id, sequence_order);
+
+CREATE TABLE IF NOT EXISTS goals (
+  id            SERIAL PRIMARY KEY,
+  subject_id    INTEGER NOT NULL REFERENCES intel_subjects (id),
+  transition_id INTEGER REFERENCES transitions (id),  -- nullable: a goal can predate a matched transition
+  title         TEXT NOT NULL,
+  category      TEXT NOT NULL CHECK (category IN
+                   ('employment', 'business', 'credit', 'housing', 'education', 'assets', 'other')),
+  priority      INTEGER NOT NULL DEFAULT 0,
+  target_date   DATE,
+  status        TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed', 'abandoned')),
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_goals_subject ON goals (subject_id);
+
+CREATE TABLE IF NOT EXISTS current_state_facts (
+  id          SERIAL PRIMARY KEY,
+  subject_id  INTEGER NOT NULL REFERENCES intel_subjects (id),
+  fact_key    TEXT NOT NULL,
+  fact_value  TEXT NOT NULL,  -- cast by the reader per fact_key's known type; see ARCHITECTURE.md Gap 2
+  fact_type   TEXT NOT NULL CHECK (fact_type IN ('user_provided', 'verified', 'computed', 'inferred')),
+  source_note TEXT,
+  recorded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (fact_type <> 'verified' OR source_note IS NOT NULL)
+);
+
+CREATE INDEX IF NOT EXISTS idx_current_state_facts_subject ON current_state_facts (subject_id, fact_key);
+
+CREATE TABLE IF NOT EXISTS constraints (
+  id                  SERIAL PRIMARY KEY,
+  subject_id          INTEGER NOT NULL REFERENCES intel_subjects (id),
+  goal_id             INTEGER REFERENCES goals (id),
+  constraint_type     TEXT NOT NULL CHECK (constraint_type IN
+                         ('financial', 'documentation', 'eligibility', 'timing', 'knowledge',
+                          'legal_regulatory', 'credit', 'income', 'capacity', 'geographic',
+                          'dependency', 'missing_prerequisite')),
+  description         TEXT NOT NULL,
+  is_resolved         BOOLEAN NOT NULL DEFAULT FALSE,
+  blocks_transition_id INTEGER REFERENCES transitions (id),
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  resolved_at         TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_constraints_subject ON constraints (subject_id, is_resolved);
+
+CREATE TABLE IF NOT EXISTS recommendations (
+  id                   SERIAL PRIMARY KEY,
+  subject_id           INTEGER NOT NULL REFERENCES intel_subjects (id),
+  goal_id              INTEGER NOT NULL REFERENCES goals (id),
+  recommended_action   TEXT,  -- NULL is a legitimate outcome: "every known requirement is met, nothing to recommend"
+  rationale            TEXT NOT NULL,
+  based_on_facts       JSONB NOT NULL,
+  based_on_constraints JSONB NOT NULL,
+  missing_information  JSONB NOT NULL,
+  computed_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_recommendations_goal ON recommendations (goal_id);
