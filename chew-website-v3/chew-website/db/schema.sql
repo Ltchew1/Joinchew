@@ -127,3 +127,130 @@ CREATE TABLE IF NOT EXISTS agreement_signatures (
 CREATE INDEX IF NOT EXISTS idx_agreement_signatures_application ON agreement_signatures (application_id);
 
 ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS agreement_signature_id INTEGER REFERENCES agreement_signatures (id);
+
+-- ============================================================
+-- CHEW Path Engine — jurisdiction, source, and requirement model
+-- ============================================================
+-- Foundation for the business-formation / licensing / education /
+-- career pathfinder. Run this once to add the schema.
+--
+-- Data-honesty rules this design enforces:
+--   - Every fact-bearing row in path_requirements must reference a
+--     `sources` row with a real authority_level and url — there is
+--     no free-text "trust me" field.
+--   - verification_status distinguishes a manually-verified fact
+--     from a placeholder. The UI must never present a
+--     'general_guidance' row as verified.
+--   - education_programs, careers, and jobs are intentionally
+--     EMPTY as of this migration. Do not seed them with invented
+--     programs, careers, or job listings — they exist so a real
+--     future integration has a schema to land in without a
+--     rewrite. See PATH_ENGINE.md for what is and isn't populated.
+
+CREATE TABLE IF NOT EXISTS jurisdictions (
+  id         SERIAL PRIMARY KEY,
+  country    TEXT NOT NULL DEFAULT 'US',
+  state      TEXT,           -- e.g. 'FL'; NULL for a national/federal-level row
+  county     TEXT,
+  city       TEXT,
+  label      TEXT NOT NULL,  -- human-readable, e.g. "United States (Federal)", "Florida", "Orlando, FL"
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (country, state, county, city)
+);
+
+CREATE TABLE IF NOT EXISTS sources (
+  id              SERIAL PRIMARY KEY,
+  name            TEXT NOT NULL,  -- e.g. "IRS", "Florida Division of Corporations"
+  authority_level TEXT NOT NULL CHECK (authority_level IN ('A', 'B', 'C', 'D')),
+  -- A: official government / regulator / licensing authority
+  -- B: official school, accreditor, certification body, or recognized institution
+  -- C: licensed commercial data provider
+  -- D: secondary / community source
+  url             TEXT NOT NULL,
+  jurisdiction_id INTEGER REFERENCES jurisdictions (id),  -- NULL for a national/federal source
+  notes           TEXT,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS business_types (
+  id          SERIAL PRIMARY KEY,
+  slug        TEXT UNIQUE NOT NULL,  -- e.g. 'llc-formation', 'cleaning-service'
+  name        TEXT NOT NULL,
+  category    TEXT NOT NULL CHECK (category IN ('general_formation', 'lower_regulation', 'professional_licensed', 'heavily_regulated')),
+  description TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS path_requirements (
+  id                   SERIAL PRIMARY KEY,
+  business_type_id     INTEGER NOT NULL REFERENCES business_types (id),
+  jurisdiction_id      INTEGER NOT NULL REFERENCES jurisdictions (id),
+  name                 TEXT NOT NULL,  -- e.g. "Employer Identification Number (EIN)"
+  requirement_type     TEXT NOT NULL CHECK (requirement_type IN ('required', 'recommended', 'optional_advantage')),
+  issuing_authority    TEXT NOT NULL,  -- e.g. "Internal Revenue Service"
+  source_id            INTEGER NOT NULL REFERENCES sources (id),
+  cost_cents           INTEGER,        -- NULL if free or cost genuinely varies (see cost_notes)
+  cost_notes           TEXT,
+  renewal_period       TEXT,           -- e.g. "Annual", "One-time"; NULL if not applicable
+  sequence_order       INTEGER NOT NULL DEFAULT 0,
+  depends_on_id        INTEGER REFERENCES path_requirements (id),  -- self-reference for step dependencies
+  documents_needed     JSONB,          -- array of strings
+  official_action_url  TEXT,           -- direct link to the official application/portal
+  notes                TEXT,
+  verification_status  TEXT NOT NULL CHECK (verification_status IN ('verified', 'manually_verified', 'general_guidance')),
+  last_verified_at     TIMESTAMPTZ,
+  effective_date       DATE,
+  expiration_date      DATE,
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_path_requirements_lookup ON path_requirements (business_type_id, jurisdiction_id);
+CREATE INDEX IF NOT EXISTS idx_path_requirements_sequence ON path_requirements (business_type_id, jurisdiction_id, sequence_order);
+
+-- ---------- Schema-only: intentionally unpopulated (see header note) ----------
+
+CREATE TABLE IF NOT EXISTS education_programs (
+  id                       SERIAL PRIMARY KEY,
+  institution              TEXT NOT NULL,
+  program_name             TEXT NOT NULL,
+  credential               TEXT,
+  accreditation            TEXT,
+  jurisdiction_id          INTEGER REFERENCES jurisdictions (id),
+  duration                 TEXT,
+  cost_cents               INTEGER,
+  application_requirements JSONB,
+  source_id                INTEGER REFERENCES sources (id),
+  last_verified_at         TIMESTAMPTZ,
+  created_at               TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS careers (
+  id                     SERIAL PRIMARY KEY,
+  title                  TEXT NOT NULL,
+  education_path         TEXT,
+  licensing_requirements JSONB,
+  certifications         JSONB,
+  prep_time              TEXT,
+  common_progression     TEXT,
+  source_id              INTEGER REFERENCES sources (id),
+  created_at             TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Integration-ready shape for a future real job feed. `source_name` and
+-- `source_timestamp` are NOT NULL by design — a row cannot exist without
+-- attribution and a freshness timestamp. Never insert placeholder/sample
+-- rows here; the API must return an empty list rather than seed fixtures.
+CREATE TABLE IF NOT EXISTS jobs (
+  id                         SERIAL PRIMARY KEY,
+  title                      TEXT NOT NULL,
+  employer                   TEXT,
+  location                   TEXT,
+  compensation_notes         TEXT,
+  education_requirement      TEXT,
+  certification_requirement  TEXT,
+  source_name                TEXT NOT NULL,
+  source_timestamp           TIMESTAMPTZ NOT NULL,
+  apply_url                  TEXT,
+  status                     TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'expired', 'filled')),
+  created_at                 TIMESTAMPTZ NOT NULL DEFAULT now()
+);
