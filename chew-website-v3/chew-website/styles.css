@@ -549,6 +549,87 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 .room-card h3 { font-size: 1.06rem; margin-bottom: 9px; position: relative; z-index: 1; }
 .room-card p { font-size: 0.92rem; position: relative; z-index: 1; }
 
+/* ============================================================
+   Economic Intelligence system — constellation, path, and the
+   honest-illustration components. Real diagrams of how CHEW thinks,
+   never simulated product screens or invented data.
+   ============================================================ */
+
+/* ---------- The Economic Constellation ---------- */
+.constellation-wrap { display: flex; justify-content: center; margin: 44px 0 8px; }
+.constellation { width: 100%; max-width: 460px; height: auto; overflow: visible; }
+.constellation .node-center circle { fill: url(#constGoldFill); }
+.constellation .node-center text {
+  font-family: var(--font-display); font-size: 15px; font-weight: 700;
+  fill: #14120A; text-anchor: middle; dominant-baseline: middle;
+}
+.constellation .node circle {
+  fill: rgba(255,255,255,0.03); stroke: var(--panel-border); stroke-width: 1.4;
+  transition: stroke 0.4s ease, fill 0.4s ease;
+}
+.constellation .node text {
+  font-family: var(--font-body); font-size: 10.5px; fill: var(--text-muted);
+  text-anchor: middle; dominant-baseline: middle; letter-spacing: 0.01em;
+}
+.constellation .node:hover circle { stroke: var(--gold); fill: rgba(201,162,39,0.1); }
+.constellation .link { stroke: var(--panel-border); stroke-width: 1; opacity: 0.4; animation: link-pulse 6s ease-in-out infinite; }
+.constellation .link:nth-of-type(3n) { animation-delay: -2s; }
+.constellation .link:nth-of-type(3n+1) { animation-delay: -4s; }
+@keyframes link-pulse { 0%, 100% { opacity: 0.22; } 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .constellation .link { animation: none; opacity: 0.35; } }
+
+/* ---------- The Path: where you are → target ---------- */
+.path-flow { display: flex; align-items: flex-start; justify-content: center; gap: 4px; flex-wrap: wrap; margin-top: 44px; }
+.path-step { display: flex; flex-direction: column; align-items: center; text-align: center; width: 158px; }
+.path-step .path-dot {
+  width: 13px; height: 13px; border-radius: 50%; background: var(--gold-light);
+  box-shadow: 0 0 14px rgba(201,162,39,0.5); margin-bottom: 16px;
+}
+.path-step h4 { font-family: var(--font-display); font-size: 1rem; color: var(--text); margin: 0 0 6px; }
+.path-step p { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+.path-arrow { color: var(--gold); font-size: 1.3rem; opacity: 0.45; align-self: center; margin-top: 4px; }
+@media (max-width: 760px) {
+  .path-flow { flex-direction: column; }
+  .path-arrow { transform: rotate(90deg); margin: 2px 0; }
+}
+
+/* ---------- Illustrative intelligence example (never a live alert) ---------- */
+.intel-card { max-width: 580px; margin: 36px auto 0; padding: 32px 34px; }
+.intel-card .intel-label {
+  font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 16px; display: block;
+}
+.intel-card blockquote {
+  margin: 0; font-family: var(--font-display); font-size: 1.3rem;
+  color: var(--gold-light); font-style: normal; line-height: 1.35;
+}
+.intel-card .intel-explain { margin-top: 16px; font-size: 0.95rem; color: var(--text-muted); }
+
+/* ---------- Reroute concept (plans change, intelligence should too) ---------- */
+.reroute-wrap { display: flex; justify-content: center; margin: 40px 0 4px; }
+.reroute-visual { width: 100%; max-width: 540px; height: auto; }
+.reroute-visual .path-line { fill: none; stroke: var(--panel-border); stroke-width: 2; stroke-linecap: round; }
+.reroute-visual .path-line.reroute { stroke: var(--gold); stroke-dasharray: 7 7; animation: dash-flow 2.4s linear infinite; }
+@keyframes dash-flow { to { stroke-dashoffset: -28; } }
+.reroute-visual .node-disrupt circle { fill: rgba(201,162,39,0.16); stroke: var(--gold); stroke-width: 1.5; }
+.reroute-visual .node-disrupt text, .reroute-visual .node-plain text {
+  font-family: var(--font-body); font-size: 10.5px; fill: var(--text-muted); text-anchor: middle;
+}
+@media (prefers-reduced-motion: reduce) { .reroute-visual .path-line.reroute { animation: none; } }
+
+/* ---------- Secret weapon teaser: real categories, nothing fabricated ---------- */
+.secret-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 36px; }
+@media (max-width: 900px) { .secret-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .secret-grid { grid-template-columns: 1fr; } }
+.secret-tile { padding: 24px 16px; text-align: center; }
+.secret-tile .lock-icon { width: 16px; height: 16px; margin: 0 auto 12px; opacity: 0.55; }
+.secret-tile h4 {
+  font-size: 0.9rem; margin: 0; color: var(--text); filter: blur(2.2px);
+  opacity: 0.55; user-select: none; transition: filter 0.4s ease, opacity 0.4s ease;
+}
+.secret-tile:hover h4 { filter: blur(1.1px); opacity: 0.8; }
+@media (hover: none) { .secret-tile h4 { filter: blur(1.4px); opacity: 0.7; } }
+
 /* ---------- Closing / legacy section ---------- */
 .legacy-close { position: relative; overflow: hidden; padding: 112px 0; }
 .legacy-close .hero-glow { opacity: 0.7; }
