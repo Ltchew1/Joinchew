@@ -34,6 +34,12 @@
 // tracks capability freshness, so the radar only ever shows what's
 // actually true right now: connected to this scenario or not, and
 // whether a real provider exists.
+//
+// Also returns goalTitle: the real goals.title row for this scenario's
+// goal (e.g. "Buy a first home (example)") — used by CHEW Future-Back to
+// label the destination it's walking backward from, rather than
+// reconstructing that string from the recommendation's free-text
+// rationale.
 
 const { computeRecommendation } = require('../lib/intelligenceEngine');
 const { getCapabilityOverview } = require('../lib/capabilityGraph');
@@ -100,6 +106,9 @@ module.exports = async (req, res) => {
 
     const capabilityOverview = await getCapabilityOverview();
 
+    const goalResult = await query('SELECT title FROM goals WHERE id = $1', [scenario.goalId]);
+    const goalTitle = goalResult.rows[0] ? goalResult.rows[0].title : null;
+
     return res.status(200).json({
       isExample: true,
       disclaimer: 'This is a demo experience using an illustrative example scenario, not your personal data. Numeric thresholds shown are examples for testing CHEW\'s logic, not verified financial or lending guidance.',
@@ -107,6 +116,7 @@ module.exports = async (req, res) => {
       recommendation,
       requirementSequence,
       capabilityOverview,
+      goalTitle,
     });
   } catch (err) {
     console.error('intelligence-demo error:', err.message);

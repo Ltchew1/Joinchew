@@ -416,6 +416,56 @@ viewports) matched precisely. Also verified clicking a selected territory
 again deselects it, the "Clear selection" button fully resets state, and
 zero JavaScript console errors occurred anywhere in the flow.
 
+## CHEW Future-Back — the real requirement chain, walked in reverse
+
+Of the directive's newly-named moments, Future-Back was the best fit for
+this repo's real constraint: unlike Parallel Futures (which needs invented
+hypothetical timelines — fastest/lowest-cash/lowest-risk — with no real
+computed basis to draw from), Future-Back's entire premise is "start at the
+destination and walk backward through what has to be true first," which
+maps directly onto data the intelligence engine already computes: the real,
+ordered `requirementSequence` and the real `chosenRequirementKey` (the
+engine's own answer to "where are you today"). Nothing here is invented —
+it's the same data CHEW Move, Blind Spot, and Domino already use, walked in
+the opposite direction.
+
+`api/intelligence-demo.js` gained one more real field: `goalTitle`, the
+actual `goals.title` row for the scenario (e.g. "Buy a first home
+(example)") — added instead of parsing it out of the recommendation's
+free-text rationale string, which would have been fragile and implicit.
+
+The frontend takes `chosenRequirementKey`'s position in `requirementSequence`
+and splits on it: everything from that position to the end of the sequence
+(the requirement CHEW is actually focused on today, plus everything still
+ahead of it) becomes the backward-walking chain, reversed so the stage
+closest to the goal appears first and the chosen requirement lands last,
+labeled "TODAY — START HERE." Anything before that position — real,
+already-met requirements — is summarized in one honest line below the
+chain ("Already true, before this point in the chain: ...") rather than
+folded into the forward-looking walk, since resolved history isn't a
+future dependency. Handles the edge case where every requirement is
+already met (no `chosenRequirementKey` at all) with its own honest stage
+rather than crashing or showing an empty chain — verified directly by
+forcing that exact state in the scratch database (updating the home
+scenario's `credit_score` and `down_payment_savings_cents` facts to
+passing values) and confirming the frontend rendered "Every real
+requirement for this goal is already met in this example" with zero JS
+errors, then reverting the facts back to the original seeded state.
+
+Tested in a real browser against both seeded scenarios at a 1280px desktop
+viewport, under `prefers-reduced-motion`, and at a 375px mobile viewport:
+asserted the exact stage order, labels, and the "today" stage's position
+and content against the real API response for every run (not just that
+stages appeared), confirmed the resolved-history line appears only for the
+home scenario (where `documented_income` is met before the chosen
+requirement) and correctly does not appear for the funding scenario (where
+the chosen requirement is first in sequence, nothing precedes it), and
+confirmed goal-switching resets state synchronously — checked immediately
+after the click via a microtask rather than after a fixed delay, since
+under `prefers-reduced-motion` the next goal's fetch can resolve and
+re-reveal the section within single-digit milliseconds, which a delayed
+check would have wrongly read as a failed reset.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
@@ -478,12 +528,14 @@ the following exist in this repository yet:
     as "demo" would mean fabricating a history that was never seeded,
     which is different from labeling a single static scenario as an
     example).
-  - **Just not built yet, execution-bandwidth only**: Parallel Futures,
-    Future-Back Planning, the five "browseable rooms," sound design, and
-    a bespoke mobile choreography beyond the existing responsive
-    breakpoints (CHEW Blind Spot, CHEW Domino, and the Opportunity Radar
-    are no longer on this list — see above, all three now built). None
-    of these need a capability this repo lacks to build as a
+  - **Just not built yet, execution-bandwidth only**: Parallel Futures
+    specifically (it needs invented hypothetical timeline data with no real
+    computed basis, unlike Future-Back — see above), the five "browseable
+    rooms," sound design, and a bespoke mobile choreography beyond the
+    existing responsive breakpoints (CHEW Blind Spot, CHEW Domino, the
+    Opportunity Radar, and Future-Back are no longer on this list — see
+    above, all four now built). None of these need a capability this repo
+    lacks to build as a
     clearly-labeled demo/sample exhibit — they're exactly the kind of
     thing this directive now explicitly permits. They weren't built in
     this pass because the directive's own "Implementation Discipline"

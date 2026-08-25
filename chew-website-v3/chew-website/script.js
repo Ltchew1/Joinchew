@@ -597,6 +597,81 @@ document.addEventListener('DOMContentLoaded', function () {
       radarTriggerEl.addEventListener('click', runRadar);
     }
 
+    // CHEW Future-Back: walks the real requirement chain backward from the
+    // real goal to "today" — the same requirementSequence + basedOnFacts +
+    // chosenRequirementKey already fetched for Move/Domino, just walked in
+    // reverse order. Nothing here is invented: the destination is the real
+    // goals.title row (goalTitle), each stage is a real transition_requirement,
+    // and "TODAY — START HERE" lands on the real chosenRequirementKey — the
+    // same one CHEW Move and CHEW Blind Spot already treat as the current
+    // real focus. No database write, same hard rule as Domino and Radar.
+    var futurebackSectionEl = document.getElementById('futureback-section');
+    var futurebackTriggerEl = document.getElementById('futureback-trigger');
+    var futurebackChainEl = document.getElementById('futureback-chain');
+    var futurebackTimeouts = [];
+    var lastGoalTitle = null;
+
+    function clearFuturebackTimeouts() {
+      futurebackTimeouts.forEach(function (id) { clearTimeout(id); });
+      futurebackTimeouts = [];
+    }
+
+    function runFutureBack() {
+      clearFuturebackTimeouts();
+      if (!lastRequirementSequence || !lastRequirementSequence.length) return;
+
+      var chosenIndex = lastRequirementSequence.findIndex(function (t) { return t.key === lastChosenRequirementKey; });
+      var goalLabel = lastGoalTitle || 'This example\'s goal';
+      var stagesHtml = '<div class="futureback-stage futureback-stage--goal" data-index="0">'
+        + '<span class="futureback-stage-eyebrow">The Real Goal</span>'
+        + '<span class="futureback-stage-label">' + escapeHtml(goalLabel) + '</span>'
+        + '</div>';
+
+      if (chosenIndex === -1) {
+        stagesHtml += '<div class="futureback-arrow" aria-hidden="true">&darr;</div>'
+          + '<div class="futureback-stage futureback-stage--today" data-index="1">'
+          + '<span class="futureback-stage-eyebrow">Today</span>'
+          + '<span class="futureback-stage-label">Every real requirement for this goal is already met in this example.</span>'
+          + '</div>';
+        futurebackChainEl.innerHTML = stagesHtml;
+        futurebackChainEl.hidden = false;
+        var onlyStage = futurebackChainEl.querySelectorAll('.futureback-stage');
+        onlyStage.forEach(function (el) { el.classList.add('is-visible'); });
+        return;
+      }
+
+      var forward = lastRequirementSequence.slice(chosenIndex).slice().reverse();
+      var resolved = lastRequirementSequence.slice(0, chosenIndex);
+
+      forward.forEach(function (tile, i) {
+        var isToday = i === forward.length - 1;
+        stagesHtml += '<div class="futureback-arrow" aria-hidden="true">&darr;</div>';
+        stagesHtml += '<div class="futureback-stage' + (isToday ? ' futureback-stage--today' : '') + '" data-index="' + (i + 1) + '">'
+          + '<span class="futureback-stage-eyebrow">' + (isToday ? 'Today &mdash; Start Here' : 'For that to be true, first') + '</span>'
+          + '<span class="futureback-stage-label">' + escapeHtml(tile.label) + '</span>'
+          + '<span class="futureback-stage-note">' + escapeHtml(tile.actionIfUnmet || '') + '</span>'
+          + '</div>';
+      });
+
+      if (resolved.length) {
+        stagesHtml += '<p class="futureback-resolved">Already true, before this point in the chain: '
+          + resolved.map(function (t) { return escapeHtml(t.label); }).join(', ') + '.</p>';
+      }
+
+      futurebackChainEl.innerHTML = stagesHtml;
+      futurebackChainEl.hidden = false;
+
+      var stageEls = futurebackChainEl.querySelectorAll('.futureback-stage');
+      stageEls.forEach(function (el, i) {
+        var reveal = function () { el.classList.add('is-visible'); };
+        if (revealReduceMotion) { reveal(); } else { futurebackTimeouts.push(setTimeout(reveal, 300 + i * 260)); }
+      });
+    }
+
+    if (futurebackTriggerEl) {
+      futurebackTriggerEl.addEventListener('click', runFutureBack);
+    }
+
     goalButtons.forEach(function (btn) {
       btn.addEventListener('click', function () {
         clearPendingTimeouts();
@@ -609,6 +684,10 @@ document.addEventListener('DOMContentLoaded', function () {
         radarNodesEl.innerHTML = '';
         radarDetailEl.hidden = true;
         radarDetailEl.innerHTML = '';
+        clearFuturebackTimeouts();
+        futurebackSectionEl.hidden = true;
+        futurebackChainEl.hidden = true;
+        futurebackChainEl.innerHTML = '';
         goalButtons.forEach(function (b) { b.classList.remove('is-active'); });
         btn.classList.add('is-active');
         statusEl.textContent = 'CHEW is thinking...';
@@ -640,14 +719,17 @@ document.addEventListener('DOMContentLoaded', function () {
             lastBasedOnFacts = rec.basedOnFacts;
             lastChosenRequirementKey = rec.chosenRequirementKey;
             lastCapabilityOverview = data.capabilityOverview || null;
+            lastGoalTitle = data.goalTitle || null;
             if (revealReduceMotion) {
               chainEl.classList.add('is-visible');
               dominoSectionEl.hidden = false;
               radarSectionEl.hidden = false;
+              futurebackSectionEl.hidden = false;
             } else {
               pendingTimeouts.push(setTimeout(function () { chainEl.classList.add('is-visible'); }, 1700));
               pendingTimeouts.push(setTimeout(function () { dominoSectionEl.hidden = false; }, 2000));
               pendingTimeouts.push(setTimeout(function () { radarSectionEl.hidden = false; }, 2300));
+              pendingTimeouts.push(setTimeout(function () { futurebackSectionEl.hidden = false; }, 2600));
             }
             resultEl.scrollIntoView({ behavior: revealReduceMotion ? 'auto' : 'smooth', block: 'nearest' });
           })
