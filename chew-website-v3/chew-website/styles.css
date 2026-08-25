@@ -13,6 +13,7 @@
   --gold: #C9A227;         /* Ember Gold — matte and rich, never brassy */
   --gold-light: #E8CE7A;   /* Light Gold — highlights, glows, hairlines */
   --gold-deep: #8A6E1C;
+  --sample-blue: #7B9CBE;  /* marks sample/illustrative input, never real registry structure — see Network Room */
 
   --text: #F2EEE4;         /* Bone — never pure white */
   --text-muted: #8A857A;   /* Ash — secondary text */
@@ -991,6 +992,111 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 }
 @media (prefers-reduced-motion: reduce) { .futureback-stage { transition: none; } }
 @media (max-width: 640px) { .futureback-chain { max-width: 100%; } .futureback-stage { padding: 18px 18px; } }
+
+/* CHEW Network Room: reuses the real, already-public capability registry
+   (api/capability-routing.js -> lib/capabilityGraph.js) to show the real
+   Need -> Capability -> Gate -> Provider -> Consent -> Handoff -> Outcome
+   chain for a sample need. The Need itself is always sample/illustrative
+   (--sample-blue accent); everything downstream is real registry
+   structure (gold accent, matching the rest of the site). Consent here is
+   always simulated client-side — nothing in this page ever calls
+   recordConsent()/recordRoutingEvent() or writes to the database.
+   See network-room.html. */
+.netroom-legend { display: flex; justify-content: center; gap: 22px; flex-wrap: wrap; font-size: 0.78rem; color: var(--text-faint); margin: 6px 0 30px; }
+.netroom-legend-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.netroom-legend-dot--sample { background: var(--sample-blue); }
+.netroom-legend-dot--real { background: var(--gold); }
+
+.netroom-need-picker { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.netroom-need-btn {
+  padding: 12px 18px; border-radius: var(--radius); background: var(--panel);
+  border: 1px solid var(--panel-border-soft); color: var(--text-muted); font-size: 0.86rem;
+  cursor: pointer; text-align: left; max-width: 240px;
+  transition: border-color 0.3s ease, color 0.3s ease, background 0.3s ease;
+}
+.netroom-need-btn:hover, .netroom-need-btn:focus-visible { border-color: var(--sample-blue); color: var(--text); }
+.netroom-need-btn.is-active { border-color: var(--sample-blue); background: rgba(123,156,190,0.12); color: var(--text); }
+
+.netroom-status { text-align: center; font-size: 0.86rem; color: var(--text-faint); margin: 18px 0 0; min-height: 1.2em; }
+
+.netroom-chain-wrap { margin-top: 30px; }
+.netroom-chain {
+  list-style: none; margin: 0; padding: 0 0 8px;
+  display: flex; align-items: stretch; gap: 4px; overflow-x: auto;
+}
+.netroom-stage {
+  flex: 0 0 220px; padding: 18px; border-radius: var(--radius); text-align: left;
+  background: var(--panel); border: 1px solid var(--panel-border-soft);
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.5s cubic-bezier(0.22,1,0.36,1), transform 0.5s cubic-bezier(0.22,1,0.36,1),
+              border-color 0.4s ease, background 0.4s ease, box-shadow 0.4s ease;
+}
+.netroom-stage.is-visible { opacity: 1; transform: translateY(0); }
+.netroom-stage-eyebrow { display: block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; color: var(--text-faint); }
+.netroom-stage-title { display: block; font-size: 0.92rem; font-weight: 600; color: var(--text); margin-bottom: 6px; line-height: 1.3; }
+.netroom-stage-note { display: block; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
+.netroom-stage-note + .netroom-stage-note { margin-top: 6px; }
+
+.netroom-stage--need { border-color: var(--sample-blue); background: rgba(123,156,190,0.1); }
+.netroom-stage--need .netroom-stage-eyebrow { color: var(--sample-blue); }
+
+.netroom-stage--capability.is-real { border-color: var(--gold); background: rgba(201,162,39,0.09); }
+.netroom-stage--capability .netroom-stage-eyebrow { color: var(--gold-light); }
+.netroom-candidates { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.netroom-candidate-chip {
+  font-size: 0.7rem; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--panel-border);
+  color: var(--text-faint); transition: opacity 0.4s ease, border-color 0.4s ease, color 0.4s ease;
+}
+.netroom-candidate-chip.is-matched { border-color: var(--gold-light); color: var(--gold-light); font-weight: 600; }
+.netroom-candidate-chip.is-ruled-out { opacity: 0.3; }
+
+.netroom-stage--gate.has-gate { border-color: var(--gold); }
+.netroom-stage--gate.no-gate { border-style: dashed; }
+
+.netroom-stage--provider.is-available { border-color: var(--gold-light); background: rgba(201,162,39,0.14); box-shadow: 0 0 18px rgba(232,206,122,0.18); }
+.netroom-stage--provider.is-blocked { border-style: dashed; border-color: var(--panel-border); }
+.netroom-stage--provider.is-blocked .netroom-stage-eyebrow { color: var(--text-faint); }
+.netroom-stage--provider.is-blocked .netroom-stage-title { color: var(--text-muted); }
+
+.netroom-stage--consent.is-unreached,
+.netroom-stage--handoff.is-unreached { opacity: 0.35; border-style: dashed; }
+.netroom-stage--consent.is-live { border-color: var(--gold); }
+.netroom-consent-btn {
+  margin-top: 10px; padding: 8px 14px; border-radius: var(--radius); background: none;
+  border: 1px solid var(--gold-light); color: var(--gold-light); font-size: 0.78rem; cursor: pointer;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+.netroom-consent-btn:hover { background: rgba(201,162,39,0.14); }
+.netroom-consent-btn:disabled { opacity: 0.4; cursor: default; }
+.netroom-stage--consent.is-granted { border-color: var(--gold-light); background: rgba(201,162,39,0.1); }
+
+.netroom-stage--handoff.is-live { border-color: var(--gold); }
+
+.netroom-stage--outcome.is-success { border-color: var(--gold-light); background: rgba(201,162,39,0.16); box-shadow: 0 0 22px rgba(232,206,122,0.22); }
+.netroom-stage--outcome.is-success .netroom-stage-title { font-family: var(--font-display); font-style: italic; color: var(--gold-light); font-size: 1.02rem; }
+.netroom-stage--outcome.is-none .netroom-stage-title { color: var(--text-muted); }
+
+.netroom-connector { display: flex; align-items: center; justify-content: center; flex: 0 0 22px; color: var(--gold); opacity: 0.3; font-size: 1rem; transition: opacity 0.4s ease; }
+.netroom-connector.is-lit { opacity: 0.85; }
+
+.netroom-inspector {
+  margin: 26px auto 0; max-width: 560px; padding: 20px 24px; border-radius: var(--radius);
+  background: var(--panel); border: 1px solid var(--panel-border-soft); text-align: left;
+}
+.netroom-inspector summary { cursor: pointer; font-size: 0.86rem; color: var(--gold-light); font-weight: 600; }
+.netroom-inspector dl { margin: 14px 0 0; }
+.netroom-inspector dt { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); margin-top: 10px; }
+.netroom-inspector dt:first-child { margin-top: 0; }
+.netroom-inspector dd { margin: 3px 0 0; font-size: 0.86rem; color: var(--text-muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  .netroom-stage, .netroom-connector, .netroom-candidate-chip { transition: none; }
+}
+@media (max-width: 760px) {
+  .netroom-chain { flex-direction: column; overflow-x: visible; }
+  .netroom-stage { flex-basis: auto; }
+  .netroom-connector { flex-basis: auto; padding: 2px 0; transform: rotate(90deg); }
+}
 
 /* ---------- Closing / legacy section ---------- */
 .legacy-close { position: relative; overflow: hidden; padding: 112px 0; }

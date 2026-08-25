@@ -466,6 +466,92 @@ under `prefers-reduced-motion` the next goal's fetch can resolve and
 re-reveal the section within single-digit milliseconds, which a delayed
 check would have wrongly read as a failed reset.
 
+## The Network Room — the real capability registry, traced live (network-room.html)
+
+A later directive ("CHEW Public Experience — Continue, Network Room Next")
+named this the highest-leverage next module specifically because it could
+reuse real, already-shipped infrastructure instead of building new
+intelligence: `api/capability-routing.js` was already public (feature
+`capability_network` has been `preview`-status, API-accessible, since an
+earlier pass), read-only, and unused by any page. Network Room is the
+first frontend to actually read from it.
+
+The room asks the same question CHEW's real registry answers: when a need
+is detected, how does it connect to a real capability? A visitor picks one
+of 9 sample needs (illustrative phrasing, clearly marked `--sample-blue`
+throughout — a new `:root` token added specifically so "this is sample
+input" is never confused with "this is real registry structure," which
+stays gold like the rest of the site) and CHEW traces the real chain: Need
+→ Capability → Qualification Gate → Provider/Source → Consent Boundary →
+Handoff → Outcome. Every stage past the Need is populated from a live
+fetch — capability name/category/description, gate conditions
+(`eligibilityNotes`/`prerequisiteNotes`/`documentsNeeded` from real
+`capability_provider_links` rows), provider status, and now jurisdiction
+(`lib/capabilityGraph.js`'s `getRoutingRecommendation` gained a
+`jurisdictionLabel` field via a `LEFT JOIN jurisdictions`, additive and
+non-breaking since no frontend consumed the raw `jurisdictionId` before
+this). For categories with more than one real capability (risk,
+real_assets, life_events all have 2-3), the Capability stage briefly shows
+all real candidates in that category before marking the one that actually
+matches — a genuine "considered, then narrowed" moment built from real
+taxonomy grouping, not a scripted illusion.
+
+**The honest default, and why it's the point, not a gap:** this
+environment has zero active providers seeded for any capability, so every
+one of the 9 sample needs currently traces to `NO VERIFIED LIVE ROUTE
+YET` — CHEW's registry has the capability defined, but refuses to invent a
+referral to fill the empty slot. When a route is blocked there, the
+Consent and Handoff stages still render, but as "Not reached" — visible,
+not hidden, so a visitor can see what *would* happen without CHEW
+pretending it already can. This is the same restraint pattern as the
+Opportunity Radar, just carried one layer deeper into an actual routing
+decision instead of a capability overview.
+
+**Consent is always simulated, and this page never writes anything.**
+`lib/capabilityGraph.js` already has `recordConsent()`/`recordRoutingEvent()`
+for a real, future authenticated flow — this page calls neither. "Grant
+simulated consent" only toggles local UI classes and unlocks the Handoff
+stage's display text; nothing is sent, shared, or persisted. The Handoff
+stage is permanently labeled "DEMONSTRATION — network routing is not
+live. No message is actually sent," regardless of whether a route
+resolves, matching the directive's `NETWORK_ROUTING_LIVE=false` intent
+without inventing new environment-variable plumbing this repo has no other
+use for — the honesty is enforced by the page simply never calling a
+write endpoint, not by a flag that could be flipped by mistake.
+
+A "Why this route?" inspector (a real `<dl>`, not a tooltip) explains the
+match in plain language for every outcome, success or blocked: capability
+match, how many real candidates were considered, whether gate conditions
+exist, provider count, jurisdiction when available, and the consent
+requirement — no black-box "trust us."
+
+**Verified, not assumed, that the success path actually works:** since the
+honest default never reaches Consent/Handoff/Outcome in their "live"
+states, seeded one real `network_providers` row, one `jurisdictions` row,
+and one `capability_provider_links` row (with real eligibility,
+prerequisite, and document-needed text) for `insurance_risk_review` in the
+scratch database, then confirmed in the browser that the Gate stage showed
+the real conditions, the Provider stage showed the real name/status/
+jurisdiction, the Outcome stage read "VERIFIED ROUTE FOUND," clicking
+"Grant simulated consent" correctly disabled the button, lit the
+connector, and flipped Handoff from "Not reached" to "Proceeding via Warm
+email introduction" (the real `contactMethod`), and the inspector reported
+the real jurisdiction and provider count — then deleted all three seeded
+rows and confirmed the API and page both reverted to the honest zero-state.
+
+Tested all 9 sample needs individually (27 runs: 9 needs × 3 viewport
+conditions) at a 1280px desktop viewport, under `prefers-reduced-motion`,
+and at a 375px mobile viewport: asserted the exact stage sequence, that
+every stage reached `is-visible`, the exact candidate-chip count per
+category (0 for single-capability categories, 2 or 3 for shared
+categories, exactly 1 marked matched), and the exact honest blocked-state
+text for Provider/Consent/Handoff/Outcome — against the live API response
+each time, not assumed. Confirmed keyboard `Tab`-then-`Enter` activates a
+need button identically to a click. Confirmed the desktop chain scrolls
+horizontally (`overflow-x: auto` on a real `<ol>`) and collapses to a
+vertical stack with rotated connectors on mobile, mirroring the existing
+Domino pattern. Confirmed zero JavaScript console errors throughout.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
@@ -530,12 +616,15 @@ the following exist in this repository yet:
     example).
   - **Just not built yet, execution-bandwidth only**: Parallel Futures
     specifically (it needs invented hypothetical timeline data with no real
-    computed basis, unlike Future-Back — see above), the five "browseable
-    rooms," sound design, and a bespoke mobile choreography beyond the
-    existing responsive breakpoints (CHEW Blind Spot, CHEW Domino, the
-    Opportunity Radar, and Future-Back are no longer on this list — see
-    above, all four now built). None of these need a capability this repo
-    lacks to build as a
+    computed basis, unlike Future-Back — see above, and per direct
+    instruction this stays unbuilt until a legitimate scenario-modeling
+    layer exists), the five remaining browseable rooms (Unlock Room,
+    Future Room, Wealth World, Simulation Room, CHEW Lab — Network Room is
+    no longer on this list, see above), sound design, and a bespoke mobile
+    choreography beyond the existing responsive breakpoints (CHEW Blind
+    Spot, CHEW Domino, the Opportunity Radar, Future-Back, and the Network
+    Room are no longer on this list — see above, all five now built). None
+    of these need a capability this repo lacks to build as a
     clearly-labeled demo/sample exhibit — they're exactly the kind of
     thing this directive now explicitly permits. They weren't built in
     this pass because the directive's own "Implementation Discipline"

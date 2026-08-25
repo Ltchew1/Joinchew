@@ -29,9 +29,11 @@ async function getRoutingRecommendation({ capabilitySlug }) {
   }
 
   const providersResult = await query(
-    `SELECT p.*, l.eligibility_notes, l.prerequisite_notes, l.documents_needed, l.priority
+    `SELECT p.*, l.eligibility_notes, l.prerequisite_notes, l.documents_needed, l.priority,
+            j.label AS jurisdiction_label
      FROM capability_provider_links l
      JOIN network_providers p ON p.id = l.provider_id
+     LEFT JOIN jurisdictions j ON j.id = p.jurisdiction_id
      WHERE l.capability_id = $1 AND p.status = 'active' AND p.is_ready = TRUE
      ORDER BY l.priority ASC`,
     [capability.id]
@@ -45,6 +47,7 @@ async function getRoutingRecommendation({ capabilitySlug }) {
     entityType: row.entity_type,
     disclosureText: row.disclosure_text,
     jurisdictionId: row.jurisdiction_id,
+    jurisdictionLabel: row.jurisdiction_label,
     licensingNotes: row.licensing_notes,
     contactMethod: row.contact_method,
     dataSharingNotes: row.data_sharing_notes,
@@ -54,7 +57,12 @@ async function getRoutingRecommendation({ capabilitySlug }) {
   }));
 
   return {
-    capability: { slug: capability.slug, name: capability.name, category: capability.category },
+    capability: {
+      slug: capability.slug,
+      name: capability.name,
+      category: capability.category,
+      description: capability.description,
+    },
     available: providers.length > 0,
     providers,
   };
