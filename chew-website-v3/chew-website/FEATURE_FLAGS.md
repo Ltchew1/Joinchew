@@ -146,6 +146,56 @@ forbids. So this pass built exactly one thing, for real:
   STATE→CONSTRAINTS→OPPORTUNITIES→UNLOCKS→PATH intelligence reveal, and
   "The CHEW Move" — grounded in the actual engine rather than staged.
 
+## Two more signature moments — "Visual Supremacy & Experience Maxout"
+
+This directive changed one rule from the prior one: clearly-labeled
+demo/sample states are now explicitly permitted for visual spectacle,
+even without a real engine behind them ("build clearly labeled demo,
+sample, preview, simulation, or exhibit states"). It also explicitly
+warned against the opposite failure mode — "do not create 20
+half-finished experiences... build in production-quality slices... then
+move to the next slice." Given that instruction, and given the user's
+own follow-up scoped this to the public site only ("do not expose
+private/member-only functionality" — there is no portal in this
+repository to build, and creating one would require a full identity/auth
+system, ARCHITECTURE.md Gap 1), this pass built exactly two of the
+directive's ~12 named signature moments to real production quality
+rather than attempting all twelve shallowly:
+
+- **CHEW Activation** — a brief (under 2.5s), skippable opening sequence
+  on the homepage: darkness, two architectural lines draw outward from
+  center, the CHEW mark resolves with a gold glow, the wordmark fades in
+  beneath, then the whole overlay fades to reveal the page. Pure
+  opacity/transform CSS animation (`styles.css`), no new dependencies,
+  no blocking of interaction underneath. Session-scoped via
+  `sessionStorage` — verified in a real browser to play once, then stay
+  instantly hidden on a same-session reload, so it can never become
+  annoying on repeat visits. Under `prefers-reduced-motion`, verified to
+  skip to hidden instantly with zero animation. Skippable by
+  click/tap at any point.
+- **The CHEW Move collapse/reveal** — enhances the existing "Tell CHEW
+  where you're trying to go" section (see below) with the dramatic
+  "many candidates narrow to one" moment the directive asked for by
+  name, built entirely from real data already returned by the engine:
+  every requirement the engine actually evaluated renders as a chip,
+  then resolves — met ones dim to near-transparent, the deferred one(s)
+  recede slightly, and the real chosen requirement (a new
+  `chosenRequirementKey` field added to `lib/intelligenceEngine.js`'s
+  response specifically so the frontend never has to guess which
+  candidate was "the one" by fragile text-matching) expands and glows
+  gold before the full detail card appears beneath it. Verified in a
+  real browser: chips render unresolved immediately after clicking a
+  goal, resolve correctly ~650ms later with the right chip
+  highlighted (confirmed for both seeded scenarios — "Credit Score" for
+  the housing example, and separately verified the API correctly
+  reports different chosen keys per scenario), and the full chain fades
+  in only after the chips settle — not simultaneously. Under
+  `prefers-reduced-motion`, verified everything resolves and becomes
+  visible instantly, no staggered delay.
+- Both were tested at a 390px mobile viewport: the activation sequence
+  scales correctly, and the chip row wraps to its own line with the
+  highlighted chip still clearly readable.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
@@ -184,24 +234,37 @@ the following exist in this repository yet:
   "shared" with — the registry is built as if that consumer exists
   (nothing here is website-specific), but that's unverified until a
   portal actually reads from it.
-- From the "Public Site Experience Supremacy" directive specifically:
-  the opening "system wakes up" activation sequence; an interactive Life
-  Map with illuminating node relationships (the existing constellation
-  is static, not interactive); CHEW Blind Spot, CHEW Domino, Parallel
-  Futures, Future-Back Planning, and Opportunity Radar (each would need
-  a real engine capability this repo doesn't have — conflicting-priority
-  detection, cascading-consequence modeling, multi-path scenario
-  comparison, reverse planning, and time-bounded opportunity tracking
-  are all Phase 2/3+ per `ARCHITECTURE.md`, not yet real); Economic
-  Weather and "What Changed?" (both need state-over-time tracking this
-  repo doesn't build — see ARCHITECTURE.md's Outcome entity, still
-  conceptual); Hidden Leverage, Friction Detection, and Conflict
-  Detection (each needs pattern-recognition across a subject's history
-  that doesn't exist for one seeded test subject); the five "browseable
-  rooms"; sound design; and a bespoke mobile choreography beyond the
-  existing responsive breakpoints. Building fake versions of any of
-  these would have meant exactly the "eye candy without architecture"
-  the directive itself prohibited.
+- From the "Public Site Experience Supremacy" / "Visual Supremacy &
+  Experience Maxout" directives: the opening activation sequence and the
+  CHEW Move collapse are now built (see above) — everything else on
+  their lists is still not attempted. Worth being precise about *why*,
+  because the reason differs by item now that clearly-labeled demo data
+  is explicitly permitted:
+  - **Blocked by a real constraint, not a choice**: the portal entirely
+    (there is no authenticated portal in this repository, and building
+    one needs real identity/auth — ARCHITECTURE.md Gap 1 — which is a
+    security-relevant foundation, not a visual-layer decision to make
+    inside a design pass); an interactive Life Map with illuminating
+    node relationships tied to real state (the existing constellation is
+    static and illustrative-only, not wired to any subject's data);
+    Economic Weather, "What Changed," Hidden Leverage, Friction
+    Detection, and Conflict Detection (each needs either state-over-time
+    tracking or pattern-recognition across a subject's history that
+    doesn't exist for the one seeded test subject — building these even
+    as "demo" would mean fabricating a history that was never seeded,
+    which is different from labeling a single static scenario as an
+    example).
+  - **Just not built yet, execution-bandwidth only**: CHEW Blind Spot,
+    CHEW Domino, Parallel Futures, Future-Back Planning, Opportunity
+    Radar, the five "browseable rooms," sound design, and a bespoke
+    mobile choreography beyond the existing responsive breakpoints. None
+    of these need a capability this repo lacks to build as a
+    clearly-labeled demo/sample exhibit — they're exactly the kind of
+    thing this directive now explicitly permits. They weren't built in
+    this pass because the directive's own "Implementation Discipline"
+    section explicitly warned against 20 half-finished experiences in
+    favor of a few done to real production quality — two were chosen,
+    not twelve attempted shallowly. These are the natural next slices.
 
 ## Testing performed
 
@@ -227,5 +290,19 @@ system changed:
   viewport and a 390px mobile viewport, with zero JavaScript console
   errors, and confirmed a live flag flip updates a card's badge with no
   code change.
+- **CHEW Activation + CHEW Move collapse, verified in a real browser:**
+  confirmed the activation overlay auto-hides itself after its sequence
+  completes; reloaded the page and confirmed it stays hidden instantly
+  (session-scoped, no replay); confirmed zero JS errors through the full
+  flow. Confirmed the move-collapse chips render unresolved immediately
+  after selecting a goal, then resolve ~650ms later with the correct
+  chip highlighted — cross-checked against the API's own
+  `chosenRequirementKey` field for both seeded scenarios, not assumed.
+  Confirmed the full detail chain only fades in after the chips settle,
+  not simultaneously. Re-tested both moments under
+  `prefers-reduced-motion`: activation hidden instantly, chips resolved
+  instantly, chain visible instantly — no animation, no delay. Verified
+  both at a 390px mobile viewport: activation scales correctly, chip row
+  wraps with the highlighted chip still clearly readable.
 - No local test infrastructure (Postgres cluster, scratch database, dev
   server) is part of this repository.

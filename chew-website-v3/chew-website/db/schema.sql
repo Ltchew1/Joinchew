@@ -563,6 +563,13 @@ CREATE INDEX IF NOT EXISTS idx_recommendations_goal ON recommendations (goal_id)
 ALTER TABLE transition_requirements ADD COLUMN IF NOT EXISTS capability_id INTEGER REFERENCES capabilities (id);
 ALTER TABLE recommendations ADD COLUMN IF NOT EXISTS related_capability JSONB;
 
+-- Names WHICH requirement_key was chosen, so a caller (e.g. a public UI
+-- animating "many candidates -> one CHEW Move") can reliably highlight
+-- the right one instead of guessing by matching recommended_action text
+-- against based_on_facts. NULL when nothing was chosen (every
+-- requirement met, or no transition/requirements at all).
+ALTER TABLE recommendations ADD COLUMN IF NOT EXISTS chosen_requirement_key TEXT;
+
 -- ============================================================
 -- Action / Task tracking — ARCHITECTURE.md §20 milestone (Gap 7)
 -- ============================================================

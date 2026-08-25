@@ -72,6 +72,7 @@ async function computeRecommendation({ subjectId, goalId }) {
       basedOnConstraints: [],
       missingInformation: { reason: 'no_transition_matched' },
       relatedCapability: null,
+      chosenRequirementKey: null,
       computedAt: null,
     };
   }
@@ -96,6 +97,7 @@ async function computeRecommendation({ subjectId, goalId }) {
       basedOnConstraints: [],
       missingInformation: { reason: 'no_requirements_defined' },
       relatedCapability: null,
+      chosenRequirementKey: null,
       computedAt: null,
     };
   }
@@ -157,6 +159,7 @@ async function computeRecommendation({ subjectId, goalId }) {
       basedOnConstraints,
       missingInformation: { missingFactKeys: missingKeys },
       relatedCapability: null,
+      chosenRequirementKey: null,
     };
   } else {
     const evalEntry = evaluatedFacts[chosenRequirement.requirement_key];
@@ -195,12 +198,13 @@ async function computeRecommendation({ subjectId, goalId }) {
       basedOnConstraints,
       missingInformation: { missingFactKeys: missingKeys },
       relatedCapability,
+      chosenRequirementKey: chosenRequirement.requirement_key,
     };
   }
 
   const insertResult = await query(
-    `INSERT INTO recommendations (subject_id, goal_id, recommended_action, rationale, based_on_facts, based_on_constraints, missing_information, related_capability)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO recommendations (subject_id, goal_id, recommended_action, rationale, based_on_facts, based_on_constraints, missing_information, related_capability, chosen_requirement_key)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      RETURNING id, computed_at`,
     [
       subjectId,
@@ -211,6 +215,7 @@ async function computeRecommendation({ subjectId, goalId }) {
       JSON.stringify(result.basedOnConstraints),
       JSON.stringify(result.missingInformation),
       result.relatedCapability ? JSON.stringify(result.relatedCapability) : null,
+      result.chosenRequirementKey,
     ]
   );
 

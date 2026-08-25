@@ -220,7 +220,12 @@ directive requires to be explainable, not a black box.
 - Fields: `id`, `subject_id`, `goal_id`, `recommended_action`,
   `rationale`, `based_on_facts` (JSONB — which `fact_key`s and values
   were used), `based_on_constraints` (JSONB — which constraint ids),
-  `missing_information` (JSONB — what facts would improve this), `computed_at`.
+  `missing_information` (JSONB — what facts would improve this),
+  `related_capability` (JSONB, nullable — see §11), `chosen_requirement_key`
+  (nullable — which `transition_requirements.requirement_key` was
+  selected; added so a caller can reliably identify "the one" without
+  guessing from `recommended_action` text — see FEATURE_FLAGS.md's CHEW
+  Move collapse), `computed_at`.
 - Never infer without evidence: there is no confidence score field, and
   none should be added without a real statistical basis — the directive
   explicitly forbids "fake AI confidence metrics." A recommendation is

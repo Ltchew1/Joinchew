@@ -1,6 +1,33 @@
 // CHEW — shared site behavior
 
 document.addEventListener('DOMContentLoaded', function () {
+  // CHEW Activation: a brief, skippable opening sequence on the homepage
+  // only, shown once per browser session. Pure opacity/transform CSS
+  // animation (GPU-friendly), never blocks interaction, and is a no-op
+  // instantly under prefers-reduced-motion or on a repeat visit this
+  // session.
+  var activation = document.getElementById('chew-activation');
+  if (activation) {
+    var activationReduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var alreadyActivated = false;
+    try { alreadyActivated = sessionStorage.getItem('chewActivated') === '1'; } catch (e) { /* private browsing, etc — treat as not activated */ }
+
+    if (alreadyActivated || activationReduceMotion) {
+      activation.hidden = true;
+    } else {
+      document.documentElement.style.overflow = 'hidden';
+      var finishActivation = function () {
+        if (activation.hidden) return;
+        activation.classList.add('is-hidden');
+        document.documentElement.style.overflow = '';
+        try { sessionStorage.setItem('chewActivated', '1'); } catch (e) { /* ignore */ }
+        setTimeout(function () { activation.hidden = true; }, 650);
+      };
+      activation.addEventListener('click', finishActivation);
+      setTimeout(finishActivation, 2200);
+    }
+  }
+
   var toggle = document.querySelector('.nav-toggle');
   var nav = document.querySelector('.nav');
   if (toggle && nav) {
@@ -183,13 +210,60 @@ document.addEventListener('DOMContentLoaded', function () {
       return html;
     }
 
+    // CHEW Move collapse: renders every real requirement the engine
+    // actually evaluated as a chip, then resolves them — met ones dim,
+    // the untouched-for-now one(s) recede, and the real chosen
+    // requirement (chosenRequirementKey, from the engine, not guessed
+    // client-side) expands. Every chip and every classification comes
+    // straight from the API response; nothing here is invented content.
+    var moveCollapseEl = document.getElementById('move-collapse');
+    var moveChipRowEl = document.getElementById('move-chip-row');
+    var revealReduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var pendingTimeouts = [];
+
+    function clearPendingTimeouts() {
+      pendingTimeouts.forEach(function (id) { clearTimeout(id); });
+      pendingTimeouts = [];
+    }
+
+    function buildAndResolveMoveCollapse(basedOnFacts, chosenRequirementKey) {
+      var keys = Object.keys(basedOnFacts);
+      moveCollapseEl.classList.remove('is-resolved');
+      moveChipRowEl.innerHTML = keys.map(function (key) {
+        return '<span class="move-chip" data-key="' + escapeHtml(key) + '">' + escapeHtml(formatFactKey(key)) + '</span>';
+      }).join('');
+
+      var resolve = function () {
+        keys.forEach(function (key) {
+          var chip = moveChipRowEl.querySelector('[data-key="' + key.replace(/"/g, '') + '"]');
+          if (!chip) return;
+          if (key === chosenRequirementKey) {
+            chip.classList.add('is-chosen');
+          } else if (basedOnFacts[key].met) {
+            chip.classList.add('is-met');
+          } else {
+            chip.classList.add('is-deferred');
+          }
+        });
+        moveCollapseEl.classList.add('is-resolved');
+      };
+
+      if (revealReduceMotion) {
+        resolve();
+      } else {
+        pendingTimeouts.push(setTimeout(resolve, 650));
+      }
+    }
+
     goalButtons.forEach(function (btn) {
       btn.addEventListener('click', function () {
+        clearPendingTimeouts();
         goalButtons.forEach(function (b) { b.classList.remove('is-active'); });
         btn.classList.add('is-active');
         statusEl.textContent = 'CHEW is thinking...';
         statusEl.classList.remove('is-error');
         resultEl.hidden = true;
+        chainEl.classList.remove('is-visible');
 
         fetch('/api/intelligence-demo?goal=' + encodeURIComponent(btn.getAttribute('data-goal')))
           .then(function (res) {
@@ -209,7 +283,13 @@ document.addEventListener('DOMContentLoaded', function () {
               + '<div class="reveal-arrow-row" aria-hidden="true">&darr;</div>'
               + '<div class="reveal-stage chew-move intelligence-pulse">' + buildMoveStage(rec.recommendedAction, rec.rationale) + '</div>';
             resultEl.hidden = false;
-            resultEl.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest' });
+            buildAndResolveMoveCollapse(rec.basedOnFacts, rec.chosenRequirementKey);
+            if (revealReduceMotion) {
+              chainEl.classList.add('is-visible');
+            } else {
+              pendingTimeouts.push(setTimeout(function () { chainEl.classList.add('is-visible'); }, 1150));
+            }
+            resultEl.scrollIntoView({ behavior: revealReduceMotion ? 'auto' : 'smooth', block: 'nearest' });
           })
           .catch(function (err) {
             statusEl.textContent = err.message || 'CHEW couldn\'t load this example right now.';

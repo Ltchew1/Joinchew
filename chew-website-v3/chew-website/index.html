@@ -17,6 +17,11 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<div id="chew-activation" class="chew-activation" aria-hidden="true">
+  <div class="activation-lines" aria-hidden="true"></div>
+  <div class="activation-mark"><img src="assets/chew-icon-official.png" alt="" width="64" height="64"></div>
+  <div class="activation-label">CHEW</div>
+</div>
 <header class="site-header">
   <div class="container">
     <a href="index.html" class="brand">
@@ -126,6 +131,10 @@
       <p class="reveal-status" id="reveal-status" role="status" aria-live="polite"></p>
       <div class="intelligence-reveal-result" id="intelligence-reveal-result" hidden>
         <span class="tag tag--gold reveal-disclaimer" id="reveal-disclaimer"></span>
+        <div class="move-collapse" id="move-collapse">
+          <p class="move-collapse-label">Evaluating options for this goal&hellip;</p>
+          <div class="move-chip-row" id="move-chip-row"></div>
+        </div>
         <div class="reveal-chain" id="reveal-chain"></div>
       </div>
     </div>
