@@ -100,6 +100,52 @@ homepage rather than attempting the whole site:
   pre-existing responsive grid breakpoints rather than new mobile-only
   interaction (no swipe gesture was built).
 
+## "Tell CHEW where you're trying to go" — a real intelligence demo, not staged eye candy
+
+A later directive ("Public Site Experience Supremacy") asked for roughly
+fifteen named cinematic experiences (CHEW Move, Blind Spot, Domino,
+Parallel Futures, Future-Back Planning, Opportunity Radar, Economic
+Weather, a Life Map illumination graph, browseable "rooms," sound
+design, a full opening activation sequence, and more), but its own
+governing rule was explicit: *"Do not fake intelligence to create eye
+candy... use actual architecture where available, otherwise use clearly
+labeled demo scenarios."* Given that only one real reasoning engine
+exists in this repository (`lib/intelligenceEngine.js` — see
+`ARCHITECTURE.md`), building the other fourteen would have meant either
+fabricating logic that doesn't exist or building believable-looking
+animations with invented content — exactly what the directive itself
+forbids. So this pass built exactly one thing, for real:
+
+- **`api/intelligence-demo.js`** — a new, narrowly-scoped, public
+  endpoint. Unlike `api/intelligence-recommendation.js` (which stays
+  gated `internal` because there's no real subject/identity system —
+  ARCHITECTURE.md Gap 1), this one is safe to expose publicly because it
+  never accepts an arbitrary `subjectId`/`goalId`: it only ever computes
+  against the two pre-seeded illustrative scenarios from
+  `db/seed-intelligence.sql`, selected by a fixed `goal=home|funding`
+  enum. Every response is wrapped with `isExample: true` and an explicit
+  disclaimer. Gated by its own `intelligence_demo` flag (seeded `live`,
+  since it's safe by construction), separate from `intelligence_engine`.
+- **Homepage section "Tell CHEW where you're trying to go"** (added
+  directly after the hero, without touching the hero's locked copy):
+  two real goal buttons: clicking one calls the real engine and renders
+  four stages — State, Constraints, Opportunities & Unlocks, and "The
+  CHEW Move" — built entirely from the API's actual returned fields
+  (`basedOnFacts`, `basedOnConstraints`, `relatedCapability`,
+  `missingInformation`, `recommendedAction`, `rationale`). Nothing here
+  is a scripted animation with placeholder content — verified by
+  clicking both goals in a real browser and confirming each produces
+  genuinely different output pulled from the live database (the credit
+  score example correctly identifies "credit score" as the constraint
+  in one path; the business example correctly identifies "bookkeeping"
+  in the other), with zero JavaScript console errors, at both a 1280px
+  desktop and a 390px mobile viewport (buttons wrap, stages stack
+  full-width and stay readable).
+- This delivers real, working versions of three of the directive's named
+  concepts — "Tell CHEW where you're trying to go," the
+  STATE→CONSTRAINTS→OPPORTUNITIES→UNLOCKS→PATH intelligence reveal, and
+  "The CHEW Move" — grounded in the actual engine rather than staged.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
@@ -138,6 +184,24 @@ the following exist in this repository yet:
   "shared" with — the registry is built as if that consumer exists
   (nothing here is website-specific), but that's unverified until a
   portal actually reads from it.
+- From the "Public Site Experience Supremacy" directive specifically:
+  the opening "system wakes up" activation sequence; an interactive Life
+  Map with illuminating node relationships (the existing constellation
+  is static, not interactive); CHEW Blind Spot, CHEW Domino, Parallel
+  Futures, Future-Back Planning, and Opportunity Radar (each would need
+  a real engine capability this repo doesn't have — conflicting-priority
+  detection, cascading-consequence modeling, multi-path scenario
+  comparison, reverse planning, and time-bounded opportunity tracking
+  are all Phase 2/3+ per `ARCHITECTURE.md`, not yet real); Economic
+  Weather and "What Changed?" (both need state-over-time tracking this
+  repo doesn't build — see ARCHITECTURE.md's Outcome entity, still
+  conceptual); Hidden Leverage, Friction Detection, and Conflict
+  Detection (each needs pattern-recognition across a subject's history
+  that doesn't exist for one seeded test subject); the five "browseable
+  rooms"; sound design; and a bespoke mobile choreography beyond the
+  existing responsive breakpoints. Building fake versions of any of
+  these would have meant exactly the "eye candy without architecture"
+  the directive itself prohibited.
 
 ## Testing performed
 

@@ -100,4 +100,122 @@ document.addEventListener('DOMContentLoaded', function () {
       status.focus();
     });
   });
+
+  // "Tell CHEW where you're trying to go" — a real, working call to
+  // CHEW's intelligence engine (see ARCHITECTURE.md), run against a
+  // fixed illustrative example, never the visitor's own data. Every
+  // stage below is built directly from the API's real returned fields
+  // — nothing here is a scripted/staged animation with invented content.
+  var goalButtons = document.querySelectorAll('.goal-btn');
+  if (goalButtons.length) {
+    var statusEl = document.getElementById('reveal-status');
+    var resultEl = document.getElementById('intelligence-reveal-result');
+    var disclaimerEl = document.getElementById('reveal-disclaimer');
+    var chainEl = document.getElementById('reveal-chain');
+
+    function formatFactKey(key) {
+      return key.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    }
+
+    function escapeHtml(str) {
+      var div = document.createElement('div');
+      div.textContent = str == null ? '' : String(str);
+      return div.innerHTML;
+    }
+
+    function buildStateStage(basedOnFacts) {
+      var keys = Object.keys(basedOnFacts);
+      var html = '<span class="reveal-stage-label">State</span>';
+      if (!keys.length) {
+        html += '<p>No facts on file for this example yet.</p>';
+      } else {
+        keys.forEach(function (key) {
+          var fact = basedOnFacts[key];
+          var valueText = fact.value === null ? 'not yet provided' : fact.value + (fact.unit ? ' ' + fact.unit : '');
+          html += '<p><strong>' + escapeHtml(formatFactKey(key)) + ':</strong> ' + escapeHtml(valueText)
+            + (fact.met ? ' <span class="is-met">&#10003; meets requirement</span>' : '') + '</p>';
+        });
+      }
+      return html;
+    }
+
+    function buildConstraintsStage(constraints) {
+      var html = '<span class="reveal-stage-label">Constraints</span>';
+      if (!constraints.length) {
+        html += '<p>No unresolved constraints on file for this example.</p>';
+      } else {
+        constraints.forEach(function (c) {
+          html += '<p><strong>' + escapeHtml(formatFactKey(c.type)) + ':</strong> ' + escapeHtml(c.description) + '</p>';
+        });
+      }
+      return html;
+    }
+
+    function buildOpportunityStage(relatedCapability, missingInformation) {
+      var html = '<span class="reveal-stage-label">Opportunities &amp; Unlocks</span>';
+      var lines = [];
+      if (relatedCapability) {
+        lines.push('<strong>' + escapeHtml(relatedCapability.capability.name) + ':</strong> '
+          + (relatedCapability.available
+            ? relatedCapability.providers.length + ' active provider(s) found.'
+            : 'no active provider available yet.'));
+      }
+      var missingKeys = (missingInformation && missingInformation.missingFactKeys) || [];
+      if (missingKeys.length) {
+        lines.push('Still unknown: ' + missingKeys.map(formatFactKey).join(', ') + '.');
+      }
+      if (!lines.length) {
+        html += '<p>Nothing further unlocks or blocks this example right now.</p>';
+      } else {
+        lines.forEach(function (line) { html += '<p>' + line + '</p>'; });
+      }
+      return html;
+    }
+
+    function buildMoveStage(recommendedAction, rationale) {
+      var html = '<span class="reveal-stage-label">The CHEW Move</span>';
+      if (recommendedAction) {
+        html += '<p class="move-action">&ldquo;' + escapeHtml(recommendedAction) + '&rdquo;</p>';
+      } else {
+        html += '<p class="move-action">Every known requirement is met &mdash; nothing further to recommend for this example.</p>';
+      }
+      html += '<p style="margin-top:14px;">' + escapeHtml(rationale) + '</p>';
+      return html;
+    }
+
+    goalButtons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        goalButtons.forEach(function (b) { b.classList.remove('is-active'); });
+        btn.classList.add('is-active');
+        statusEl.textContent = 'CHEW is thinking...';
+        statusEl.classList.remove('is-error');
+        resultEl.hidden = true;
+
+        fetch('/api/intelligence-demo?goal=' + encodeURIComponent(btn.getAttribute('data-goal')))
+          .then(function (res) {
+            if (!res.ok) return res.json().then(function (d) { throw new Error(d.error || 'Lookup failed'); });
+            return res.json();
+          })
+          .then(function (data) {
+            statusEl.textContent = '';
+            disclaimerEl.textContent = data.disclaimer;
+            var rec = data.recommendation;
+            chainEl.innerHTML =
+              '<div class="reveal-stage">' + buildStateStage(rec.basedOnFacts) + '</div>'
+              + '<div class="reveal-arrow-row" aria-hidden="true">&darr;</div>'
+              + '<div class="reveal-stage">' + buildConstraintsStage(rec.basedOnConstraints) + '</div>'
+              + '<div class="reveal-arrow-row" aria-hidden="true">&darr;</div>'
+              + '<div class="reveal-stage">' + buildOpportunityStage(rec.relatedCapability, rec.missingInformation) + '</div>'
+              + '<div class="reveal-arrow-row" aria-hidden="true">&darr;</div>'
+              + '<div class="reveal-stage chew-move intelligence-pulse">' + buildMoveStage(rec.recommendedAction, rec.rationale) + '</div>';
+            resultEl.hidden = false;
+            resultEl.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest' });
+          })
+          .catch(function (err) {
+            statusEl.textContent = err.message || 'CHEW couldn\'t load this example right now.';
+            statusEl.classList.add('is-error');
+          });
+      });
+    });
+  }
 });
