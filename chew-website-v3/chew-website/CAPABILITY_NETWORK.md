@@ -33,8 +33,11 @@ Update it whenever a real provider is added — do not let it go stale.
   confirming the hidden one never appears in the result, under any
   request shape. `recordRoutingEvent()` and `recordConsent()` are real,
   functional insert helpers, ready for a real handoff flow to call.
-- **A working API** (`api/capability-routing.js`): `GET
-  /api/capability-routing` (no params) lists the capability taxonomy;
+- **A working API** (`api/capability-routing.js`), gated server-side by
+  the `capability_network` feature flag (see `FEATURE_FLAGS.md`) — a
+  real 404 when off, not just an unlinked page. Currently seeded
+  `active` since this narrow scope was already tested and shipped.
+  `GET /api/capability-routing` (no params) lists the capability taxonomy;
   `GET /api/capability-routing?capability=<slug>` returns that
   capability's real routing recommendation. Both paths tested against a
   live database, including the "capability exists but has zero active

@@ -21,7 +21,11 @@ exist yet. Update it whenever coverage changes — do not let it go stale.
 - **A working API** (`api/business-path.js`): `GET /api/business-path?
   businessType=...&state=...[&county=...][&city=...]`. Validates input,
   calls the engine, returns JSON. No mock data path exists in production
-  code — every response comes from the database.
+  code — every response comes from the database. Gated server-side by
+  the `path_engine` feature flag (see `FEATURE_FLAGS.md`) — a real 404,
+  not just an unlinked page, is what stands between this and being
+  "off." Currently seeded `active` since this narrow scope was already
+  tested and shipped as an early preview.
 - **A working frontend** (`business-pathfinder.html`): a real form wired
   to the real API, rendering all three coverage states (VERIFIED / PARTIAL
   / GENERAL_GUIDANCE) with the exact required copy for each. Marked

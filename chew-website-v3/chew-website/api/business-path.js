@@ -8,11 +8,18 @@
 // GET /api/business-path?businessType=llc-formation&state=FL[&county=Orange][&city=Orlando]
 
 const { getBusinessPath } = require('../lib/pathEngine');
+const { isFeatureActive } = require('../lib/featureFlags');
 
 module.exports = async (req, res) => {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Hidden UI is not security — this feature must be unreachable at the
+  // API layer whenever it isn't flipped 'active', not just unlinked.
+  if (!(await isFeatureActive('path_engine'))) {
+    return res.status(404).json({ error: 'Not found' });
   }
 
   const { businessType, state, county, city } = req.query || {};

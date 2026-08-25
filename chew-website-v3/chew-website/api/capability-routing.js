@@ -11,11 +11,18 @@
 // GET /api/capability-routing  (no params — lists the capability taxonomy)
 
 const { getCapabilities, getRoutingRecommendation } = require('../lib/capabilityGraph');
+const { isFeatureActive } = require('../lib/featureFlags');
 
 module.exports = async (req, res) => {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Hidden UI is not security — this feature must be unreachable at the
+  // API layer whenever it isn't flipped 'active', not just unlinked.
+  if (!(await isFeatureActive('capability_network'))) {
+    return res.status(404).json({ error: 'Not found' });
   }
 
   const { capability } = req.query || {};

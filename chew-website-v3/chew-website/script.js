@@ -47,6 +47,29 @@ document.addEventListener('DOMContentLoaded', function () {
     }, { passive: true });
   }
 
+  // Coming-soon capability cards: read real server-side feature status and
+  // switch a card's badge from "Coming Soon" to "Explore" when a feature is
+  // flipped active — no redesign needed. Fails safe: a fetch error or an
+  // unrecognized slug just leaves the default "Coming Soon" badge in place.
+  var featureCards = document.querySelectorAll('[data-feature-slug]');
+  if (featureCards.length) {
+    fetch('/api/feature-flags')
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (data) {
+        if (!data || !data.flags) return;
+        var statusBySlug = {};
+        data.flags.forEach(function (f) { statusBySlug[f.slug] = f.status; });
+        featureCards.forEach(function (card) {
+          var slug = card.getAttribute('data-feature-slug');
+          var badge = card.querySelector('[data-status-badge]');
+          if (!badge || statusBySlug[slug] !== 'active') return;
+          badge.textContent = 'Explore';
+          badge.classList.add('is-active');
+        });
+      })
+      .catch(function () { /* leave default Coming Soon state */ });
+  }
+
   // Forms are not yet connected to a backend, payment processor, or CRM.
   // This shows an honest status message instead of silently failing.
   var forms = document.querySelectorAll('form[data-form]');

@@ -630,6 +630,33 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 .secret-tile:hover h4 { filter: blur(1.1px); opacity: 0.8; }
 @media (hover: none) { .secret-tile h4 { filter: blur(1.4px); opacity: 0.7; } }
 
+/* ---------- Intelligence Pulse: signature reveal motion ---------- */
+.intelligence-pulse { animation: intelligence-pulse 2.6s ease-in-out infinite; }
+@keyframes intelligence-pulse {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba(232,206,122,0)); }
+  50% { filter: drop-shadow(0 0 5px rgba(232,206,122,0.6)); }
+}
+@media (prefers-reduced-motion: reduce) { .intelligence-pulse { animation: none; } }
+
+/* ---------- What's Next: locked capability cards, driven by feature flags ---------- */
+.expansion-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 36px; }
+@media (max-width: 980px) { .expansion-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .expansion-grid { grid-template-columns: 1fr; } }
+.coming-soon-card { position: relative; overflow: hidden; padding: 30px 26px; }
+.coming-soon-card .lock-icon { width: 20px; height: 20px; opacity: 0.7; margin-bottom: 16px; }
+.coming-soon-card h4 { color: var(--gold-light); font-size: 1.02rem; margin: 0 0 8px; }
+.coming-soon-card p { font-size: 0.88rem; color: var(--text-muted); margin: 0; }
+.coming-soon-card .status-badge {
+  display: inline-block; margin-top: 18px; font-size: 0.68rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--gold-light); border: 1px solid var(--panel-border);
+  border-radius: 999px; padding: 5px 12px; background: rgba(201,162,39,0.08);
+}
+.coming-soon-card .status-badge.is-active { color: var(--black); background: var(--gold-light); border-color: var(--gold-light); }
+.coming-soon-card::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at 30% 0%, rgba(232,206,122,0.07), transparent 60%);
+}
+
 /* ---------- Closing / legacy section ---------- */
 .legacy-close { position: relative; overflow: hidden; padding: 112px 0; }
 .legacy-close .hero-glow { opacity: 0.7; }

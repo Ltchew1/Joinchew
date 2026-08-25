@@ -357,3 +357,32 @@ CREATE TABLE IF NOT EXISTS routing_events (
 );
 
 CREATE INDEX IF NOT EXISTS idx_routing_events_capability ON routing_events (capability_id);
+
+-- ============================================================
+-- CHEW Feature Flags — server-side production-access gate
+-- ============================================================
+-- "Hidden UI is not security." Any not-yet-launched feature must be
+-- unreachable at the API layer, not merely unlinked from navigation.
+-- lib/featureFlags.js is the only supported way to read these — API
+-- handlers call isFeatureActive(slug) and return 404 when false, so a
+-- disabled feature is genuinely unreachable, not just hard to find.
+--
+-- status meanings:
+--   locked       — not yet built for production use / explicitly held back
+--   coming_soon  — publicly teased (e.g. a locked card), but the API
+--                  behind it still 404s until flipped to 'active'
+--   active       — really live; the API serves real requests
+--
+-- Flipping a row to 'active' is a real launch decision — do not change
+-- a flag's status without being told to, and never seed a flag as
+-- 'active' for a feature that hasn't actually been verified working.
+
+CREATE TABLE IF NOT EXISTS feature_flags (
+  id           SERIAL PRIMARY KEY,
+  slug         TEXT UNIQUE NOT NULL,
+  name         TEXT NOT NULL,
+  status       TEXT NOT NULL DEFAULT 'locked' CHECK (status IN ('locked', 'coming_soon', 'active')),
+  release_note TEXT,
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
