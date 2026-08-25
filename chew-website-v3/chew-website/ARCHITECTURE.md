@@ -344,21 +344,39 @@ repeat §1–3.
 
 ## 11. Capability registry relationship
 
-The Opportunity Engine (§12.5) and Path Engine's business/opportunity
-sense (§12.7) are meant to query `capabilities` /
-`capability_provider_links` / `network_providers` directly — this pass
-does not duplicate that registry. Concretely, the intended (not yet
-built — see Gap 10) query shape is:
+**Built.** `transition_requirements.capability_id` links a requirement
+directly to an existing `capabilities` row. When
+`lib/intelligenceEngine.js`'s chosen unmet requirement carries that
+link, it calls `lib/capabilityGraph.js`'s `getRoutingRecommendation()`
+— the same function `api/capability-routing.js` already uses — so there
+is exactly one code path that turns a capability slug into real provider
+data, not two. The actual query shape, now live:
 
 ```
-"User needs property insurance" (a Constraint or unmet Requirement
- whose requirement_key maps to a capabilities.slug, e.g. 'insurance_risk_review')
-   -> capabilities row found
+transition_requirements row with capability_id set
+  (e.g. 'bookkeeping_current' -> capabilities.slug 'accounting_tax')
+   -> getRoutingRecommendation({ capabilitySlug })
    -> capability_provider_links WHERE capability_id = X
    -> network_providers WHERE status = 'active' AND is_ready = TRUE
-   -> Path Engine (intelligence sense) decides sequence_order among
-      other recommended actions
+   -> attached to the recommendation as `relatedCapability`
+      (available + provider list, or honestly available: false)
 ```
+
+Verified end-to-end, including live: seeded a real `network_providers`
+row mid-test (status `active`, `is_ready = TRUE`) linked to
+`accounting_tax`, and confirmed the next `computeRecommendation()` call
+against the same goal picked it up automatically — `relatedCapability
+.available` flipped from `false` to `true` with zero code change,
+because the intelligence engine never caches or duplicates registry
+data, it queries it fresh every call.
+
+What's still narrow: only a requirement an author has explicitly set
+`capability_id` on gets this treatment — there's no inference that
+guesses "this requirement is probably about insurance" from its
+`requirement_key` or label. That's a deliberate boundary, not a
+missing feature — auto-matching risks a wrong match presented as
+confident routing, which is exactly the kind of unearned certainty this
+architecture is built to avoid.
 
 This pass's MVP slice does not exercise this path (no
 `transition_requirement` in the seed data maps to a real `capabilities`
@@ -378,7 +396,7 @@ it without a redesign.
 | **Goal Engine** | **Built (data model only).** `goals` table. Goal *conflict detection* (the directive's homebuying-vs-business-vs-financing example) is Phase 2 — it requires a rule for every pairwise category interaction, and this pass has exactly one transition defined, not enough breadth to write real conflict rules against. Documented as Gap 11, not built speculatively. |
 | **Readiness Engine** | **Built, folded into the recommendation engine.** Readiness for a transition is computed by evaluating every `transition_requirements` row against `current_state_facts` — met/unmet, with the exact fact and threshold cited. There is no separate readiness percentage; the directive explicitly asks for "you are not ready because of X, Y, Z," not a score, and that's exactly what `lib/intelligenceEngine.js` returns. |
 | **Constraint Engine** | **Built (data model + resolution status), leverage ranking simplified.** Constraints are typed and can block a specific transition. Ranking by true leverage (§ TransitionRequirement above) is replaced by author-assigned `sequence_order` in the MVP — named as a simplification, not hidden. |
-| **Opportunity Engine** | **Not built this pass.** Depends on the capability-registry wiring in §11 (Gap 10) — building it before that wiring exists would mean inventing opportunity data, which is exactly what's forbidden. |
+| **Opportunity Engine** | **Wired.** A `transition_requirements` row may name a `capability_id`; when the engine's chosen unmet requirement carries one, `computeRecommendation()` calls `lib/capabilityGraph.js`'s already-tested `getRoutingRecommendation()` directly — no second, forked opportunity model. Verified end-to-end, including live: seeded a real `network_providers` row mid-test and confirmed the next call to `computeRecommendation()` picked it up and flipped `relatedCapability.available` from `false` to `true` with zero code change. Still narrow — only requirements an author has explicitly linked to a capability get this treatment; there's no automatic matching of a requirement to a capability by inference. |
 | **Unlock Engine** | **Built, as a byproduct of the Readiness Engine.** "What's unmet and what closes the gap" *is* `action_if_unmet` on the first unmet `transition_requirements` row by `sequence_order`. There's no separate Unlock Engine module in this pass — the directive's own example output format (LOCKED / WHY / CURRENT / REQUIRED / NEXT MOVE) maps field-for-field onto `computeRecommendation()`'s return shape (see `lib/intelligenceEngine.js`). |
 | **Path Engine (intelligence sense)** | **Not built this pass** — name collision worth flagging explicitly: `lib/pathEngine.js` already exists in this repo for business-formation path lookups (a different, narrower concept — a fixed sequence of legal/regulatory steps). The intelligence-sense Path Engine (best-next-move across multiple weighted factors: cost, time, risk, reversibility) is Phase 2+ and needs a real multi-factor ranking model this pass does not attempt. The MVP's "recommended next action" is the *single* nearest unmet requirement, not a ranked path through several — that's the honest boundary of what's built. |
 
@@ -390,7 +408,7 @@ The directive's 10-step loop, annotated with what's real in this pass:
 2. Understand goals — **built** (`goals`).
 3. Detect constraints — **built** (`constraints`, plus unmet
    `transition_requirements` computed live).
-4. Identify opportunities — **not built** (needs §11 wiring).
+4. Identify opportunities — **wired** (see Opportunity Engine row above), narrow: only for a requirement an author explicitly linked to a capability.
 5. Determine unlock conditions — **built** (`action_if_unmet` on the
    nearest unmet requirement).
 6. Rank possible actions — **simplified** (`sequence_order`, not true
@@ -453,11 +471,13 @@ a bare string.
 
 ## 16. MVP vs. later phases
 
-**MVP (built this pass):** `intel_subjects`, `transitions`,
-`transition_requirements`, `goals`, `current_state_facts`,
-`constraints`, `recommendations`; `lib/intelligenceEngine.js`
-(`computeRecommendation`); one illustrative, clearly-labeled test
-transition + test subject; an internal (non-public) API endpoint.
+**MVP (built across this pass and the Opportunity Engine follow-up):**
+`intel_subjects`, `transitions`, `transition_requirements` (now with
+`capability_id`), `goals`, `current_state_facts`, `constraints`,
+`recommendations` (now with `related_capability`);
+`lib/intelligenceEngine.js` (`computeRecommendation`, now wired to
+`lib/capabilityGraph.js`); two illustrative, clearly-labeled test
+transitions + one test subject; an internal (non-public) API endpoint.
 
 **Phase 2 (needs more platform maturity or real data, not more design):**
 real subject identity/auth (Gap 1); typed fact columns or a validated
@@ -510,18 +530,26 @@ is additive.
 
 ## 20. Recommended next implementation milestone
 
-Wire the Opportunity Engine to the capability registry (§11): pick one
-real `transition_requirements` row whose `requirement_key` can honestly
-map to an existing `capabilities.slug` (or add one new, honestly-scoped
-transition where that mapping is natural — e.g. a
-"documentation-incomplete → funding-ready" transition with a requirement
-that maps to `accounting_tax`), and extend `computeRecommendation()` to
-optionally attach the matching active/ready providers (if any exist —
-today there are none, so the honest output is still "no provider
-available yet," exactly like `capability-routing.js` already returns).
-This is the smallest next step that starts closing the "Opportunity"
-gap without inventing opportunity data, and it's the natural second half
-of the loop this pass's MVP already demonstrates one half of.
+**Done** (this was the milestone recommended when this document was
+first written, and it's now built — see §11 and the Opportunity Engine
+row in §12's table). `transition_requirements.capability_id` links a
+requirement to a real `capabilities` row; `computeRecommendation()`
+calls `lib/capabilityGraph.js`'s existing `getRoutingRecommendation()`
+directly; verified live by seeding a real provider mid-test and watching
+the next recommendation call pick it up with zero code change.
+
+**Next candidate milestone:** close Gap 7 — action/task tracking with a
+defined completion → fact update flow. Right now the loop stops at step
+7 (recommend); nothing lets a subject mark `action_if_unmet` done, and
+nothing defines whether that should auto-write a `current_state_facts`
+row or require a human/verification step first. This is the natural
+continuation of what's already built (steps 1–7 of the decision loop
+work end-to-end; 8–10 don't), and unlike Gap 1 (real identity/auth) or
+Gap 10 (already closed), it doesn't require a product decision outside
+engineering — the open question is narrowly: does a completed action
+create a `user_provided` fact automatically, or a `computed`/`inferred`
+one pending confirmation? That's worth deciding explicitly before
+building it, rather than defaulting silently.
 
 ## Testing performed
 
@@ -557,5 +585,20 @@ with real, scripted tests against a live local PostgreSQL 16 database:
   correct default — see §16 and the seed file), `200` with the same
   explainable data once flipped to `preview`, `404` again once restored
   to `internal`, plus `400` on non-integer `subjectId`/`goalId`.
+- **Opportunity Engine wiring (§11), re-verified after adding it:**
+  applied the updated schema (`transition_requirements.capability_id`,
+  `recommendations.related_capability`) cleanly; confirmed the second
+  seeded transition's `bookkeeping_current` requirement correctly links
+  to the `accounting_tax` capability; confirmed
+  `computeRecommendation()` returns `relatedCapability: null` for the
+  first (unlinked) scenario — a regression check on already-tested
+  behavior — and a real, non-null `relatedCapability` object for the
+  second, honestly reporting `available: false` while
+  `network_providers` is empty. Then seeded one real `active`/`is_ready`
+  provider mid-test and re-ran the same call: `relatedCapability
+  .available` flipped to `true` with 1 provider, with no code change —
+  proof the engine reads the registry live rather than caching a stale
+  answer. Re-ran the full prior test suite afterward to confirm no
+  regressions.
 - No local test infrastructure (Postgres cluster, scratch database) is
   part of this repository.

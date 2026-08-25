@@ -18,6 +18,10 @@
 -- The test subject is NOT a real person. Its label says so. Do not
 -- reuse subject id 1 for anything resembling a real user until real
 -- identity/auth exists (see ARCHITECTURE.md, Gap 1).
+--
+-- DEPENDS ON db/seed-capabilities.sql having already run — the second
+-- scenario below (Opportunity Engine wiring) looks up the
+-- 'accounting_tax' capability row by slug.
 
 INSERT INTO transitions (slug, name, from_state_label, to_state_label, description, category) VALUES
   ('renter_to_homebuyer_ready', 'Renter to Homebuyer-Ready', 'Renter', 'Homebuyer-Ready (illustrative)',
@@ -69,3 +73,44 @@ SELECT 1, g.id, 'credit',
   FALSE, t.id
 FROM goals g JOIN transitions t ON t.id = g.transition_id
 WHERE t.slug = 'renter_to_homebuyer_ready' AND g.subject_id = 1;
+
+-- ============================================================
+-- Second scenario — Opportunity Engine wiring
+-- ============================================================
+-- Deliberately a SEPARATE transition from the housing one above, rather
+-- than forcing a capability onto a requirement it doesn't honestly fit.
+-- 'bookkeeping_current' genuinely maps to the accounting_tax capability
+-- already seeded in db/seed-capabilities.sql — this is what lets
+-- lib/intelligenceEngine.js's chosen-unmet-requirement path call the
+-- real, already-tested capability registry instead of a second,
+-- invented one. network_providers is still empty, so the honest
+-- expected result is "no active provider yet" — that is correct
+-- behavior for this test, not a bug.
+
+INSERT INTO transitions (slug, name, from_state_label, to_state_label, description, category) VALUES
+  ('business_docs_to_funding_ready', 'Business Documentation to Funding-Ready', 'Documentation Incomplete', 'Funding-Ready (illustrative)',
+   'Illustrative transition used to test Opportunity Engine wiring to the capability registry. Not a claim that CHEW currently offers funding-readiness services.',
+   'business')
+ON CONFLICT (slug) DO NOTHING;
+
+INSERT INTO transition_requirements (transition_id, requirement_key, label, comparison, required_value, unit, sequence_order, action_if_unmet, capability_id)
+SELECT t.id, 'bookkeeping_current', 'Bookkeeping is current and reconciled', 'boolean_true', 'true', NULL, 1,
+  'Get your bookkeeping caught up and reconciled — this typically requires a licensed accounting/tax professional.',
+  c.id
+FROM transitions t, capabilities c
+WHERE t.slug = 'business_docs_to_funding_ready' AND c.slug = 'accounting_tax'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO transition_requirements (transition_id, requirement_key, label, comparison, required_value, unit, sequence_order, action_if_unmet)
+SELECT id, 'has_business_bank_account', 'Dedicated business bank account', 'boolean_true', 'true', NULL, 2,
+  'Open a bank account dedicated to the business, separate from personal accounts.'
+FROM transitions WHERE slug = 'business_docs_to_funding_ready'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO current_state_facts (subject_id, fact_key, fact_value, fact_type, source_note) VALUES
+  (1, 'bookkeeping_current', 'false', 'user_provided', NULL);
+-- has_business_bank_account is intentionally NOT seeded (missing fact).
+
+INSERT INTO goals (subject_id, transition_id, title, category, priority, target_date, status)
+SELECT 1, id, 'Get business funding-ready (example)', 'business', 1, (now() + interval '6 months')::date, 'active'
+FROM transitions WHERE slug = 'business_docs_to_funding_ready';

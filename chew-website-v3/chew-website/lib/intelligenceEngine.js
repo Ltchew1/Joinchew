@@ -15,8 +15,15 @@
 // row (by sequence_order) that current_state_facts doesn't satisfy.
 // sequence_order is an author's stated priority, not a computed
 // leverage score — see ARCHITECTURE.md's TransitionRequirement section.
+//
+// Opportunity Engine wiring (ARCHITECTURE.md §20 milestone): when the
+// chosen unmet requirement names a capability_id, this re-uses
+// lib/capabilityGraph.js's already-tested getRoutingRecommendation() to
+// report real provider availability for it — never a second, invented
+// data model. See db/schema.sql's "Opportunity Engine wiring" comment.
 
 const { query } = require('./db');
+const { getRoutingRecommendation } = require('./capabilityGraph');
 
 function evaluateRequirement(comparison, factValue, requiredValue) {
   if (factValue === undefined || factValue === null) return false;
@@ -56,12 +63,17 @@ async function computeRecommendation({ subjectId, goalId }) {
       basedOnFacts: {},
       basedOnConstraints: [],
       missingInformation: { reason: 'no_transition_matched' },
+      relatedCapability: null,
       computedAt: null,
     };
   }
 
   const requirementsResult = await query(
-    'SELECT * FROM transition_requirements WHERE transition_id = $1 ORDER BY sequence_order ASC',
+    `SELECT tr.*, c.slug AS capability_slug
+     FROM transition_requirements tr
+     LEFT JOIN capabilities c ON c.id = tr.capability_id
+     WHERE tr.transition_id = $1
+     ORDER BY tr.sequence_order ASC`,
     [goal.transition_id]
   );
   const requirements = requirementsResult.rows;
@@ -75,6 +87,7 @@ async function computeRecommendation({ subjectId, goalId }) {
       basedOnFacts: {},
       basedOnConstraints: [],
       missingInformation: { reason: 'no_requirements_defined' },
+      relatedCapability: null,
       computedAt: null,
     };
   }
@@ -135,6 +148,7 @@ async function computeRecommendation({ subjectId, goalId }) {
       basedOnFacts: evaluatedFacts,
       basedOnConstraints,
       missingInformation: { missingFactKeys: missingKeys },
+      relatedCapability: null,
     };
   } else {
     const evalEntry = evaluatedFacts[chosenRequirement.requirement_key];
@@ -144,6 +158,23 @@ async function computeRecommendation({ subjectId, goalId }) {
     const constraintNote = relevantConstraints.length
       ? ` CHEW also has ${relevantConstraints.length} unresolved constraint(s) on file for this transition.`
       : '';
+
+    // Opportunity Engine wiring: the chosen requirement may name a real
+    // capability. If so, ask the already-built, already-tested
+    // capability registry what it actually knows — never invent an
+    // answer here. Today this will almost always report
+    // available: false with zero providers, honestly, because
+    // network_providers is still empty.
+    let relatedCapability = null;
+    if (chosenRequirement.capability_slug) {
+      relatedCapability = await getRoutingRecommendation({ capabilitySlug: chosenRequirement.capability_slug });
+    }
+    const capabilityNote = relatedCapability
+      ? (relatedCapability.available
+          ? ` CHEW found ${relatedCapability.providers.length} active provider(s) for the "${relatedCapability.capability.name}" capability this requirement maps to.`
+          : ` This requirement maps to the "${relatedCapability.capability.name}" capability, but no active provider is available for it yet.`)
+      : '';
+
     result = {
       subjectId,
       goalId,
@@ -151,16 +182,17 @@ async function computeRecommendation({ subjectId, goalId }) {
       rationale: `"${chosenRequirement.label}" is the highest-priority unmet requirement for "${goal.title}" `
         + `(sequence ${chosenRequirement.sequence_order}). Current: ${currentDescription}. `
         + `Required: ${chosenRequirement.required_value}${chosenRequirement.unit ? ' ' + chosenRequirement.unit : ''} `
-        + `(${chosenRequirement.comparison}).${constraintNote}`,
+        + `(${chosenRequirement.comparison}).${constraintNote}${capabilityNote}`,
       basedOnFacts: evaluatedFacts,
       basedOnConstraints,
       missingInformation: { missingFactKeys: missingKeys },
+      relatedCapability,
     };
   }
 
   const insertResult = await query(
-    `INSERT INTO recommendations (subject_id, goal_id, recommended_action, rationale, based_on_facts, based_on_constraints, missing_information)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO recommendations (subject_id, goal_id, recommended_action, rationale, based_on_facts, based_on_constraints, missing_information, related_capability)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING id, computed_at`,
     [
       subjectId,
@@ -170,6 +202,7 @@ async function computeRecommendation({ subjectId, goalId }) {
       JSON.stringify(result.basedOnFacts),
       JSON.stringify(result.basedOnConstraints),
       JSON.stringify(result.missingInformation),
+      result.relatedCapability ? JSON.stringify(result.relatedCapability) : null,
     ]
   );
 

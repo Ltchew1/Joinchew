@@ -546,3 +546,19 @@ CREATE TABLE IF NOT EXISTS recommendations (
 );
 
 CREATE INDEX IF NOT EXISTS idx_recommendations_goal ON recommendations (goal_id);
+
+-- ============================================================
+-- Opportunity Engine wiring — ARCHITECTURE.md §20 milestone
+-- ============================================================
+-- Connects the intelligence layer to the ALREADY-BUILT capability
+-- registry (CAPABILITY_NETWORK.md) instead of forking a second
+-- "opportunity" data model. A transition_requirements row MAY name the
+-- capability that satisfies it; when the intelligence engine's chosen
+-- (unmet) requirement carries that link, it re-uses
+-- lib/capabilityGraph.js's already-tested getRoutingRecommendation() to
+-- report real provider availability — never invented. Today that will
+-- almost always mean "no provider available yet" honestly, because
+-- network_providers is still empty; that is the correct, not a broken,
+-- result.
+ALTER TABLE transition_requirements ADD COLUMN IF NOT EXISTS capability_id INTEGER REFERENCES capabilities (id);
+ALTER TABLE recommendations ADD COLUMN IF NOT EXISTS related_capability JSONB;
