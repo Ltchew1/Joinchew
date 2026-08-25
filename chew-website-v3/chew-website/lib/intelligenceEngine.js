@@ -250,12 +250,22 @@ async function computeRecommendation({ subjectId, goalId }) {
   return result;
 }
 
-// Marks a pending action completed. Only a boolean_true requirement's
-// completion is treated as evidence of the fact itself (the action IS
-// the fact — see db/schema.sql). A threshold requirement's completion
-// records that the activity happened, but returns honest `guidance`
-// asking for the actual updated value instead of inferring one.
-async function completeAction({ actionId, subjectId }) {
+// Marks a pending action completed. A boolean_true requirement's
+// completion is always treated as evidence of the fact itself (the
+// action IS the fact — see db/schema.sql). A threshold requirement
+// (gte/lte/eq) is never inferred from activity alone: the caller MUST
+// supply `factValue` — the subject's own report of the resulting number
+// — to complete it, recorded as `user_provided`, exactly as trustworthy
+// (no more, no less) as any other self-reported fact.
+//
+// `factValue` is required, not optional-with-a-fallback-guidance, for a
+// deliberate reason: an action can only be completed once (its status
+// check below refuses a second attempt), so a completion that silently
+// accepted "no value" would leave the action permanently done with
+// nothing to show for it and no way to retry — a real dead end. An
+// action linked to a threshold requirement stays `pending` (and
+// completable again) until a real value is actually provided.
+async function completeAction({ actionId, subjectId, factValue }) {
   const actionResult = await query(
     'SELECT * FROM actions WHERE id = $1 AND subject_id = $2',
     [actionId, subjectId]
@@ -277,6 +287,21 @@ async function completeAction({ actionId, subjectId }) {
     requirement = reqResult.rows[0] || null;
   }
 
+  const hasFactValue = factValue !== undefined && factValue !== null && String(factValue).trim() !== '';
+
+  // Validate before writing anything — a bad or missing factValue must
+  // fail the whole call, leaving the action pending, not half-completed.
+  if (requirement && requirement.comparison !== 'boolean_true' && !hasFactValue) {
+    throw new Error(
+      `factValue is required to complete this action — completing the activity alone doesn't tell CHEW `
+      + `your new value for "${requirement.label}".`
+    );
+  }
+  if (requirement && hasFactValue && (requirement.comparison === 'gte' || requirement.comparison === 'lte')
+      && Number.isNaN(parseFloat(factValue))) {
+    throw new Error(`factValue must be numeric for a "${requirement.comparison}" requirement.`);
+  }
+
   let resultingFactId = null;
   let factCreated = false;
   let guidance = null;
@@ -291,9 +316,16 @@ async function completeAction({ actionId, subjectId }) {
     resultingFactId = factInsertResult.rows[0].id;
     factCreated = true;
   } else if (requirement) {
-    guidance = `Completing this action doesn't tell CHEW your new value for "${requirement.label}" — `
-      + `doing the work isn't the same as knowing the result. Please provide an updated fact for `
-      + `"${requirement.requirement_key}" so your recommendation can reflect it.`;
+    // hasFactValue is guaranteed true here — the guard above already
+    // rejected the missing/invalid cases.
+    const factInsertResult = await query(
+      `INSERT INTO current_state_facts (subject_id, fact_key, fact_value, fact_type, source_note)
+       VALUES ($1, $2, $3, 'user_provided', $4)
+       RETURNING id`,
+      [subjectId, requirement.requirement_key, String(factValue).trim(), `Self-reported by completing action #${action.id}.`]
+    );
+    resultingFactId = factInsertResult.rows[0].id;
+    factCreated = true;
   } else {
     guidance = 'This action has no linked requirement, so completing it does not update any stored fact.';
   }

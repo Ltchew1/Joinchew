@@ -582,10 +582,13 @@ ALTER TABLE recommendations ADD COLUMN IF NOT EXISTS related_capability JSONB;
 --   - For a `gte` / `lte` / `eq` requirement (a threshold, e.g. "raise
 --     your credit score toward 620"), completing the *activity* does
 --     NOT tell CHEW the new value — doing the work is not the same as
---     knowing the resulting number. Completion does NOT auto-create a
---     fact in this case; it returns honest guidance asking for an
---     updated fact instead. Never infer a threshold value from activity
---     completion.
+--     knowing the resulting number. Never infer a threshold value from
+--     activity completion. A caller MUST supply the subject's own
+--     reported value (still `user_provided`, not upgraded to
+--     'verified') to complete this kind of action — completion is
+--     refused, not silently accepted with no fact, so the action stays
+--     `pending` and can be retried with a real value instead of
+--     reaching a dead end (an action can only be completed once).
 -- lib/intelligenceEngine.js's completeAction() is the only code path
 -- that writes resulting_fact_id — do not set it by hand.
 

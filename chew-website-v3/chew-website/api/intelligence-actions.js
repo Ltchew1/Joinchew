@@ -11,7 +11,10 @@
 // subject/user identity system exists yet (ARCHITECTURE.md Gap 1).
 //
 // GET  /api/intelligence-actions?subjectId=1[&status=pending]
-// POST /api/intelligence-actions { subjectId, actionId }
+// POST /api/intelligence-actions { subjectId, actionId, factValue? }
+//   factValue is required to complete an action linked to a
+//   gte/lte/eq requirement (CHEW will not guess it); omit it for a
+//   boolean_true requirement, where completion alone is the fact.
 
 const { completeAction, listActions, computeRecommendation } = require('../lib/intelligenceEngine');
 const { isFeatureActive } = require('../lib/featureFlags');
@@ -40,14 +43,14 @@ module.exports = async (req, res) => {
       return res.status(200).json({ actions });
     }
 
-    const { subjectId, actionId } = req.body || {};
+    const { subjectId, actionId, factValue } = req.body || {};
     const subjectIdNum = parseInt(subjectId, 10);
     const actionIdNum = parseInt(actionId, 10);
     if (!Number.isInteger(subjectIdNum) || !Number.isInteger(actionIdNum)) {
       return res.status(400).json({ error: 'subjectId and actionId (integers) are required.' });
     }
 
-    const completion = await completeAction({ actionId: actionIdNum, subjectId: subjectIdNum });
+    const completion = await completeAction({ actionId: actionIdNum, subjectId: subjectIdNum, factValue });
     const recommendation = await computeRecommendation({ subjectId: subjectIdNum, goalId: completion.goalId });
     return res.status(200).json({ completion, recommendation });
   } catch (err) {
@@ -56,6 +59,9 @@ module.exports = async (req, res) => {
     }
     if (err.message.startsWith('Action is already')) {
       return res.status(409).json({ error: err.message });
+    }
+    if (err.message.startsWith('factValue')) {
+      return res.status(400).json({ error: err.message });
     }
     console.error('intelligence-actions error:', err.message);
     return res.status(500).json({ error: 'Unable to process action.' });

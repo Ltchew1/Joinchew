@@ -247,14 +247,20 @@ The directive treats Action and Task as first-class trackable entities
   `boolean_true` requirement's completion **is** the fact (self-reported,
   `user_provided` — never silently upgraded to `verified`) and
   auto-creates a `current_state_facts` row. A threshold requirement's
-  (`gte`/`lte`/`eq`) completion is **not** treated as evidence of the new
-  value — "did the activity" is not "knows the resulting number" — so no
-  fact is created; the caller gets honest `guidance` asking for an
-  updated fact instead. Both paths verified end-to-end: completing a
-  `boolean_true` action created a real fact and the next recommendation
-  moved to the following requirement; completing a threshold action left
-  the underlying fact (credit score, still `580`) untouched and CHEW
-  kept recommending the same real gap rather than pretending it closed.
+  (`gte`/`lte`/`eq`) completion is **never inferred** from the activity
+  alone — "did the activity" is not "knows the resulting number" — so
+  `completeAction()` **requires** the caller to supply `factValue` (the
+  subject's own report of the new number, still `user_provided`) to
+  complete this kind of action at all. Completing without one is
+  refused with a clear error and the action stays `pending`, retryable
+  — a deliberate fix to an earlier version of this design that let a
+  threshold action complete with no fact and no way to add one later
+  (an action can only be completed once), which would have been a real
+  dead end. Verified end-to-end for both paths: a `boolean_true` action
+  completed with no `factValue` still auto-creates its fact; a threshold
+  action rejected an empty and a non-numeric `factValue`, then succeeded
+  once given a real number, correctly advancing the next recommendation
+  to the following unmet requirement.
 - Phase: MVP.
 
 ### Outcome (conceptual)
@@ -516,12 +522,12 @@ UI once there's more than one real transition; compound requirement
 logic (AND/OR, conditional requirements) beyond simple threshold
 comparison; goal conflict detection; household/multi-subject support;
 Education/Skill/Credential as real tables once `education_programs` has
-data; a completion flow for `gte`/`lte`/`eq` requirements that prompts
-for the actual updated value rather than just returning `guidance` text
-(today the guidance is generated but nothing captures the follow-up fact
-in the same interaction — the subject has to make a separate call to
-whatever writes `current_state_facts`, which this pass doesn't build a
-public entry point for at all).
+data; a dedicated, general-purpose "report a new fact" entry point not
+tied to completing a specific action (today `current_state_facts` can
+only be written by the seed files, a `boolean_true` action completion,
+or a threshold action completion's `factValue` — there's still no way
+for a subject to update, say, their income out of the blue, unrelated to
+any pending action).
 
 **Phase 3+ (advanced automation, integration, prediction):** outcome
 tracking beyond action completion — did the *transition itself* actually
@@ -584,22 +590,32 @@ never do (doing the work isn't knowing the result), returning honest
 that a threshold completion leaves the real fact value genuinely
 unchanged rather than fabricating progress.
 
-**Next candidate milestone:** give threshold-requirement completions
-somewhere to actually send the follow-up value. Right now
-`completeAction()` correctly *refuses* to guess a new credit score or
-savings balance, but there's no public entry point in this repository
-for a subject to then report that updated number — the only way a
-`current_state_facts` row gets written today is a direct database
-insert (as the seed files do) or an auto-created `boolean_true`
-completion. A small `POST /api/intelligence-facts` (or extending
-`api/intelligence-actions.js`'s completion payload to optionally accept
-`{ factValue }` for threshold requirements) would close that gap without
-touching the comparison/evaluation logic already built and tested. This
-is a smaller, narrower milestone than Gap 1 (real identity) or Gap 4
-(transitions authorable outside a deploy) and doesn't require a new
-product decision — the honesty rule (never infer a threshold value) is
-already decided; this just gives the subject a legitimate way to supply
-it themselves.
+**Done #3** — threshold-requirement completions now accept the
+follow-up value. `completeAction({ actionId, subjectId, factValue })`
+requires `factValue` to complete an action linked to a `gte`/`lte`/`eq`
+requirement — completion is refused (not silently accepted with no
+fact) when it's missing or non-numeric where numeric is expected, and
+the action stays `pending`, retryable. This closed a real design flaw
+caught while building it, not just a documentation gap: an earlier
+version of this milestone let a threshold action complete without a
+value and then had no way to add one later, because an action can only
+be completed once — a genuine dead end, fixed before it shipped.
+`api/intelligence-actions.js`'s `POST` body now accepts `factValue`
+directly, so completion and the follow-up value travel in one request.
+Verified end-to-end: empty and non-numeric `factValue` both correctly
+rejected; a valid one created a real `user_provided` fact and the very
+next recommendation call correctly advanced past the now-met
+requirement; `boolean_true` completions (no `factValue` needed)
+unaffected.
+
+**Next candidate milestone:** a general-purpose "report a new fact"
+entry point, not tied to completing a specific action. Every
+`current_state_facts` write today happens through one of three narrow
+paths — a seed file, a `boolean_true` action completion, or a threshold
+action's `factValue` — so a subject still can't, say, just update their
+income when nothing is currently blocking on it. This is the last piece
+needed before Gap 1 (real subject identity) becomes the actual limiting
+factor rather than an API gap.
 
 ## Testing performed
 
@@ -676,5 +692,19 @@ with real, scripted tests against a live local PostgreSQL 16 database:
   `intelligence_engine` is `internal`, by first hitting it un-flipped and
   getting `{"error":"Not found"}` before flipping the flag for the rest
   of the test.
+- **factValue for threshold completions, re-verified after adding it:**
+  confirmed completing a `gte`-linked action with no `factValue` throws
+  and leaves the action `pending` (retryable, not stuck); confirmed a
+  non-numeric `factValue` for a `gte` requirement is rejected the same
+  way; confirmed a valid numeric `factValue` creates a real fact and the
+  very next `computeRecommendation()` call for that goal advances past
+  the newly-met requirement to the next one by `sequence_order`;
+  confirmed retrying the now-completed action still correctly errors;
+  confirmed `boolean_true` completions are unaffected (no `factValue`
+  required or used). `api/intelligence-actions.js`'s `POST` verified for
+  both the `400` (missing `factValue`) and `200` (valid `factValue`,
+  returning the completion and recomputed recommendation together)
+  cases. This test also surfaced and fixed the dead-end design flaw
+  described in §20 before it was committed.
 - No local test infrastructure (Postgres cluster, scratch database) is
   part of this repository.
