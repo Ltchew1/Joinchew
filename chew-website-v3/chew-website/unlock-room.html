@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Unlock Room (Early Preview) | CHEW</title>
+<meta name="description" content="Manipulate CHEW's real requirement chain by hand. Toggle any real condition and watch its barrier physically open — a sandbox over CHEW's actual rules, seeded from a real illustrative starting state, never written to a database.">
+<link rel="canonical" href="https://www.joinchew.com/unlock-room.html">
+<meta name="robots" content="noindex, follow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="brand">
+      <img src="assets/chew-icon-official.png" alt="" width="40" height="40">
+      CHEW
+    </a>
+    <nav class="nav" id="site-nav">
+      <a href="index.html">Home</a>
+      <a href="how-it-works.html">How It Works</a>
+      <a href="services.html">Programs</a>
+      <a href="blueprint.html">Blueprint</a>
+      <a href="philosophy.html">Philosophy</a>
+      <a href="education.html">Education</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="apply.html" class="btn btn-gold btn-sm">I'm Ready to Chew</a>
+    </div>
+    <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="site-nav">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="hero-glow"></div>
+    <div class="container" style="position:relative;">
+      <span class="eyebrow">Early Preview &middot; Not a Finished Product</span>
+      <h1 style="max-width:24ch;">Put your hand on CHEW's real requirement chain.</h1>
+      <p class="max-prose" style="font-size:1.05rem; margin-top:16px;">
+        Every barrier below is a real requirement from CHEW's rules engine, seeded from a real
+        illustrative starting state. Flip any lock and watch CHEW respond honestly &mdash; this is
+        a sandbox for exploring the actual chain, not a prediction about you, and nothing you do
+        here is saved.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0;">
+    <div class="container">
+      <div class="unlockroom-scenario-picker" id="unlockroom-scenario-picker" role="group" aria-label="Choose an example scenario" data-reveal>
+        <button type="button" class="unlockroom-scenario-btn" data-goal="home">Buy a home</button>
+        <button type="button" class="unlockroom-scenario-btn" data-goal="funding">Get business funding-ready</button>
+      </div>
+      <p class="netroom-status" id="unlockroom-status" role="status" aria-live="polite"></p>
+
+      <div id="unlockroom-body" hidden>
+        <div class="unlockroom-stat-row">
+          <span class="unlockroom-stat-num" id="unlockroom-stat-num">0</span>
+          <span class="unlockroom-stat-label">of <span id="unlockroom-stat-total">0</span> real barriers open</span>
+        </div>
+
+        <div class="unlockroom-vault">
+          <ol class="unlockroom-corridor" id="unlockroom-corridor" aria-label="CHEW's real requirement chain for this scenario"></ol>
+          <div class="unlockroom-pathway" aria-hidden="true">
+            <div class="unlockroom-pathway-fill" id="unlockroom-pathway-fill"></div>
+          </div>
+        </div>
+
+        <div class="unlockroom-reset-row">
+          <button type="button" class="unlockroom-reset-btn" id="unlockroom-reset-btn">Reset to CHEW's real current state</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--panel">
+    <div class="container max-prose">
+      <span class="eyebrow">What This Actually Is</span>
+      <h2>Real conditions, hand-toggled &mdash; never saved, never guessed.</h2>
+      <p>
+        Every barrier is a real row from <code>transition_requirements</code>, and each one starts
+        exactly where CHEW's real rules engine says this illustrative scenario actually stands
+        today &mdash; some already open, most not. Flipping a lock only changes what's shown on
+        your screen; it never calls CHEW's real completion path and never touches the database, so
+        experimenting here can't corrupt this demo for the next visitor. Where a barrier connects
+        to a real capability in CHEW's registry, that connection &mdash; and whether a provider is
+        actually active for it &mdash; is shown honestly, the same live data the Network Room and
+        Opportunity Radar read from.
+      </p>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var pickerEl = document.getElementById('unlockroom-scenario-picker');
+  var statusEl = document.getElementById('unlockroom-status');
+  var bodyEl = document.getElementById('unlockroom-body');
+  var corridorEl = document.getElementById('unlockroom-corridor');
+  var pathwayFillEl = document.getElementById('unlockroom-pathway-fill');
+  var statNumEl = document.getElementById('unlockroom-stat-num');
+  var statTotalEl = document.getElementById('unlockroom-stat-total');
+  var resetBtn = document.getElementById('unlockroom-reset-btn');
+
+  var requirementSequence = null;
+  var capabilityOverview = null;
+  var realFacts = null;   // the real, fetched met/unmet state — never mutated
+  var doorState = null;   // the visitor's hypothetical toggle state — client-only
+
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  }
+
+  var LEAF_GLYPH_HALF =
+    '<svg class="unlockroom-leaf-glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+    '<path class="shackle" d="M8 10V7a4 4 0 0 1 8 0v3" stroke-width="2" stroke-linecap="round"/>' +
+    '<rect class="body" x="5" y="10" width="14" height="10" rx="2" stroke-width="2"/>' +
+    '</svg>';
+
+  function capabilityNote(tile) {
+    if (!tile.capabilitySlug) return null;
+    var cap = capabilityOverview ? capabilityOverview.filter(function (c) { return c.slug === tile.capabilitySlug; })[0] : null;
+    if (!cap) return 'Connected to: ' + escapeHtml(tile.capabilityName) + '.';
+    return 'Connected to: ' + escapeHtml(tile.capabilityName) + ' &mdash; ' +
+      (cap.available ? cap.activeProviderCount + ' active provider' + (cap.activeProviderCount === 1 ? '' : 's') + '.' : 'no active provider yet.');
+  }
+
+  function renderCorridor() {
+    corridorEl.innerHTML = requirementSequence.map(function (tile, i) {
+      var isOpen = !!doorState[tile.key];
+      var capNote = capabilityNote(tile);
+      return '<li class="unlockroom-door ' + (isOpen ? 'is-unlocked' : 'is-locked') + '" data-key="' + tile.key + '">' +
+        '<div class="unlockroom-leaf unlockroom-leaf--left">' + LEAF_GLYPH_HALF + '</div>' +
+        '<div class="unlockroom-leaf unlockroom-leaf--right"></div>' +
+        '<div class="unlockroom-door-content">' +
+        '<button type="button" class="unlockroom-lock-btn" role="switch" aria-checked="' + isOpen + '" data-key="' + tile.key + '">' +
+        '<span class="unlockroom-door-num">' + (i + 1) + '</span>' +
+        '<span class="unlockroom-lock-state-text">' + (isOpen ? 'Open' : 'Locked') + '</span></button>' +
+        '<span class="unlockroom-door-title">' + escapeHtml(tile.label) + '</span>' +
+        '<span class="unlockroom-door-note">' + (isOpen ? 'This condition is met.' : escapeHtml(tile.actionIfUnmet || 'Not yet met.')) + '</span>' +
+        (capNote ? '<span class="unlockroom-door-cap">' + capNote + '</span>' : '') +
+        '</div></li>';
+    }).join('');
+
+    corridorEl.querySelectorAll('.unlockroom-lock-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var key = btn.getAttribute('data-key');
+        doorState[key] = !doorState[key];
+        updateDoor(key);
+        updateStats();
+      });
+    });
+
+    updateStats();
+  }
+
+  function updateDoor(key) {
+    var doorEl = corridorEl.querySelector('.unlockroom-door[data-key="' + key + '"]');
+    var btnEl = corridorEl.querySelector('.unlockroom-lock-btn[data-key="' + key + '"]');
+    var isOpen = !!doorState[key];
+    doorEl.classList.toggle('is-unlocked', isOpen);
+    doorEl.classList.toggle('is-locked', !isOpen);
+    btnEl.setAttribute('aria-checked', String(isOpen));
+    btnEl.querySelector('.unlockroom-lock-state-text').textContent = isOpen ? 'Open' : 'Locked';
+    var tile = requirementSequence.filter(function (t) { return t.key === key; })[0];
+    doorEl.querySelector('.unlockroom-door-note').textContent = isOpen ? 'This condition is met.' : (tile.actionIfUnmet || 'Not yet met.');
+  }
+
+  function updateStats() {
+    var keys = requirementSequence.map(function (t) { return t.key; });
+    var openCount = keys.filter(function (k) { return doorState[k]; }).length;
+    statNumEl.textContent = openCount;
+    statTotalEl.textContent = keys.length;
+
+    var consecutive = 0;
+    for (var i = 0; i < keys.length; i++) {
+      if (doorState[keys[i]]) consecutive++; else break;
+    }
+    var pct = keys.length ? Math.round((consecutive / keys.length) * 100) : 0;
+    pathwayFillEl.style.width = pct + '%';
+  }
+
+  function runScenario(goal) {
+    pickerEl.querySelectorAll('.unlockroom-scenario-btn').forEach(function (b) {
+      b.classList.toggle('is-active', b.getAttribute('data-goal') === goal);
+    });
+    statusEl.textContent = 'CHEW is loading the real chain…';
+    bodyEl.hidden = true;
+
+    fetch('/api/intelligence-demo?goal=' + encodeURIComponent(goal))
+      .then(function (res) {
+        if (!res.ok) return res.json().then(function (d) { throw new Error(d.error || 'Lookup failed'); });
+        return res.json();
+      })
+      .then(function (data) {
+        statusEl.textContent = '';
+        requirementSequence = data.requirementSequence || [];
+        capabilityOverview = data.capabilityOverview || null;
+        realFacts = data.recommendation.basedOnFacts;
+        doorState = {};
+        requirementSequence.forEach(function (t) {
+          doorState[t.key] = !!(realFacts[t.key] && realFacts[t.key].met);
+        });
+        renderCorridor();
+        bodyEl.hidden = false;
+        if (!reduceMotion) bodyEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      })
+      .catch(function (err) {
+        statusEl.textContent = err.message || 'CHEW could not load this scenario right now.';
+      });
+  }
+
+  pickerEl.querySelectorAll('.unlockroom-scenario-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () { runScenario(btn.getAttribute('data-goal')); });
+  });
+
+  resetBtn.addEventListener('click', function () {
+    if (!requirementSequence) return;
+    doorState = {};
+    requirementSequence.forEach(function (t) {
+      doorState[t.key] = !!(realFacts[t.key] && realFacts[t.key].met);
+    });
+    requirementSequence.forEach(function (t) { updateDoor(t.key); });
+    updateStats();
+  });
+})();
+</script>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-legal">
+      <span>&copy; 2026 CHEW LLC. All rights reserved.</span>
+      <span>CHEW LLC is a financial education and business-infrastructure company. CHEW does not provide credit repair services, does not promise or guarantee funding, approvals, score changes, or removal of information, and does not provide legal, tax, or investment advice. Results depend on individual circumstances, participation, and third-party decisions. See our <a href="disclaimer.html" style="color:inherit;">disclaimer</a>.</span>
+    </div>
+  </div>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>

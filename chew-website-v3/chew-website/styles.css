@@ -1098,6 +1098,108 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   .netroom-connector { flex-basis: auto; padding: 2px 0; transform: rotate(90deg); }
 }
 
+/* CHEW Unlock Room: real requirementSequence + basedOnFacts + capabilityOverview
+   from /api/intelligence-demo, rendered as toggleable vault doors seeded from
+   the real current state. Toggling is a client-side "what if" sandbox — never
+   written to the database. See unlock-room.html. */
+.unlockroom-scenario-picker { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.unlockroom-scenario-btn {
+  padding: 12px 22px; border-radius: var(--radius); background: var(--panel);
+  border: 1px solid var(--panel-border-soft); color: var(--text-muted); font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; transition: border-color 0.3s ease, color 0.3s ease, background 0.3s ease;
+}
+.unlockroom-scenario-btn:hover, .unlockroom-scenario-btn:focus-visible { border-color: var(--gold); color: var(--text); }
+.unlockroom-scenario-btn.is-active { border-color: var(--gold-light); background: rgba(201,162,39,0.12); color: var(--text); }
+
+.unlockroom-stat-row { display: flex; justify-content: center; align-items: baseline; gap: 10px; margin: 22px 0 0; }
+.unlockroom-stat-num { font-family: var(--font-display); font-size: 2.6rem; font-style: italic; color: var(--gold-light); line-height: 1; }
+.unlockroom-stat-label { font-size: 0.86rem; color: var(--text-faint); }
+
+.unlockroom-vault {
+  position: relative; margin-top: 34px; padding: 40px 30px 26px;
+  border-radius: calc(var(--radius) * 2); background: radial-gradient(ellipse at 50% 0%, rgba(201,162,39,0.07), rgba(0,0,0,0) 70%), var(--black-soft);
+  border: 1px solid var(--panel-border-soft);
+}
+.unlockroom-corridor { list-style: none; margin: 0; padding: 0 0 6px; display: flex; align-items: stretch; gap: 10px; overflow-x: auto; }
+
+.unlockroom-door {
+  flex: 0 0 240px; min-height: 280px; border-radius: var(--radius); text-align: left; position: relative;
+  overflow: hidden; perspective: 700px;
+  background: radial-gradient(circle at 50% 20%, rgba(255,255,255,0.03), rgba(0,0,0,0.25) 75%);
+  border: 1px solid var(--panel-border);
+  transition: border-color 0.5s ease, box-shadow 0.5s ease, transform 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+.unlockroom-door.is-locked { filter: saturate(0.55) brightness(0.92); }
+.unlockroom-door.is-unlocked {
+  border-color: var(--gold-light);
+  box-shadow: 0 0 40px rgba(232,206,122,0.28), inset 0 0 50px rgba(232,206,122,0.08);
+  transform: translateY(-3px);
+}
+
+.unlockroom-door-content { position: relative; z-index: 1; height: 100%; padding: 22px 18px; display: flex; flex-direction: column; }
+
+/* The vault leaves: two solid panels covering the content while locked,
+   swinging open in 3D on unlock — a physical barrier dissolve rather than
+   a fading line. Center glyph doubles as the seam's rivet line. */
+.unlockroom-leaf {
+  position: absolute; top: 0; bottom: 0; width: 50%; z-index: 2;
+  background: linear-gradient(135deg, #201c11, #0c0b07 70%);
+  display: flex; align-items: center; justify-content: center;
+  backface-visibility: hidden; pointer-events: none;
+  transition: transform 0.75s cubic-bezier(0.65,0,0.35,1), opacity 0.6s ease 0.1s;
+}
+.unlockroom-leaf--left { left: 0; border-right: 1px solid rgba(0,0,0,0.5); transform-origin: left center; justify-content: flex-end; padding-right: 4px; }
+.unlockroom-leaf--right { right: 0; border-left: 1px solid rgba(232,206,122,0.08); transform-origin: right center; justify-content: flex-start; padding-left: 4px; }
+.unlockroom-leaf-glyph { width: 30px; height: 30px; opacity: 0.55; }
+.unlockroom-leaf-glyph .shackle { stroke: var(--text-faint); transition: transform 0.5s cubic-bezier(0.34,1.56,0.64,1), stroke 0.4s ease; transform-origin: 50% 68%; }
+.unlockroom-leaf-glyph .body { stroke: var(--text-faint); fill: rgba(255,255,255,0.04); transition: stroke 0.4s ease, fill 0.4s ease; }
+
+.unlockroom-door.is-unlocked .unlockroom-leaf--left { transform: rotateY(-100deg); opacity: 0; }
+.unlockroom-door.is-unlocked .unlockroom-leaf--right { transform: rotateY(100deg); opacity: 0; }
+.unlockroom-door.is-unlocked .unlockroom-leaf-glyph .shackle { transform: translateY(-4px) rotate(-18deg); stroke: var(--gold-light); }
+.unlockroom-door.is-unlocked .unlockroom-leaf-glyph .body { stroke: var(--gold-light); fill: rgba(201,162,39,0.18); }
+
+.unlockroom-lock-btn {
+  display: flex; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; padding: 0;
+  margin-bottom: auto; color: var(--text-faint); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  align-self: flex-start;
+}
+.unlockroom-lock-btn:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; }
+.unlockroom-lock-state-text { color: inherit; }
+.unlockroom-door-num {
+  display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%;
+  border: 1px solid var(--panel-border); font-size: 0.68rem; color: var(--text-faint); margin-bottom: 12px;
+}
+.unlockroom-door.is-unlocked .unlockroom-door-num { border-color: var(--gold-light); color: var(--gold-light); }
+
+.unlockroom-door-title { display: block; font-size: 0.96rem; font-weight: 600; color: var(--text); margin: 12px 0 6px; line-height: 1.35; }
+.unlockroom-door-note { display: block; font-size: 0.79rem; color: var(--text-muted); line-height: 1.5; }
+.unlockroom-door-cap { display: block; font-size: 0.74rem; color: var(--text-faint); margin-top: auto; padding-top: 12px; border-top: 1px dashed var(--panel-border); }
+.unlockroom-door.is-unlocked .unlockroom-door-cap { color: var(--gold-light); border-top-color: rgba(232,206,122,0.3); }
+
+.unlockroom-pathway { position: relative; height: 4px; margin-top: 22px; border-radius: 2px; background: rgba(255,255,255,0.06); overflow: hidden; }
+.unlockroom-pathway-fill {
+  position: absolute; top: 0; left: 0; bottom: 0; width: 0%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold-deep), var(--gold-light));
+  transition: width 0.6s cubic-bezier(0.22,1,0.36,1);
+  box-shadow: 0 0 12px rgba(232,206,122,0.5);
+}
+.unlockroom-reset-row { text-align: center; margin-top: 22px; }
+.unlockroom-reset-btn {
+  background: none; border: none; color: var(--text-faint); font-size: 0.8rem; text-decoration: underline; cursor: pointer; padding: 4px 8px;
+}
+.unlockroom-reset-btn:hover { color: var(--text-muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  .unlockroom-door, .unlockroom-leaf, .unlockroom-leaf-glyph .shackle, .unlockroom-leaf-glyph .body, .unlockroom-pathway-fill {
+    transition: none !important;
+  }
+}
+@media (max-width: 760px) {
+  .unlockroom-corridor { flex-direction: column; overflow-x: visible; }
+  .unlockroom-door { flex-basis: auto; }
+}
+
 /* ---------- Closing / legacy section ---------- */
 .legacy-close { position: relative; overflow: hidden; padding: 112px 0; }
 .legacy-close .hero-glow { opacity: 0.7; }

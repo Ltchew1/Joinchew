@@ -552,6 +552,34 @@ horizontally (`overflow-x: auto` on a real `<ol>`) and collapses to a
 vertical stack with rotated connectors on mobile, mirroring the existing
 Domino pattern. Confirmed zero JavaScript console errors throughout.
 
+## The Unlock Room — CHEW's real requirement chain, hand-toggleable (unlock-room.html)
+
+Reuses `/api/intelligence-demo` (same real `requirementSequence`,
+`basedOnFacts`, and `capabilityOverview` Domino, Future-Back, and the
+Radar already read). Each real requirement renders as a vault door,
+seeded open/closed from the real current `met` state. The visitor can
+flip any door — a client-only hypothetical toggle, never written back,
+never calling `completeAction()`. Doors are real 3D-transformed leaf
+panels (`rotateY`) that physically swing open on unlock rather than a
+fading line, with a live "N of N barriers open" count and a pathway-fill
+bar showing how far the sequence is consecutively clear from the start —
+both simple, honest counts derived from the visitor's own toggles, not a
+re-implementation of the engine's real prioritization logic (deliberately
+not attempted client-side, to avoid the chain drifting from what the
+server would actually compute). Where a requirement links to a real
+capability, the door shows that capability's real live provider count,
+cross-referenced from `capabilityOverview` exactly as the Radar does.
+
+Tested both scenarios across desktop, mobile, and reduced-motion: real
+starting lock states matched the live API exactly (home: 1 of 3 open,
+`documented_income` only; funding: 0 of 2), toggle correctly flips
+classes/`aria-checked`/stat count/pathway fill, keyboard `Enter` toggles
+identically to a click, "Reset to CHEW's real current state" restores the
+exact original count, zero JS console errors. Caught and fixed a real bug
+before shipping: the corridor `<ol>` had no `list-style: none`, so
+browser-default numbers rendered as stray "2." "3." markers floating
+outside the card edges — fixed, verified by screenshot.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
@@ -618,13 +646,14 @@ the following exist in this repository yet:
     specifically (it needs invented hypothetical timeline data with no real
     computed basis, unlike Future-Back — see above, and per direct
     instruction this stays unbuilt until a legitimate scenario-modeling
-    layer exists), the five remaining browseable rooms (Unlock Room,
-    Future Room, Wealth World, Simulation Room, CHEW Lab — Network Room is
-    no longer on this list, see above), sound design, and a bespoke mobile
-    choreography beyond the existing responsive breakpoints (CHEW Blind
-    Spot, CHEW Domino, the Opportunity Radar, Future-Back, and the Network
-    Room are no longer on this list — see above, all five now built). None
-    of these need a capability this repo lacks to build as a
+    layer exists), the four remaining browseable rooms (Future Room,
+    Wealth World, Simulation Room, CHEW Lab — Network Room and Unlock Room
+    are no longer on this list, see above), sound design, and a bespoke
+    mobile choreography beyond the existing responsive breakpoints (CHEW
+    Blind Spot, CHEW Domino, the Opportunity Radar, Future-Back, the
+    Network Room, and the Unlock Room are no longer on this list — see
+    above, all six now built). None of these need a capability this repo
+    lacks to build as a
     clearly-labeled demo/sample exhibit — they're exactly the kind of
     thing this directive now explicitly permits. They weren't built in
     this pass because the directive's own "Implementation Discipline"
