@@ -233,6 +233,70 @@ content:
   under `prefers-reduced-motion`, and readable at a 390px mobile
   viewport.
 
+## CHEW Domino — a real cascade simulation with a hard safety rule
+
+The directive's example ("Complete documentation → readiness improves →
+pathway opens → requirement clears → milestone activates → opportunity
+appears") maps onto a real capability of this repo's intelligence
+engine: completing a requirement really does change which requirement
+becomes CHEW's next real focus, and that's already fully built and
+tested (see the action/task tracking and Opportunity Engine wiring
+milestones). The design question this moment forced was **whether the
+public demo should call that real, database-writing code path** — and
+the answer had to be no.
+
+Both this feature and the existing "Tell CHEW where you're trying to
+go" section share one fixed, seeded illustrative subject
+(`intel_subjects` id 1). If a public, unauthenticated, repeatable-by-
+anyone "Domino" button actually called `completeAction()`, the first
+visitor to click it would permanently alter that shared subject's real
+facts — completing `credit_score` for real would silently change the
+housing scenario's starting state for every visitor after them, and a
+second click on an already-completed action would just fail outright
+(actions can only be completed once). There's no per-visitor identity
+in this repo to sandbox a private copy of the scenario against (Gap 1),
+so a mutating public demo would either break itself after one use or
+require infrastructure this pass doesn't build.
+
+The resolution: `api/intelligence-demo.js` now also returns
+`requirementSequence` — the real, ordered `transition_requirements` rows
+for the scenario (with real capability links where they exist), a
+read-only enrichment, same class of non-sensitive rules metadata
+`api/business-path.js` already exposes. The frontend uses this plus the
+already-fetched real current facts to **simulate exactly one step
+forward** — treating the currently-chosen requirement as if it had just
+been completed, and showing the real, deterministic consequence of that
+(which requirement becomes the next real focus, whether it's tied to a
+real capability) — without calling `completeAction()` or writing
+anything. The panel is labeled explicitly: *"Simulated walkthrough of
+CHEW's real rules for this example, in order — nothing here is saved or
+completed for real."* This is deliberately bounded to one hypothetical
+step, not a chain of invented completions, to stay as close to "real"
+as an unauthenticated demo honestly can.
+
+Building this caught a real latent bug before it shipped: the initial
+version located "the next tile" by checking `tiles[chosenIndex + 1]`
+against the rendered DOM list, which — for the edge case where the
+chosen requirement happens to be the *last* one in sequence — would
+have matched the synthetic "Pathway Clear" tile as if it were a real
+next requirement, then crashed accessing `undefined.capabilitySlug`.
+Neither seeded scenario naturally reaches that state (the chosen
+requirement is never actually last in either), so this wouldn't have
+surfaced in the two demo paths alone. Caught by deliberately forcing the
+edge case — inserting a real `credit_score = 700` fact so
+`down_payment_savings_cents` (the last item) became the chosen one — and
+verified fixed by checking against `requirementSequence.length` instead
+of DOM presence. Confirmed clean in the browser afterward: the "Pathway
+Clear" tile correctly activates with zero errors.
+
+Also verified: re-fetching `/api/intelligence-demo` immediately after
+running the Domino simulation confirms `chosenRequirementKey` is
+unchanged for both scenarios — direct proof the simulation performs zero
+writes, not just an assumption from reading the code. Tested instant
+behavior with zero animation under `prefers-reduced-motion`, and
+confirmed the capability connection line ("Connected to: Accounting /
+Tax") renders correctly on the funding scenario's first tile.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
@@ -291,11 +355,11 @@ the following exist in this repository yet:
     as "demo" would mean fabricating a history that was never seeded,
     which is different from labeling a single static scenario as an
     example).
-  - **Just not built yet, execution-bandwidth only**: CHEW Domino,
-    Parallel Futures, Future-Back Planning, Opportunity Radar, the five
-    "browseable rooms," sound design, and a bespoke mobile choreography
-    beyond the existing responsive breakpoints (CHEW Blind Spot is no
-    longer on this list — see above, now built). None
+  - **Just not built yet, execution-bandwidth only**: Parallel Futures,
+    Future-Back Planning, Opportunity Radar, the five "browseable
+    rooms," sound design, and a bespoke mobile choreography beyond the
+    existing responsive breakpoints (CHEW Blind Spot and CHEW Domino are
+    no longer on this list — see above, both now built). None
     of these need a capability this repo lacks to build as a
     clearly-labeled demo/sample exhibit — they're exactly the kind of
     thing this directive now explicitly permits. They weren't built in

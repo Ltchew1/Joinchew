@@ -296,9 +296,113 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
 
+    // CHEW Domino: simulates the real requirement chain cascading from
+    // this example's actual current state — NEVER a database write.
+    // requirementSequence and the current facts both come straight from
+    // the API response already fetched for this goal; the only
+    // "hypothetical" step is treating the one currently-chosen
+    // requirement as if it were just completed, then showing the real,
+    // deterministic consequence of that (which requirement becomes the
+    // next real focus, and whether it's tied to a real capability) —
+    // exactly one step forward, not a chain of invented completions.
+    var dominoSectionEl = document.getElementById('domino-section');
+    var dominoTriggerEl = document.getElementById('domino-trigger');
+    var dominoRowEl = document.getElementById('domino-row');
+    var dominoTimeouts = [];
+    var lastRequirementSequence = null;
+    var lastBasedOnFacts = null;
+    var lastChosenRequirementKey = null;
+
+    function clearDominoTimeouts() {
+      dominoTimeouts.forEach(function (id) { clearTimeout(id); });
+      dominoTimeouts = [];
+    }
+
+    function capabilityStatusLine(tile) {
+      if (!tile.capabilitySlug) return '';
+      return ' Connected to: ' + escapeHtml(tile.capabilityName) + '.';
+    }
+
+    function runDomino() {
+      clearDominoTimeouts();
+      if (!lastRequirementSequence || !lastRequirementSequence.length) return;
+
+      var chosenIndex = lastRequirementSequence.findIndex(function (t) { return t.key === lastChosenRequirementKey; });
+      var tilesHtml = lastRequirementSequence.map(function (tile, i) {
+        var met = lastBasedOnFacts[tile.key] && lastBasedOnFacts[tile.key].met;
+        var startState = met ? 'is-cleared' : '';
+        return '<div class="domino-tile ' + startState + '" data-index="' + i + '">'
+          + '<span class="domino-tile-label">' + escapeHtml(tile.label) + '</span>'
+          + '<span class="domino-tile-status" data-status></span>'
+          + '</div>';
+      }).join('<span class="domino-connector" data-connector aria-hidden="true">&rarr;</span>');
+
+      if (chosenIndex !== -1 && chosenIndex === lastRequirementSequence.length - 1) {
+        tilesHtml += '<span class="domino-connector" data-connector aria-hidden="true">&rarr;</span>'
+          + '<div class="domino-tile is-final" data-final><span class="domino-tile-label">Pathway Clear</span><span class="domino-tile-status" data-status>(simulated)</span></div>';
+      }
+
+      dominoRowEl.innerHTML = tilesHtml;
+      dominoRowEl.hidden = false;
+
+      var tiles = dominoRowEl.querySelectorAll('.domino-tile');
+      var connectors = dominoRowEl.querySelectorAll('.domino-connector');
+
+      // Set the static status text for already-met and locked tiles immediately.
+      lastRequirementSequence.forEach(function (tile, i) {
+        var statusEl = tiles[i].querySelector('[data-status]');
+        var met = lastBasedOnFacts[tile.key] && lastBasedOnFacts[tile.key].met;
+        if (met) {
+          statusEl.textContent = 'Already met.' + capabilityStatusLine(tile);
+        } else if (i === chosenIndex) {
+          statusEl.textContent = 'CHEW\'s current real focus.' + capabilityStatusLine(tile);
+        } else {
+          statusEl.textContent = 'Comes after.' + capabilityStatusLine(tile);
+        }
+      });
+
+      var runStep = function (delay, fn) {
+        if (revealReduceMotion) { fn(); } else { dominoTimeouts.push(setTimeout(fn, delay)); }
+      };
+
+      if (chosenIndex === -1) return; // everything already met — nothing to simulate falling
+
+      runStep(400, function () {
+        tiles[chosenIndex].classList.add('is-falling');
+        if (connectors[chosenIndex]) connectors[chosenIndex].classList.add('is-lit');
+      });
+      runStep(revealReduceMotion ? 0 : 950, function () {
+        tiles[chosenIndex].classList.remove('is-falling');
+        tiles[chosenIndex].classList.add('is-cleared');
+        tiles[chosenIndex].querySelector('[data-status]').textContent = 'Simulated: clears now.' + capabilityStatusLine(lastRequirementSequence[chosenIndex]);
+
+        // tiles[] includes the synthetic "Pathway Clear" tile when
+        // present, so checking lastRequirementSequence.length (not just
+        // whether tiles[chosenIndex + 1] exists) is what correctly tells
+        // a real next requirement apart from that synthetic tile.
+        var hasRealNextRequirement = chosenIndex + 1 < lastRequirementSequence.length;
+        if (hasRealNextRequirement) {
+          var nextTile = tiles[chosenIndex + 1];
+          nextTile.classList.add('is-active');
+          nextTile.querySelector('[data-status]').textContent = 'Becomes CHEW\'s next real focus.' + capabilityStatusLine(lastRequirementSequence[chosenIndex + 1]);
+        } else {
+          var finalTile = dominoRowEl.querySelector('[data-final]');
+          if (finalTile) finalTile.classList.add('is-active');
+        }
+      });
+    }
+
+    if (dominoTriggerEl) {
+      dominoTriggerEl.addEventListener('click', runDomino);
+    }
+
     goalButtons.forEach(function (btn) {
       btn.addEventListener('click', function () {
         clearPendingTimeouts();
+        clearDominoTimeouts();
+        dominoSectionEl.hidden = true;
+        dominoRowEl.hidden = true;
+        dominoRowEl.innerHTML = '';
         goalButtons.forEach(function (b) { b.classList.remove('is-active'); });
         btn.classList.add('is-active');
         statusEl.textContent = 'CHEW is thinking...';
@@ -326,10 +430,15 @@ document.addEventListener('DOMContentLoaded', function () {
             resultEl.hidden = false;
             buildAndResolveMoveCollapse(rec.basedOnFacts, rec.chosenRequirementKey);
             showBlindSpotIfApplicable(rec.basedOnFacts, rec.chosenRequirementKey, rec.recommendedAction);
+            lastRequirementSequence = data.requirementSequence || null;
+            lastBasedOnFacts = rec.basedOnFacts;
+            lastChosenRequirementKey = rec.chosenRequirementKey;
             if (revealReduceMotion) {
               chainEl.classList.add('is-visible');
+              dominoSectionEl.hidden = false;
             } else {
               pendingTimeouts.push(setTimeout(function () { chainEl.classList.add('is-visible'); }, 1700));
+              pendingTimeouts.push(setTimeout(function () { dominoSectionEl.hidden = false; }, 2000));
             }
             resultEl.scrollIntoView({ behavior: revealReduceMotion ? 'auto' : 'smooth', block: 'nearest' });
           })

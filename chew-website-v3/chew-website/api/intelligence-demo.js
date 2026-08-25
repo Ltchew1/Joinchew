@@ -15,9 +15,20 @@
 // own data, and neither should any future caller of this endpoint.
 //
 // GET /api/intelligence-demo?goal=home|funding
+//
+// Also returns requirementSequence: the real, ordered list of
+// transition_requirements for this scenario's transition (with
+// capability links where they exist) — used by the CHEW Domino
+// simulation on the frontend. This is real, non-sensitive rules
+// metadata (same class of data api/business-path.js already exposes),
+// not a live-write path — nothing in this file ever calls
+// completeAction() or writes to the database. A public, repeatable demo
+// endpoint must never mutate the shared illustrative subject's state,
+// or it would silently corrupt this same demo for every future visitor.
 
 const { computeRecommendation } = require('../lib/intelligenceEngine');
 const { isFeatureActive } = require('../lib/featureFlags');
+const { query } = require('../lib/db');
 
 // Fixed mapping to the illustrative seed data — never derived from
 // caller input beyond selecting which of the two pre-built scenarios to
@@ -57,11 +68,32 @@ module.exports = async (req, res) => {
       subjectId: scenario.subjectId,
       goalId: scenario.goalId,
     });
+
+    const sequenceResult = await query(
+      `SELECT tr.requirement_key, tr.label, tr.sequence_order, tr.action_if_unmet,
+              c.slug AS capability_slug, c.name AS capability_name
+       FROM transition_requirements tr
+       JOIN goals g ON g.transition_id = tr.transition_id
+       LEFT JOIN capabilities c ON c.id = tr.capability_id
+       WHERE g.id = $1
+       ORDER BY tr.sequence_order ASC`,
+      [scenario.goalId]
+    );
+    const requirementSequence = sequenceResult.rows.map((row) => ({
+      key: row.requirement_key,
+      label: row.label,
+      sequenceOrder: row.sequence_order,
+      actionIfUnmet: row.action_if_unmet,
+      capabilitySlug: row.capability_slug,
+      capabilityName: row.capability_name,
+    }));
+
     return res.status(200).json({
       isExample: true,
       disclaimer: 'This is a demo experience using an illustrative example scenario, not your personal data. Numeric thresholds shown are examples for testing CHEW\'s logic, not verified financial or lending guidance.',
       scenarioLabel: scenario.label,
       recommendation,
+      requirementSequence,
     });
   } catch (err) {
     console.error('intelligence-demo error:', err.message);
