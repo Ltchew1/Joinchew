@@ -37,6 +37,128 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // The CHEW Life Map: 8 territories, 13 curated real relationship edges.
+  // This is editorial content about how financial domains generally
+  // relate to each other — the same class of claim the caption below it
+  // already made ("not a map of your accounts") — never personalized,
+  // never database-backed, never claiming to know anything about the
+  // visitor. Selecting a territory illuminates only its real connections.
+  var lifemapWrap = document.getElementById('lifemap-wrap');
+  if (lifemapWrap) {
+    var LIFEMAP_LABELS = {
+      credit: 'Credit', capital: 'Capital', business: 'Business', property: 'Property',
+      insurance: 'Insurance', assets: 'Assets', liquidity: 'Liquidity', ownership: 'Ownership',
+    };
+    var LIFEMAP_EDGES = [
+      { a: 'credit', b: 'capital', reason: 'Your credit profile shapes what capital you can access, and at what cost.' },
+      { a: 'credit', b: 'property', reason: 'Credit is usually the gating requirement standing between you and financing property.' },
+      { a: 'credit', b: 'business', reason: 'Personal credit often backs early business moves before business credit exists on its own.' },
+      { a: 'credit', b: 'liquidity', reason: 'When liquidity runs low, credit is frequently the bridge that gets used instead.' },
+      { a: 'capital', b: 'business', reason: 'Capital funds the business moves that go on to generate income and equity.' },
+      { a: 'capital', b: 'ownership', reason: 'Ownership stakes can themselves become a future source of capital.' },
+      { a: 'business', b: 'assets', reason: 'A business becomes an asset in its own right, and it can acquire assets of its own.' },
+      { a: 'business', b: 'insurance', reason: 'A business carries exposure that personal insurance was never built to cover.' },
+      { a: 'property', b: 'ownership', reason: 'Property is one of the clearest, most durable forms of ownership CHEW tracks.' },
+      { a: 'property', b: 'insurance', reason: 'Property creates real exposure — insurance is what protects it once it’s yours.' },
+      { a: 'insurance', b: 'assets', reason: 'Assets worth building are worth protecting; insurance guards what’s already been built.' },
+      { a: 'assets', b: 'liquidity', reason: 'Not everything you own is something you can use right now — CHEW tracks that gap.' },
+      { a: 'ownership', b: 'assets', reason: 'Ownership and assets tend to grow together — one is usually a sign the other is too.' },
+    ];
+
+    var lifemapHint = document.getElementById('lifemap-hint');
+    var lifemapDetail = document.getElementById('lifemap-detail');
+    var lifemapReduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var lifemapSelected = null;
+
+    function lifemapEscapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    function lifemapConnectionsFor(territory) {
+      return LIFEMAP_EDGES
+        .filter(function (e) { return e.a === territory || e.b === territory; })
+        .map(function (e) { return { other: e.a === territory ? e.b : e.a, reason: e.reason }; });
+    }
+
+    function lifemapClearState() {
+      lifemapWrap.querySelectorAll('.lifemap-node, .lifemap-label').forEach(function (el) {
+        el.classList.remove('is-selected', 'is-connected');
+      });
+      lifemapWrap.querySelectorAll('.lifemap-spoke, .lifemap-edge').forEach(function (el) {
+        el.classList.remove('is-lit');
+      });
+      lifemapWrap.querySelectorAll('.lifemap-hit').forEach(function (el) {
+        el.setAttribute('aria-pressed', 'false');
+      });
+    }
+
+    function lifemapDeselect() {
+      lifemapSelected = null;
+      lifemapWrap.classList.remove('has-selection');
+      lifemapClearState();
+      lifemapDetail.hidden = true;
+      lifemapDetail.innerHTML = '';
+      if (lifemapHint) lifemapHint.style.opacity = '1';
+    }
+
+    function lifemapSelect(territory) {
+      if (lifemapSelected === territory) { lifemapDeselect(); return; }
+      lifemapSelected = territory;
+      lifemapWrap.classList.add('has-selection');
+      lifemapClearState();
+
+      var connections = lifemapConnectionsFor(territory);
+      var connectedSet = {};
+      connections.forEach(function (c) { connectedSet[c.other] = true; });
+
+      lifemapWrap.querySelectorAll('.lifemap-node[data-territory="' + territory + '"], .lifemap-label[data-territory="' + territory + '"]').forEach(function (el) {
+        el.classList.add('is-selected');
+      });
+      Object.keys(connectedSet).forEach(function (t) {
+        lifemapWrap.querySelectorAll('.lifemap-node[data-territory="' + t + '"], .lifemap-label[data-territory="' + t + '"]').forEach(function (el) {
+          el.classList.add('is-connected');
+        });
+      });
+      lifemapWrap.querySelectorAll('.lifemap-spoke[data-territory="' + territory + '"]').forEach(function (el) { el.classList.add('is-lit'); });
+      Object.keys(connectedSet).forEach(function (t) {
+        lifemapWrap.querySelectorAll('.lifemap-spoke[data-territory="' + t + '"]').forEach(function (el) { el.classList.add('is-lit'); });
+      });
+      lifemapWrap.querySelectorAll('.lifemap-edge').forEach(function (el) {
+        var a = el.getAttribute('data-a'), b = el.getAttribute('data-b');
+        if (a === territory || b === territory) el.classList.add('is-lit');
+      });
+      var hitBtn = lifemapWrap.querySelector('.lifemap-hit[data-territory="' + territory + '"]');
+      if (hitBtn) hitBtn.setAttribute('aria-pressed', 'true');
+
+      var html = '<span class="lifemap-detail-eyebrow">' + lifemapEscapeHtml(LIFEMAP_LABELS[territory]) + ' connects to</span>'
+        + '<ul class="lifemap-detail-list">'
+        + connections.map(function (c) {
+          return '<li><strong>' + lifemapEscapeHtml(LIFEMAP_LABELS[c.other]) + '</strong> — ' + lifemapEscapeHtml(c.reason) + '</li>';
+        }).join('')
+        + '</ul>'
+        + '<button type="button" class="lifemap-detail-close" id="lifemap-detail-close">Clear selection</button>';
+      lifemapDetail.innerHTML = html;
+      lifemapDetail.hidden = false;
+      if (lifemapHint) lifemapHint.style.opacity = '0';
+
+      var closeBtn = document.getElementById('lifemap-detail-close');
+      if (closeBtn) closeBtn.addEventListener('click', lifemapDeselect);
+
+      if (!lifemapReduceMotion) {
+        lifemapDetail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    lifemapWrap.querySelectorAll('.lifemap-hit').forEach(function (btn) {
+      btn.setAttribute('aria-pressed', 'false');
+      btn.addEventListener('click', function () {
+        lifemapSelect(btn.getAttribute('data-territory'));
+      });
+    });
+  }
+
   // Scroll-reveal: fade/rise elements into view once, respecting reduced motion.
   var revealEls = document.querySelectorAll('[data-reveal]');
   if (revealEls.length && 'IntersectionObserver' in window) {

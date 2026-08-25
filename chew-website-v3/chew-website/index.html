@@ -196,59 +196,77 @@
         </p>
       </div>
       <div class="text-center" data-reveal>
-        <span class="tag tag--gold">The Economic Constellation</span>
+        <span class="tag tag--gold">The CHEW Life Map</span>
       </div>
-      <div class="constellation-wrap" data-reveal>
-        <svg class="constellation" viewBox="0 0 400 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram showing Credit, Capital, Business, Property, Insurance, Assets, Liquidity, and Ownership connected around a central CHEW node">
+      <div class="lifemap-wrap" data-reveal id="lifemap-wrap">
+        <svg class="lifemap" viewBox="0 0 400 430" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
           <defs>
             <radialGradient id="constGoldFill" cx="35%" cy="35%" r="70%">
               <stop offset="0" stop-color="#E8CE7A"/>
               <stop offset="1" stop-color="#8A6E1C"/>
             </radialGradient>
           </defs>
-          <g class="links">
-            <line class="link" x1="200" y1="200" x2="200" y2="50"/>
-            <line class="link" x1="200" y1="200" x2="306" y2="94"/>
-            <line class="link" x1="200" y1="200" x2="350" y2="200"/>
-            <line class="link" x1="200" y1="200" x2="306" y2="306"/>
-            <line class="link" x1="200" y1="200" x2="200" y2="350"/>
-            <line class="link" x1="200" y1="200" x2="94" y2="306"/>
-            <line class="link" x1="200" y1="200" x2="50" y2="200"/>
-            <line class="link" x1="200" y1="200" x2="94" y2="94"/>
-            <line class="link" x1="200" y1="50" x2="306" y2="94"/>
-            <line class="link" x1="306" y1="94" x2="350" y2="200"/>
-            <line class="link" x1="350" y1="200" x2="306" y2="306"/>
-            <line class="link" x1="306" y1="306" x2="200" y2="350"/>
-            <line class="link" x1="200" y1="350" x2="94" y2="306"/>
-            <line class="link" x1="94" y1="306" x2="50" y2="200"/>
-            <line class="link" x1="50" y1="200" x2="94" y2="94"/>
-            <line class="link" x1="94" y1="94" x2="200" y2="50"/>
+          <g class="lifemap-spokes">
+            <line class="lifemap-spoke" data-territory="credit" x1="200" y1="200" x2="200" y2="50"/>
+            <line class="lifemap-spoke" data-territory="capital" x1="200" y1="200" x2="306" y2="94"/>
+            <line class="lifemap-spoke" data-territory="business" x1="200" y1="200" x2="350" y2="200"/>
+            <line class="lifemap-spoke" data-territory="property" x1="200" y1="200" x2="306" y2="306"/>
+            <line class="lifemap-spoke" data-territory="insurance" x1="200" y1="200" x2="200" y2="350"/>
+            <line class="lifemap-spoke" data-territory="assets" x1="200" y1="200" x2="94" y2="306"/>
+            <line class="lifemap-spoke" data-territory="liquidity" x1="200" y1="200" x2="50" y2="200"/>
+            <line class="lifemap-spoke" data-territory="ownership" x1="200" y1="200" x2="94" y2="94"/>
+          </g>
+          <g class="lifemap-edges" id="lifemap-edges">
+            <line class="lifemap-edge" data-a="credit" data-b="capital" style="--edge-delay:0ms" x1="200" y1="50" x2="306" y2="94"/>
+            <line class="lifemap-edge" data-a="credit" data-b="property" style="--edge-delay:60ms" x1="200" y1="50" x2="306" y2="306"/>
+            <line class="lifemap-edge" data-a="credit" data-b="business" style="--edge-delay:120ms" x1="200" y1="50" x2="350" y2="200"/>
+            <line class="lifemap-edge" data-a="credit" data-b="liquidity" style="--edge-delay:180ms" x1="200" y1="50" x2="50" y2="200"/>
+            <line class="lifemap-edge" data-a="capital" data-b="business" style="--edge-delay:0ms" x1="306" y1="94" x2="350" y2="200"/>
+            <line class="lifemap-edge" data-a="capital" data-b="ownership" style="--edge-delay:60ms" x1="306" y1="94" x2="94" y2="94"/>
+            <line class="lifemap-edge" data-a="business" data-b="assets" style="--edge-delay:0ms" x1="350" y1="200" x2="94" y2="306"/>
+            <line class="lifemap-edge" data-a="business" data-b="insurance" style="--edge-delay:60ms" x1="350" y1="200" x2="200" y2="350"/>
+            <line class="lifemap-edge" data-a="property" data-b="ownership" style="--edge-delay:0ms" x1="306" y1="306" x2="94" y2="94"/>
+            <line class="lifemap-edge" data-a="property" data-b="insurance" style="--edge-delay:60ms" x1="306" y1="306" x2="200" y2="350"/>
+            <line class="lifemap-edge" data-a="insurance" data-b="assets" style="--edge-delay:0ms" x1="200" y1="350" x2="94" y2="306"/>
+            <line class="lifemap-edge" data-a="assets" data-b="liquidity" style="--edge-delay:0ms" x1="94" y1="306" x2="50" y2="200"/>
+            <line class="lifemap-edge" data-a="ownership" data-b="assets" style="--edge-delay:0ms" x1="94" y1="94" x2="94" y2="306"/>
           </g>
           <g class="node-center intelligence-pulse">
             <circle cx="200" cy="200" r="38"/>
             <text x="200" y="201">CHEW</text>
           </g>
-          <g class="node"><circle cx="200" cy="50" r="21"/></g>
-          <text x="200" y="86" class="node-label" style="font-family:var(--font-body); font-size:10.5px; fill:var(--text-muted); text-anchor:middle;">Credit</text>
-          <g class="node"><circle cx="306" cy="94" r="21"/></g>
-          <text x="306" y="130" style="font-family:var(--font-body); font-size:10.5px; fill:var(--text-muted); text-anchor:middle;">Capital</text>
-          <g class="node"><circle cx="350" cy="200" r="21"/></g>
-          <text x="350" y="236" style="font-family:var(--font-body); font-size:10.5px; fill:var(--text-muted); text-anchor:middle;">Business</text>
-          <g class="node"><circle cx="306" cy="306" r="21"/></g>
-          <text x="306" y="342" style="font-family:var(--font-body); font-size:10.5px; fill:var(--text-muted); text-anchor:middle;">Property</text>
-          <g class="node"><circle cx="200" cy="350" r="21"/></g>
-          <text x="200" y="386" style="font-family:var(--font-body); font-size:10.5px; fill:var(--text-muted); text-anchor:middle;">Insurance</text>
-          <g class="node"><circle cx="94" cy="306" r="21"/></g>
-          <text x="94" y="342" style="font-family:var(--font-body); font-size:10.5px; fill:var(--text-muted); text-anchor:middle;">Assets</text>
-          <g class="node"><circle cx="50" cy="200" r="21"/></g>
-          <text x="50" y="236" style="font-family:var(--font-body); font-size:10.5px; fill:var(--text-muted); text-anchor:middle;">Liquidity</text>
-          <g class="node"><circle cx="94" cy="94" r="21"/></g>
-          <text x="94" y="130" style="font-family:var(--font-body); font-size:10.5px; fill:var(--text-muted); text-anchor:middle;">Ownership</text>
+          <g class="lifemap-node" data-territory="credit"><circle cx="200" cy="50" r="21"/></g>
+          <text x="200" y="86" class="lifemap-label" data-territory="credit">Credit</text>
+          <g class="lifemap-node" data-territory="capital"><circle cx="306" cy="94" r="21"/></g>
+          <text x="306" y="130" class="lifemap-label" data-territory="capital">Capital</text>
+          <g class="lifemap-node" data-territory="business"><circle cx="350" cy="200" r="21"/></g>
+          <text x="350" y="236" class="lifemap-label" data-territory="business">Business</text>
+          <g class="lifemap-node" data-territory="property"><circle cx="306" cy="306" r="21"/></g>
+          <text x="306" y="342" class="lifemap-label" data-territory="property">Property</text>
+          <g class="lifemap-node" data-territory="insurance"><circle cx="200" cy="350" r="21"/></g>
+          <text x="200" y="386" class="lifemap-label" data-territory="insurance">Insurance</text>
+          <g class="lifemap-node" data-territory="assets"><circle cx="94" cy="306" r="21"/></g>
+          <text x="94" y="342" class="lifemap-label" data-territory="assets">Assets</text>
+          <g class="lifemap-node" data-territory="liquidity"><circle cx="50" cy="200" r="21"/></g>
+          <text x="50" y="236" class="lifemap-label" data-territory="liquidity">Liquidity</text>
+          <g class="lifemap-node" data-territory="ownership"><circle cx="94" cy="94" r="21"/></g>
+          <text x="94" y="130" class="lifemap-label" data-territory="ownership">Ownership</text>
         </svg>
+        <div class="lifemap-hit-layer" id="lifemap-hit-layer" role="group" aria-label="CHEW Life Map — select a territory to see what it's really connected to">
+          <button type="button" class="lifemap-hit" data-territory="credit" style="left:50%;top:11.63%;"><span class="sr-only">Credit</span></button>
+          <button type="button" class="lifemap-hit" data-territory="capital" style="left:76.5%;top:21.86%;"><span class="sr-only">Capital</span></button>
+          <button type="button" class="lifemap-hit" data-territory="business" style="left:87.5%;top:46.51%;"><span class="sr-only">Business</span></button>
+          <button type="button" class="lifemap-hit" data-territory="property" style="left:76.5%;top:71.16%;"><span class="sr-only">Property</span></button>
+          <button type="button" class="lifemap-hit" data-territory="insurance" style="left:50%;top:81.4%;"><span class="sr-only">Insurance</span></button>
+          <button type="button" class="lifemap-hit" data-territory="assets" style="left:23.5%;top:71.16%;"><span class="sr-only">Assets</span></button>
+          <button type="button" class="lifemap-hit" data-territory="liquidity" style="left:12.5%;top:46.51%;"><span class="sr-only">Liquidity</span></button>
+          <button type="button" class="lifemap-hit" data-territory="ownership" style="left:23.5%;top:21.86%;"><span class="sr-only">Ownership</span></button>
+        </div>
       </div>
-      <p class="text-center" style="font-size:0.82rem; color:var(--text-faint); margin-top:4px;" data-reveal>
-        A simplified view of how the pieces connect &mdash; not a map of your accounts.
+      <p class="text-center lifemap-hint" id="lifemap-hint" style="font-size:0.82rem; color:var(--text-faint); margin-top:4px;" data-reveal>
+        Select a territory &mdash; CHEW will show you what it's actually connected to. A simplified view of how the pieces relate, not a map of your accounts.
       </p>
+      <div class="lifemap-detail" id="lifemap-detail" hidden data-reveal></div>
       <p class="text-center" style="font-size:0.9rem; margin-top:18px;" data-reveal>
         We're building the engine behind that Business node in the open &mdash;
         <a href="business-pathfinder.html">see the first real, sourced path (early preview)</a>.

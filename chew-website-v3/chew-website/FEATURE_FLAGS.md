@@ -369,6 +369,53 @@ synthetic mouse-coordinate click proved unreliable specifically under
 Chromium's reduced-motion test emulation, which is a test-tooling quirk,
 not a product bug: the click listener itself fires correctly regardless).
 
+## The CHEW Life Map — real curated relationships, not personalized data
+
+A later directive ("Visual Supremacy, Digital World & WTF-Factor") asked for
+the Life Map to become a full explorable economic world — territories as
+"districts," selection reconfiguring node positions/lighting/pathways, and
+a before/after "evolve" demonstration of a simulated action opening a
+route. Given this repo's real constraint (no per-visitor identity or
+subject state exists for the public site — ARCHITECTURE.md Gap 1, the same
+constraint that keeps the general intelligence-recommendation API gated
+`internal`), a Life Map "tied to real state" isn't buildable honestly yet.
+What *was* buildable honestly: making the previously static, always-fully-
+connected octagon (`The Economic Constellation`) into something that
+actually responds, using real curated content instead of decoration.
+
+The old diagram drew all 16 possible ring/spoke lines permanently visible —
+it never claimed anything specific, it just looked like a network. The new
+Life Map (`.lifemap-*` in `styles.css`, the `lifemap-wrap` block in
+`script.js`) replaces that with 13 specific, named relationships between
+the same 8 territories (Credit, Capital, Business, Property, Insurance,
+Assets, Liquidity, Ownership) — e.g. "Business connects to Insurance: a
+business carries exposure that personal insurance was never built to
+cover." Selecting a territory illuminates only its real edges (an animated
+gold dash-flow along lit connections, reduced to an instant state change
+under `prefers-reduced-motion`) and dims everything else; a detail panel
+lists each connection with its one-line reason. This is editorial content —
+curated financial-relationship logic, the same class of claim the existing
+caption beneath it already made ("A simplified view of how the pieces
+relate, not a map of your accounts") — never fetched from a database, never
+personalized, never claiming to have analyzed the visitor.
+
+Accessibility was designed in from the start, not bolted on after: the SVG
+is purely decorative (`aria-hidden="true"`), and a layer of 8 real
+`<button>` elements is positioned over it via percentage `left`/`top`
+matching the SVG's node coordinates on a fixed-`aspect-ratio` wrapper, so
+keyboard and screen-reader users get the identical interaction real mouse/
+touch users get — not a degraded fallback. Verified with a real keyboard
+`Tab`-then-`Enter` activation in the browser, not just inferred from markup.
+
+Tested in a real browser across all 8 territories individually at a 1280px
+desktop viewport, under `prefers-reduced-motion`, and at a 375px mobile
+viewport: for every territory, asserted the exact set of illuminated
+connected nodes and lit edges against the curated `LIFEMAP_EDGES` data
+(not just "something lit up") — all 24 assertions (8 territories × 3
+viewports) matched precisely. Also verified clicking a selected territory
+again deselects it, the "Clear selection" button fully resets state, and
+zero JavaScript console errors occurred anywhere in the flow.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
@@ -417,10 +464,14 @@ the following exist in this repository yet:
     (there is no authenticated portal in this repository, and building
     one needs real identity/auth — ARCHITECTURE.md Gap 1 — which is a
     security-relevant foundation, not a visual-layer decision to make
-    inside a design pass); an interactive Life Map with illuminating
-    node relationships tied to real state (the existing constellation is
-    static and illustrative-only, not wired to any subject's data);
-    Economic Weather, "What Changed," Hidden Leverage, Friction
+    inside a design pass); the Life Map's "evolve" ambition specifically —
+    reconfiguring node positions and showing a before/after state once a
+    simulated action is taken, which would require real per-subject state
+    the public site has no identity system to hold (the Life Map's
+    territory-selection interactivity itself is now built — see above —
+    but it illuminates curated, editorial relationships, not anything
+    wired to a subject's real data); Economic Weather, "What Changed,"
+    Hidden Leverage, Friction
     Detection, and Conflict Detection (each needs either state-over-time
     tracking or pattern-recognition across a subject's history that
     doesn't exist for the one seeded test subject — building these even
