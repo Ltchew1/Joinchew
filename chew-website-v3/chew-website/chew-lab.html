@@ -206,7 +206,8 @@
               <span class="chewlab-transparency-label">Uses</span>
               <ul>
                 <li>Internally, CHEW has found one real leverage item in this repo's seeded data: the real <code>documented_income</code> fact already satisfies the home goal's real requirement, and a real, human-authored <code>goal_conflict_rules</code> row explicitly declares that same fact also matters to the business-funding goal &mdash; so it can be preserved and reused instead of re-established.</li>
-                <li>The engine only returns an item when it can point to real evidence (a fact id, a requirement it satisfies, a declared rule) &mdash; it never brainstorms or infers a relationship, asset, or program that isn't already in the schema.</li>
+                <li>Dormant Capability detection is now real too, gated behind its own explicit <code>capability_relevance_rules</code> table (a human-authored row is the only way CHEW is allowed to call a capability relevant &mdash; no similarity guessing). CHEW currently has exactly one such rule, and correctly reports zero dormant capabilities right now, because this repo's provider network is genuinely empty &mdash; proven directly by temporarily seeding one real provider and watching the exact same rule correctly light up, then reverting it.</li>
+                <li>The engine only returns an item when it can point to real evidence (a fact id, a requirement it satisfies, a declared rule, a live provider count) &mdash; it never brainstorms or infers a relationship, asset, or program that isn't already in the schema.</li>
               </ul>
               <span class="chewlab-transparency-label">Does not yet use</span>
               <ul><li>This bay isn't wired to that internal engine yet, so what you see here stays a fixed sketch rather than live output, to avoid implying member-specific modeling is live.</li></ul>

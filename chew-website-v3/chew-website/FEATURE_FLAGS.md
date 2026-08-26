@@ -1389,6 +1389,147 @@ explicit, human-authored (not inferred) capability-relevance mapping
 table is the next honest step, mirroring exactly how
 `goal_conflict_rules` made multi-goal reuse provable.
 
+## Dormant Capability — the real extension, exactly as scoped (lib/leverageModel.js)
+
+Built directly on the "next highest-leverage extension" named above:
+`capability_relevance_rules`, the explicit human-authored mapping layer
+that lets `discoverDormantCapabilityLeverage()` stop being a permanently-empty
+stub and become a real detector, without loosening the refusal
+discipline that governs every other detector in this file.
+
+**Schema created**: `capability_relevance_rules` — `source_type`
+(`goal`/`requirement`/`fact`, polymorphic `source_ref` like
+`leverage_items` already uses) + a real `capability_id` foreign key,
+`relationship_type` (fixed vocabulary, only `supports_goal_execution`
+used this pass), `mechanism`, `certainty` (reuses `goal_conflict_rules`'
+exact vocabulary — no `editorial` here, because a row in this table is
+always a real, explicit, intentionally-authored rule, not a loose
+grouping), `jurisdiction_id` (nullable), `active`, `authored_by`
+(real provenance text), timestamps. A `uniq_capability_relevance_rules`
+index makes duplicate rules structurally impossible.
+
+**The one honest rule this repo's registry actually supports**: every
+one of the 9 real seeded capabilities' own stored `description` text
+was checked directly against both seeded goals before writing anything.
+Only one held up without stretching: `real_asset_execution` ("Execution
+support for property and other real-asset transactions") is genuinely,
+directly on-topic for "Buy a first home" — a real-asset transaction, by
+definition. `accounting_tax` is already linked via `bookkeeping_current`
+and therefore already engaged, not eligible. Every other capability
+(insurance, digital infrastructure, event production, security,
+property care, transportation, relocation) has no defensible,
+non-speculative connection to either seeded goal. This is goal-level
+relevance (`source_type = 'goal'`), not forced onto any single
+requirement, because the capability supports executing the transaction
+itself, not any one prerequisite toward it.
+
+**The full AND-chain, exactly as specified**: capability exists + an
+explicit `capability_relevance_rules` row authorizes it (the sole
+authorization point, no similarity heuristic) + the capability is
+CURRENTLY available (a real live provider — `activeProviderCount > 0`,
+the identical signal the Opportunity Radar/Network Room/Wealth World
+already use, never softened to "exists in the registry") + the subject
+has a relevant active need (the goal is real and active) + the
+capability is NOT already engaged (no real `transition_requirements.capability_id`
+link to it) = dormant. Every leg is a real, live read — none hardcoded.
+
+**The load-bearing finding**: `network_providers` is permanently empty
+across this entire repo (re-confirmed directly this pass, not assumed)
+— every real capability's live `available` flag is `false` today,
+which means the "currently available" leg of the chain can never
+honestly evaluate true in the current production state, regardless of
+how many correct relevance rules exist. So the honest, correct output
+of Dormant Capability discovery today is **zero** — not because the
+architecture doesn't work, but because there is no real provider
+anywhere yet. Proven, not asserted: seeded one real provider + capability
+link in the scratch test database, confirmed the exact same rule
+correctly produced a dormant item with the real live provider count in
+its evidence, then reverted the seed and confirmed the item flipped to
+`stale` — the honest permanent state — rather than being silently
+deleted or left looking falsely current.
+
+**"Dormant means underused, not merely relevant," enforced structurally**:
+`accounting_tax` has no relevance rule at all, on purpose, specifically
+because it's already engaged — there was never a temptation to write a
+rule for it and then filter it out at query time; the honest move was
+to never author that rule in the first place, since a real declared
+relationship for an already-engaged capability would be true but
+useless. Separately verified in tests that even with a rule and a live
+provider present, an already-engaged capability is correctly excluded.
+
+**A real, named schema gap**: `routing_events`/`routing_consents` exist
+in this schema but are scoped to the separate `applications` admissions
+pipeline, not to `intel_subjects` — there is no real join path from the
+illustrative subject to a routing/handoff record. The only real
+per-subject "already engaged" signal this schema can check is the
+`transition_requirements.capability_id` link, and that is exactly what
+this detector checks — documented here rather than silently treated as
+a complete handoff-history check.
+
+**Two real, unrelated bugs found and fixed while building this**, both
+in the *scratch test database's seed idempotency*, not in this
+feature's own logic — but both were actively corrupting test results
+until fixed:
+1. `transition_requirements`' existing `INSERT ... ON CONFLICT DO
+   NOTHING` clauses had no matching unique constraint to target, making
+   the clause a silent no-op — repeated `psql -f db/seed-intelligence.sql`
+   runs across this session had silently tripled some rows. Fixed with
+   a real `uniq_transition_requirements` unique index, which makes the
+   *existing* `ON CONFLICT` clauses work as originally intended — no
+   change to the INSERT statements themselves.
+2. `goals`, `current_state_facts`, and `constraints` had no idempotency
+   guard of any kind. Added explicit `WHERE NOT EXISTS` guards to each.
+   Verified by running `db/seed-intelligence.sql` three times in a row
+   against a freshly truncated database and confirming identical row
+   counts (2 goals, 3 facts, 5 requirements, 1 constraint, 1 conflict
+   rule, 1 relevance rule) every time. This class of scratch-environment
+   pollution — which had already required a manual database reset twice
+   earlier in this session — should not recur.
+
+**API**: reuses `api/leverage-model.js` and the existing
+`hidden_leverage_discovery` flag unchanged — `dormant_capability` items
+appear in the same `discover`/`listActive`/`listAll` responses
+alongside `multi_goal_fact` items, no new endpoint needed.
+
+**Tests performed**: a standalone Node suite (21 assertions) — the
+empty-state proof (real rule, zero real providers, honestly zero
+dormant items), the seed-and-reveal proof (one real provider makes
+exactly one real dormant item appear, with the real provider count in
+its evidence), the already-engaged exclusion proof, the revert-to-stale
+proof (never silently deleted, description never rewritten), and
+consistent repeated discovery — all passed, alongside a full re-run of
+all four pre-existing suites together (138 total assertions across the
+five test files, zero failures) on the now-idempotent database.
+Separately over real HTTP, against a freshly restarted server this
+time (learning directly from Hidden Leverage's own module-cache lesson):
+confirmed the endpoint 404s by default, flipped `hidden_leverage_discovery`
+to `preview` in the **scratch test database only**, confirmed `discover`
+correctly showed nothing dormant, seeded one real provider directly via
+SQL, confirmed the exact same request now showed the dormant item live
+with no server restart needed (proving the discovery logic itself,
+not just a cached response), reverted the provider, confirmed the item
+flipped to stale over HTTP too, flipped the flag back to `internal`,
+confirmed the 404 returned, and deleted the test rows. The production
+flag was never touched.
+
+**CHEW Lab connection**: the Hidden Leverage bay's "Uses" list now
+states plainly that Dormant Capability detection is real, that it
+currently and correctly finds nothing, and exactly why — rather than
+implying either that nothing was built or that something is live when
+it isn't.
+
+**What remains unavailable**: `dormant_capability` will keep honestly
+returning empty in production until a real capability provider is
+seeded — that's an operational/business decision (onboarding a real
+provider), not a code gap. `underused_resource` and
+`duplicate_effort_avoided` remain unimplemented, same as before.
+
+**What was deliberately not inferred**: a relevance rule for any of the
+8 capabilities whose descriptions don't genuinely match either seeded
+goal; a second relevance rule invented for visual richness; any
+"already engaged" signal from `routing_events`/`routing_consents`,
+since no real join path to the illustrative subject exists for them.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of

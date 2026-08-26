@@ -29,6 +29,7 @@
 const { query } = require('./db');
 const { evaluateRequirement, getRequirementSequence } = require('./intelligenceEngine');
 const { listConflictRulesForGoal } = require('./scenarioModel');
+const { getCapabilityOverview } = require('./capabilityGraph');
 
 const LEVERAGE_MODEL_VERSION = 'leverage-model-v1';
 
@@ -335,20 +336,130 @@ async function discoverMultiGoalFactLeverage(subjectId) {
 // it's the exact mechanism the existing Opportunity Engine wiring uses
 // to surface a related capability in a real recommendation — so calling
 // it "dormant" would misrepresent something already connected.
+// Dormant Capability's full AND-chain, per direct instruction:
+//   capability exists
+//   + an explicit capability_relevance_rules row authorizes it (the
+//     sole authorization point — no similarity heuristic, no fallback)
+//   + the capability is CURRENTLY available (a real live provider —
+//     activeProviderCount > 0, the exact same signal the Opportunity
+//     Radar / Network Room / Wealth World already use, never softened
+//     to "the capability exists in the registry")
+//   + the subject has a relevant active need (the goal/requirement/fact
+//     the rule points at is real and still open)
+//   + the capability is NOT already engaged (already linked via a real
+//     transition_requirements.capability_id — if it's already active in
+//     the Opportunity Engine's own wiring, it is by definition not
+//     underused, and calling it "dormant" would misrepresent something
+//     already connected)
+// Only source_type='goal' has real, exercised logic — 'requirement' and
+// 'fact' branches are left as explicit no-ops (never silently treated
+// as matches) until a real rule of that shape is actually authored;
+// writing untested logic for zero real cases would be exactly the kind
+// of premature richness this feature was built to avoid.
 async function discoverDormantCapabilityLeverage(subjectId) {
   const goals = await getActiveGoals(subjectId);
+  if (goals.length === 0) return [];
+
+  const rulesResult = await query('SELECT * FROM capability_relevance_rules WHERE active = TRUE');
+  if (rulesResult.rows.length === 0) return [];
+
+  const capsResult = await query('SELECT id, slug, name, description FROM capabilities');
+  const capById = {};
+  capsResult.rows.forEach((c) => { capById[c.id] = c; });
+
+  const capabilityOverview = await getCapabilityOverview();
+  const overviewBySlug = {};
+  capabilityOverview.forEach((c) => { overviewBySlug[c.slug] = c; });
+
+  // "Not already engaged" — the one real per-subject signal this schema
+  // supports. routing_events/routing_consents exist in this schema but
+  // are scoped to the separate `applications` admissions pipeline, not
+  // to intel_subjects — there is no real join path from an
+  // intel_subjects row to a routing/handoff record, so that signal
+  // genuinely cannot be checked for the illustrative subject. This is a
+  // real schema gap, documented rather than silently assumed complete.
+  const engagedCapabilityIds = new Set();
   for (const goal of goals) {
     // eslint-disable-next-line no-await-in-loop -- small, bounded goal list.
     const sequence = await getRequirementSequence(goal.id);
-    const linked = sequence.filter((r) => !!r.capabilitySlug);
-    // Every linked capability found here is already active via the real
-    // Opportunity Engine wiring — never reclassified as "dormant."
-    // Left as a real, exercised branch (not a stub) so a future
-    // editorial or rule-based "relevant but unlinked" mapping has a
-    // clear place to plug in without redesigning this function.
-    if (linked.length > 0) continue;
+    sequence.forEach((r) => {
+      if (!r.capabilitySlug) return;
+      const cap = capsResult.rows.find((c) => c.slug === r.capabilitySlug);
+      if (cap) engagedCapabilityIds.add(cap.id);
+    });
   }
-  return [];
+
+  const items = [];
+  for (const rule of rulesResult.rows) {
+    if (rule.source_type !== 'goal') continue; // not yet implemented — see comment above
+
+    const relevantGoal = goals.find((g) => g.id === rule.source_ref);
+    if (!relevantGoal) continue; // rule points at a goal this subject doesn't have active — no match
+
+    const capability = capById[rule.capability_id];
+    if (!capability) continue; // defensive only — capability_id is a real FK, this should never fire
+
+    const overviewEntry = overviewBySlug[capability.slug];
+    const isAvailable = !!(overviewEntry && overviewEntry.available);
+    if (!isAvailable) continue; // honest: no real live provider today, so no fabricated dormant item
+
+    if (engagedCapabilityIds.has(capability.id)) continue; // already engaged — not dormant, already active
+
+    const evidence = {
+      capabilityId: capability.id,
+      capabilitySlug: capability.slug,
+      relevanceRuleId: rule.id,
+      goalId: relevantGoal.id,
+      activeProviderCount: overviewEntry.activeProviderCount,
+    };
+
+    // eslint-disable-next-line no-await-in-loop -- persistence must happen per-item to enforce the unique-evidence constraint per row.
+    const item = await findOrCreateLeverageItem({
+      subjectId,
+      sourceType: 'capability',
+      sourceRef: capability.id,
+      leverageCategory: 'dormant_capability',
+      title: `"${capability.name}" is available and relevant, but not yet part of your path`,
+      description: `A real capability ("${capability.name}") in CHEW's network has an explicit, human-authored relevance `
+        + `rule to "${relevantGoal.title}" (capability_relevance_rules #${rule.id}), has ${overviewEntry.activeProviderCount} `
+        + `real active provider(s) available right now, and is not currently linked to any of this subject's own `
+        + `requirements. ${rule.mechanism}`,
+      relatedGoalIds: [relevantGoal.id],
+      relatedConstraintIds: [],
+      relatedOpportunityIds: [],
+      relatedCapabilityIds: [capability.id],
+      applicabilityRule: `capability_relevance_rules #${rule.id} declares "${capability.slug}" relevant to goal `
+        + `${relevantGoal.id} (${rule.relationship_type}); getCapabilityOverview() reports `
+        + `${overviewEntry.activeProviderCount} real active provider(s); no transition_requirements row for this `
+        + `subject's goals links this capability, so it is not already engaged.`,
+      evidence,
+      verificationState: 'computed', // availability is a real live COUNT query, not self-reported — same fact_type-vocabulary reuse as elsewhere in this file
+      activationStatus: 'available',
+      suggestedAction: `Consider connecting "${capability.name}" to this path — it's already real and available, `
+        + `just not currently in use.`,
+      expectedEffectType: 'unlocks_capability',
+      uncertaintyClassification: rule.certainty,
+    });
+    items.push(item);
+  }
+
+  // Staleness sweep, mirroring discoverMultiGoalFactLeverage's own: a
+  // previously-found dormant item whose capability lost its provider,
+  // became engaged, or whose rule was deactivated is never silently
+  // left looking current.
+  const currentCapabilitySourceRefs = new Set(items.map((i) => i.sourceRef));
+  const existingCapabilityItemsResult = await query(
+    `SELECT id, source_ref, activation_status FROM leverage_items WHERE subject_ref = $1 AND source_type = 'capability' AND leverage_category = 'dormant_capability'`,
+    [subjectId]
+  );
+  for (const row of existingCapabilityItemsResult.rows) {
+    if (currentCapabilitySourceRefs.has(row.source_ref)) continue;
+    if (row.activation_status === 'stale' || row.activation_status === 'already_activated') continue;
+    // eslint-disable-next-line no-await-in-loop -- small, bounded set of previously-discovered items for one subject.
+    await query(`UPDATE leverage_items SET activation_status = 'stale', updated_at = now() WHERE id = $1`, [row.id]);
+  }
+
+  return items;
 }
 
 async function discoverBySourceType(sourceType, subjectId) {

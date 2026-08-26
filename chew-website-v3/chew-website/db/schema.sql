@@ -487,6 +487,14 @@ CREATE TABLE IF NOT EXISTS transition_requirements (
 
 CREATE INDEX IF NOT EXISTS idx_transition_requirements_lookup
   ON transition_requirements (transition_id, sequence_order);
+-- db/seed-intelligence.sql's INSERTs into this table already declare
+-- ON CONFLICT DO NOTHING, but that clause is a silent no-op without a
+-- real matching constraint to target — this repo's own scratch test
+-- database ended up with 3x-duplicated rows here from repeated re-seeds
+-- before this index existed. Adding it makes the seed file's existing
+-- ON CONFLICT clauses actually idempotent, as originally intended.
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_transition_requirements
+  ON transition_requirements (transition_id, requirement_key);
 
 CREATE TABLE IF NOT EXISTS goals (
   id            SERIAL PRIMARY KEY,
@@ -801,3 +809,49 @@ CREATE INDEX IF NOT EXISTS idx_leverage_items_status ON leverage_items (activati
 -- constraint existing, not just on its own care.
 CREATE UNIQUE INDEX IF NOT EXISTS uniq_leverage_items_evidence
   ON leverage_items (subject_ref, source_type, source_ref, leverage_category);
+
+-- ============================================================
+-- Capability Relevance Rules — the sole authorization point for
+-- Dormant Capability detection
+-- ============================================================
+-- Same refusal discipline as goal_conflict_rules: lib/leverageModel.js's
+-- Dormant Capability detector is only ever allowed to say a capability
+-- is relevant to a goal/requirement/fact when a row here explicitly
+-- declares it. There is no similarity heuristic, no category-name
+-- matching, and no fallback — an unmatched goal/requirement/fact simply
+-- has no dormant-capability candidate, full stop.
+--
+-- source_type/source_ref is deliberately polymorphic (no single FK,
+-- same pattern as leverage_items.source_ref) because a real relevance
+-- mapping can honestly exist at three different real granularities in
+-- this schema: the goal itself (source_ref = goals.id), a specific
+-- requirement (source_ref = transition_requirements.id), or a raw fact
+-- (source_ref = current_state_facts.id — used only once a fact-level
+-- mapping is actually authored). capability_id IS a real single-table
+-- FK, since "which capability" is never ambiguous.
+--
+-- certainty reuses goal_conflict_rules' exact vocabulary (not
+-- leverage_items' extended one) on purpose: a row here is always a
+-- real, explicit, stored, intentionally-authored rule — never a loose
+-- editorial grouping like Wealth World's CAP_TERRITORIES — so
+-- 'editorial' does not apply here.
+CREATE TABLE IF NOT EXISTS capability_relevance_rules (
+  id                 SERIAL PRIMARY KEY,
+  source_type        TEXT NOT NULL CHECK (source_type IN ('goal', 'requirement', 'fact')),
+  source_ref         INTEGER NOT NULL,
+  capability_id      INTEGER NOT NULL REFERENCES capabilities (id),
+  relationship_type  TEXT NOT NULL CHECK (relationship_type IN
+                        ('supports_goal_execution', 'fulfills_requirement', 'addresses_constraint')),
+  mechanism          TEXT NOT NULL,  -- human-authored explanation of why this capability actually helps
+  certainty          TEXT NOT NULL CHECK (certainty IN ('known', 'deterministic', 'assumption_dependent', 'estimated', 'unknown')),
+  jurisdiction_id    INTEGER REFERENCES jurisdictions (id),  -- NULL = no jurisdiction-specific restriction
+  active             BOOLEAN NOT NULL DEFAULT TRUE,
+  authored_by        TEXT NOT NULL,  -- real provenance statement — who/what authored this, and how
+  created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_capability_relevance_rules_source ON capability_relevance_rules (source_type, source_ref);
+CREATE INDEX IF NOT EXISTS idx_capability_relevance_rules_capability ON capability_relevance_rules (capability_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_capability_relevance_rules
+  ON capability_relevance_rules (source_type, source_ref, capability_id, relationship_type);

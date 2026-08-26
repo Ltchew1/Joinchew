@@ -56,23 +56,38 @@ RETURNING id;
 -- this repository's own testing. Adjust the subject_id if seeding into
 -- a database that already has rows.
 
-INSERT INTO current_state_facts (subject_id, fact_key, fact_value, fact_type, source_note) VALUES
-  (1, 'documented_income', 'true', 'user_provided', NULL),
-  (1, 'credit_score', '580', 'user_provided', NULL);
+-- Guarded with NOT EXISTS (rather than a plain VALUES insert) so this
+-- file can be re-run against a database that already has these rows
+-- without silently duplicating them — current_state_facts and goals
+-- have no unique constraint of their own to catch this the way
+-- ON CONFLICT does elsewhere in this file.
+INSERT INTO current_state_facts (subject_id, fact_key, fact_value, fact_type, source_note)
+SELECT 1, 'documented_income', 'true', 'user_provided', NULL
+WHERE NOT EXISTS (SELECT 1 FROM current_state_facts WHERE subject_id = 1 AND fact_key = 'documented_income');
+INSERT INTO current_state_facts (subject_id, fact_key, fact_value, fact_type, source_note)
+SELECT 1, 'credit_score', '580', 'user_provided', NULL
+WHERE NOT EXISTS (SELECT 1 FROM current_state_facts WHERE subject_id = 1 AND fact_key = 'credit_score');
 -- Note: down_payment_savings_cents is intentionally NOT seeded, to
 -- demonstrate the engine's missing_information output for a requirement
 -- with no fact on file at all.
 
 INSERT INTO goals (subject_id, transition_id, title, category, priority, target_date, status)
-SELECT 1, id, 'Buy a first home (example)', 'housing', 1, (now() + interval '12 months')::date, 'active'
-FROM transitions WHERE slug = 'renter_to_homebuyer_ready';
+SELECT 1, t.id, 'Buy a first home (example)', 'housing', 1, (now() + interval '12 months')::date, 'active'
+FROM transitions t
+WHERE t.slug = 'renter_to_homebuyer_ready'
+  AND NOT EXISTS (SELECT 1 FROM goals WHERE subject_id = 1 AND title = 'Buy a first home (example)');
 
 INSERT INTO constraints (subject_id, goal_id, constraint_type, description, is_resolved, blocks_transition_id)
 SELECT 1, g.id, 'credit',
   'Revolving credit utilization is above the recommended threshold, which is likely suppressing the credit score.',
   FALSE, t.id
 FROM goals g JOIN transitions t ON t.id = g.transition_id
-WHERE t.slug = 'renter_to_homebuyer_ready' AND g.subject_id = 1;
+WHERE t.slug = 'renter_to_homebuyer_ready' AND g.subject_id = 1
+  AND NOT EXISTS (
+    SELECT 1 FROM constraints existing
+    WHERE existing.subject_id = 1 AND existing.goal_id = g.id AND existing.constraint_type = 'credit'
+      AND existing.description = 'Revolving credit utilization is above the recommended threshold, which is likely suppressing the credit score.'
+  );
 
 -- ============================================================
 -- Second scenario — Opportunity Engine wiring
@@ -107,13 +122,16 @@ SELECT id, 'has_business_bank_account', 'Dedicated business bank account', 'bool
 FROM transitions WHERE slug = 'business_docs_to_funding_ready'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO current_state_facts (subject_id, fact_key, fact_value, fact_type, source_note) VALUES
-  (1, 'bookkeeping_current', 'false', 'user_provided', NULL);
+INSERT INTO current_state_facts (subject_id, fact_key, fact_value, fact_type, source_note)
+SELECT 1, 'bookkeeping_current', 'false', 'user_provided', NULL
+WHERE NOT EXISTS (SELECT 1 FROM current_state_facts WHERE subject_id = 1 AND fact_key = 'bookkeeping_current');
 -- has_business_bank_account is intentionally NOT seeded (missing fact).
 
 INSERT INTO goals (subject_id, transition_id, title, category, priority, target_date, status)
-SELECT 1, id, 'Get business funding-ready (example)', 'business', 1, (now() + interval '6 months')::date, 'active'
-FROM transitions WHERE slug = 'business_docs_to_funding_ready';
+SELECT 1, t.id, 'Get business funding-ready (example)', 'business', 1, (now() + interval '6 months')::date, 'active'
+FROM transitions t
+WHERE t.slug = 'business_docs_to_funding_ready'
+  AND NOT EXISTS (SELECT 1 FROM goals WHERE subject_id = 1 AND title = 'Get business funding-ready (example)');
 
 -- Multi-goal Conflict Detection — the ONE real, human-authored conflict
 -- this repo declares between the two illustrative goals above (see
@@ -141,4 +159,38 @@ WHERE ga.id IS NOT NULL AND gb.id IS NOT NULL
   AND NOT EXISTS (
     SELECT 1 FROM goal_conflict_rules existing
     WHERE existing.goal_a_id = ga.id AND existing.goal_b_id = gb.id AND existing.shared_fact_key = 'documented_income'
+  );
+
+-- Dormant Capability foundation — the ONE real, human-authored
+-- relevance mapping this repo's actual registry currently supports
+-- (see db/schema.sql's capability_relevance_rules comment for why this
+-- is deliberately sparse rather than a mapping for every capability).
+-- Checked directly against every one of the 9 real seeded capabilities'
+-- own stored descriptions before writing this: 'real_asset_execution'
+-- ("Execution support for property and other real-asset transactions")
+-- is the only one whose description is honestly, directly on-topic for
+-- an existing real goal — "Buy a first home" IS a real-asset
+-- transaction. No other capability (insurance, digital infrastructure,
+-- event production, security, property care, transportation,
+-- relocation, accounting/tax) has a defensible, non-speculative
+-- connection to either of this repo's two seeded goals beyond
+-- accounting_tax, which is already linked via bookkeeping_current and
+-- therefore already engaged, not eligible for a dormant-capability rule.
+-- This is goal-level relevance (source_type='goal'), not tied to any
+-- single requirement, because the capability supports executing the
+-- transaction itself, not any one prerequisite toward it.
+INSERT INTO capability_relevance_rules (source_type, source_ref, capability_id, relationship_type, mechanism, certainty, authored_by)
+SELECT 'goal', g.id, c.id, 'supports_goal_execution',
+  'Real-Asset Execution provides execution support for property and other real-asset transactions. '
+  || '"Buy a first home" is, structurally, exactly that kind of transaction — this capability is relevant '
+  || 'to the goal itself, not to any single prerequisite requirement toward it.',
+  'known',
+  'Authored directly in db/seed-intelligence.sql against the real capabilities.description text — not inferred from category names or topical similarity.'
+FROM (SELECT MIN(id) AS id FROM goals WHERE subject_id = 1 AND title = 'Buy a first home (example)') g,
+     capabilities c
+WHERE g.id IS NOT NULL AND c.slug = 'real_asset_execution'
+  AND NOT EXISTS (
+    SELECT 1 FROM capability_relevance_rules existing
+    WHERE existing.source_type = 'goal' AND existing.source_ref = g.id AND existing.capability_id = c.id
+      AND existing.relationship_type = 'supports_goal_execution'
   );
