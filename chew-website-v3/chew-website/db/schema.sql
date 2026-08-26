@@ -616,3 +616,68 @@ CREATE TABLE IF NOT EXISTS actions (
 
 CREATE INDEX IF NOT EXISTS idx_actions_subject_status ON actions (subject_id, status);
 CREATE INDEX IF NOT EXISTS idx_actions_goal ON actions (goal_id);
+
+-- ============================================================
+-- Scenario Modeling Foundation — CHEW Lab + Scenario Modeling
+-- Foundation Master Directive
+-- ============================================================
+-- A durable Scenario is: a preserved baseline (what CHEW actually knew,
+-- at read time, from the tables above) + a proposed move + explicit
+-- assumptions + structured effects computed by re-running the exact
+-- same deterministic requirement-chain rule (lib/intelligenceEngine.js
+-- / scenario-engine.js) against a hypothetically changed fact, never a
+-- second invented engine.
+--
+-- Identity boundary (the whole reason this table exists now instead of
+-- waiting): subject_type is identity-READY (the enum already includes
+-- 'member') but production member ownership is actively BLOCKED at the
+-- database level by the second CHECK below, not merely documented —
+-- no row can be inserted with subject_type = 'member' until a real
+-- authenticated member identity layer exists (ARCHITECTURE.md Gap 1)
+-- and that CHECK is deliberately relaxed. Until then every scenario's
+-- subject_ref points at the one seeded intel_subjects row used
+-- everywhere else on this site (see db/seed-intelligence.sql) — never
+-- a fabricated per-visitor UUID pretending to be a member.
+--
+-- scenario_status folds "current vs. stale" into one field rather than
+-- adding a second stale boolean next to it — see lib/scenarioModel.js's
+-- staleness check, which flips this on read when the real baseline
+-- facts have moved since capture, and never silently recomputes the
+-- scenario's stored effects when it does.
+CREATE TABLE IF NOT EXISTS scenarios (
+  id                          SERIAL PRIMARY KEY,
+  subject_type                TEXT NOT NULL CHECK (subject_type IN ('illustrative', 'member')),
+  subject_ref                 INTEGER NOT NULL REFERENCES intel_subjects (id),
+  goal_id                     INTEGER NOT NULL REFERENCES goals (id),
+  title                       TEXT NOT NULL,
+  description                 TEXT,
+  baseline_snapshot           JSONB NOT NULL,   -- "what CHEW knew" at capture time — see lib/scenarioModel.js buildBaselineSnapshot()
+  proposed_move               JSONB NOT NULL,   -- { type, requirementKey, description, comparisonGroupKey? }
+  assumptions                 JSONB NOT NULL,   -- array of explicit assumption strings — never hidden
+  time_horizon                TEXT NOT NULL CHECK (time_horizon IN
+                                 ('immediate', '30_days', '90_days', '6_months', '12_months', 'custom')),
+  effects                     JSONB NOT NULL,   -- array of structured effect objects — see lib/scenarioModel.js
+  dependencies                JSONB NOT NULL,   -- the real ordered requirement chain this scenario was evaluated against
+  affected_goals              JSONB NOT NULL,
+  affected_constraints        JSONB NOT NULL,
+  affected_opportunities      JSONB NOT NULL,
+  risks                       JSONB NOT NULL,
+  reversibility               TEXT NOT NULL CHECK (reversibility IN
+                                 ('easily_reversible', 'moderately_reversible', 'difficult_to_reverse',
+                                  'irreversible', 'unknown')),
+  uncertainty_classification  TEXT NOT NULL CHECK (uncertainty_classification IN
+                                 ('known', 'deterministic', 'assumption_dependent', 'estimated', 'unknown')),
+  scenario_status             TEXT NOT NULL DEFAULT 'current' CHECK (scenario_status IN ('current', 'stale')),
+  model_version                TEXT NOT NULL,
+  rule_version                TEXT NOT NULL,
+  baseline_computed_at        TIMESTAMPTZ NOT NULL,
+  created_at                  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at                  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  -- Production member ownership is intentionally blocked until a real
+  -- authenticated member identity layer exists — see comment above.
+  -- Remove this CHECK (and only this one) when that layer ships.
+  CHECK (subject_type <> 'member')
+);
+
+CREATE INDEX IF NOT EXISTS idx_scenarios_subject ON scenarios (subject_type, subject_ref, goal_id);
+CREATE INDEX IF NOT EXISTS idx_scenarios_status ON scenarios (scenario_status);

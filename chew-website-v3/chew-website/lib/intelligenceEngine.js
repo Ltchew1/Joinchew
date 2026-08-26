@@ -33,6 +33,42 @@
 const { query } = require('./db');
 const { getRoutingRecommendation } = require('./capabilityGraph');
 
+// Tags the "first unmet transition_requirements row by sequence_order"
+// rule itself, not the code that happens to implement it — bump this
+// only if that rule's actual definition changes. Read by
+// lib/scenarioModel.js so a persisted Scenario can record which real
+// rule version it was evaluated against, without duplicating the rule.
+const RULE_VERSION = 'requirement-sequence-v1';
+
+// The real, ordered requirement chain for one goal's transition —
+// shared by api/intelligence-demo.js (public) and lib/scenarioModel.js
+// (internal) so there is exactly one query that defines "the chain,"
+// not two copies that could quietly drift apart.
+async function getRequirementSequence(goalId) {
+  const sequenceResult = await query(
+    `SELECT tr.requirement_key, tr.label, tr.sequence_order, tr.action_if_unmet,
+            tr.comparison, tr.required_value, tr.unit,
+            c.slug AS capability_slug, c.name AS capability_name
+     FROM transition_requirements tr
+     JOIN goals g ON g.transition_id = tr.transition_id
+     LEFT JOIN capabilities c ON c.id = tr.capability_id
+     WHERE g.id = $1
+     ORDER BY tr.sequence_order ASC`,
+    [goalId]
+  );
+  return sequenceResult.rows.map((row) => ({
+    key: row.requirement_key,
+    label: row.label,
+    sequenceOrder: row.sequence_order,
+    actionIfUnmet: row.action_if_unmet,
+    comparison: row.comparison,
+    requiredValue: row.required_value,
+    unit: row.unit,
+    capabilitySlug: row.capability_slug,
+    capabilityName: row.capability_name,
+  }));
+}
+
 function evaluateRequirement(comparison, factValue, requiredValue) {
   if (factValue === undefined || factValue === null) return false;
   switch (comparison) {
@@ -372,4 +408,7 @@ async function listActions({ subjectId, status }) {
   }));
 }
 
-module.exports = { computeRecommendation, evaluateRequirement, completeAction, listActions };
+module.exports = {
+  computeRecommendation, evaluateRequirement, completeAction, listActions,
+  getRequirementSequence, RULE_VERSION,
+};

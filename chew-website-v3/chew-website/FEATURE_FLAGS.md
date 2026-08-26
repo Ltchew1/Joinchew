@@ -838,6 +838,156 @@ being blocked by the sandboxed test environment — identical, pre-
 existing behavior on every other page on this site, not something this
 page introduced).
 
+## The Scenario Modeling Foundation — a real, internal-only modeling layer (lib/scenarioModel.js)
+
+The directive after CHEW Lab asked for the opposite move from every
+room before it: instead of a new public visual, a real durable data
+model underneath the intelligence system, built honestly around this
+repo's actual constraint — there is still no real member/identity
+system (ARCHITECTURE.md Gap 1). The resolution follows the directive's
+own instruction precisely: build the real architecture now, scoped to
+the one seeded illustrative subject, and make the identity boundary a
+database-enforced fact, not a comment that trusts future authors to
+remember it.
+
+**Schema created** — `scenarios` (`db/schema.sql`): `subject_type` is
+identity-*ready* (its `CHECK` allows `'illustrative'` and `'member'`),
+but a second `CHECK (subject_type <> 'member')` on the same table
+actively **blocks** any row from ever being inserted with
+`subject_type = 'member'` today. This isn't a code-level gate that a
+future caller could route around — it's enforced by Postgres itself,
+verified directly: `INSERT ... VALUES ('member', ...)` against the real
+schema returns `ERROR: new row for relation "scenarios" violates check
+constraint`. The comment beside it names the exact removal condition: "a
+real authenticated member identity layer exists." Every other field
+(`baseline_snapshot`, `proposed_move`, `assumptions`, `effects`,
+`dependencies`, `affected_goals/constraints/opportunities`, `risks`,
+`reversibility`, `uncertainty_classification`, `scenario_status`,
+`model_version`, `rule_version`, `time_horizon`, timestamps) matches the
+directive's own minimum field list — nothing extra was added because it
+"sounded advanced." A new `scenario_modeling` feature flag row was added
+at status `internal`, identical in spirit to `intelligence_engine`'s
+existing gate.
+
+**Reused, not rebuilt:** this was the directive's hardest constraint,
+and it holds. `lib/scenarioModel.js` computes every "what would change"
+answer by re-running **scenario-engine.js's own
+`deriveState()`/`computeRequirementDelta()`** — the exact same pure
+functions already reused by the Unlock Room and the Simulation Room —
+against a hypothetical in-memory fact override. It never touches
+`current_state_facts`. The one small honest refactor this required: the
+inline SQL that built `requirementSequence` inside
+`api/intelligence-demo.js` is now `lib/intelligenceEngine.js`'s own
+exported `getRequirementSequence()`, called by both files — one query
+defines "the chain" now, not two that could quietly drift apart.
+`api/intelligence-demo.js`'s JSON output was verified byte-identical
+before and after this refactor (same live server, same request,
+diffed). `lib/capabilityGraph.js`'s `getRoutingRecommendation()` and
+`getCapabilityOverview()` are called exactly as they already were
+elsewhere — no new read path invented.
+
+**Baseline snapshot** answers "what did CHEW actually know when this was
+run?" using only real reads: the real requirement chain and its real
+met/unmet state, the real unresolved `constraints` rows, the real
+capability-coverage fraction (or `null` when nothing links, never a
+fabricated 0%), and the real current recommendation (chosen requirement
++ its real linked capability, if any) — all computed the same way, at
+read time, never cached from a stale prior call. `unavailableDataPoints`
+explicitly lists four financial dimensions this schema has no field for
+at all (income, liquidity, employment history, asset-ownership detail)
+— each with `available: false` and a plain reason, rather than silently
+omitting them in a way a reader could mistake for "everything is known."
+
+**Effects** are structured per the directive's own list (entity, effect
+type, direction, explanation, rule/source, uncertainty class, time
+relevance) and computed for the one real slice built this pass —
+"resolve one known requirement" — covering requirement state, readiness,
+recommendation, linked opportunity, and the dependency chain itself.
+Two honesty rules are load-bearing here, both directly reused from
+reasoning already established earlier in this build: resolving a
+requirement **out of its real sequence order never moves the current
+focus** (this chain is strictly linear, not branching — the same real
+structural fact the Simulation Room surfaces), and reversibility is
+reported as `'unknown'` for every scenario, not a plausible-sounding
+guess, because nothing in this schema captures how reversible resolving
+any given requirement actually is.
+
+**The first real scenario slice**, run against the real seeded
+subject/goal (subject 1, "Buy a first home (example)"): baseline was 1
+of 3 real requirements resolved (33%), current focus `credit_score`
+(the real 580-vs-620 gap). Modeling "resolve credit_score now" produces:
+readiness 1/3 → 2/3 (67%), current focus shifts to
+`down_payment_savings_cents` (recommendation *changes* — real, not
+staged), and the opportunity effect honestly reports no linked
+capability exists for either requirement, before or after (neither row
+has a `capability_id` in the real schema). Two companion edge cases were
+run and reported honestly rather than dramatized: resolving
+`documented_income` (already met) produces **no** readiness or
+recommendation change; resolving `down_payment_savings_cents` (the
+downstream requirement) out of order **also** produces no recommendation
+change — proving the linear-order rule rather than asserting it.
+
+**Parallel Futures MVP** (`compareParallelFutures()`): compares exactly
+those three real options against one shared baseline capture, each
+persisted as its own real `scenarios` row tagged with a shared
+`comparisonGroupKey`, never a second disconnected comparison structure.
+No fabricated cost, timing, or probability was added to make the
+comparison "look richer" — only readiness, current-focus, and linked-
+capability are compared, because those are the only dimensions this
+repo can support honestly today.
+
+**Future-Back MVP** (`buildFutureBackTrace()`): the first non-fictional
+Future-Back path built on this new foundation specifically — reverses
+the real requirement chain into outcome ← required conditions ← missing
+conditions ← next available action, reusing the identical baseline
+capture with no second engine and no invented date or lifestyle content.
+
+**Staleness**: `getScenario()`/`listScenarios()` compare a stored
+scenario's preserved baseline against the real current facts on every
+read; if they've diverged, `scenario_status` flips to `'stale'` and that
+flip is persisted — but the scenario's stored `effects` are never
+silently recomputed. Verified directly: seeded a real fact change
+(`credit_score` → 650) against an already-created scenario, confirmed
+`scenario_status` flipped to `stale` on the next read, confirmed its
+`effects` array was byte-identical before and after the flip, then
+reverted the seeded fact.
+
+**API** (`api/scenario-model.js`): `GET ?action=baseline|list|futureBack`,
+`GET ?id=`, `POST {action: 'create'|'compareParallelFutures'}` — gated
+`internal` exactly like `api/intelligence-recommendation.js`, and every
+request is pinned to the one seeded illustrative subject; there is no
+caller-supplied `subjectId` parameter anywhere in this file, so there is
+no path by which a request could attach a real visitor's identity to a
+scenario even by accident.
+
+**Tests performed**: a standalone Node test script exercised
+`lib/scenarioModel.js` directly against a live local PostgreSQL 16
+database (bypassing HTTP entirely, the same way this repo already tests
+other internal-only logic) — baseline preservation, the first real
+scenario slice's five effect types, the already-met and downstream-order
+edge cases, no-fabrication assertions (no invented income value, no
+fake confidence/probability language), model/rule versioning, staleness
+flip-and-no-recompute, repeated-modeling consistency (identical inputs →
+byte-identical effects), Parallel Futures' 3-way comparison, Future-Back
+traversal, and the DB-level `member` block — all passed. Separately,
+over real HTTP against the same database: confirmed the endpoint 404s
+by default (the `internal` gate actually blocks it, not just in theory);
+temporarily flipped the flag to `preview` in the **scratch test
+database only** to exercise the full `GET`/`POST` surface end-to-end
+(baseline, create, list, compare, future-back, get-by-id), confirmed
+identical results to the direct Node tests, then flipped the flag back
+to `internal` and confirmed the 404 returned — and deleted the test
+scenario rows from the scratch database afterward. The production
+`scenario_modeling` flag was never touched and stays `internal`.
+
+**What must change once real member identity exists**: relax exactly
+one line — the `CHECK (subject_type <> 'member')` constraint on
+`scenarios` — and give `api/scenario-model.js` a real authenticated
+`subjectId` instead of the hardcoded illustrative one. Nothing else in
+`lib/scenarioModel.js` needs to change: the baseline/effects/versioning
+logic already operates per-subject, per-goal: it was simply never given
+a second subject to run against.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
@@ -903,14 +1053,17 @@ the following exist in this repository yet:
     building these even as "demo" would mean fabricating a history that
     was never seeded, which is different from labeling a single static
     scenario as an example).
-  - **Just not built yet, execution-bandwidth only**: Parallel Futures
-    specifically (it needs invented hypothetical timeline data with no real
-    computed basis, unlike Future-Back — see above, and per direct
-    instruction this stays unbuilt until a legitimate scenario-modeling
-    layer exists — Impact Comparison, now built in the Simulation Room, is
-    the honest, non-fabricated version of this same instinct — CHEW
-    Lab's own Parallel Futures bay is a fixed illustrative sketch of the
-    same idea, explicitly labeled Simulation, not the real engine),
+  - **Just not built yet, execution-bandwidth only**: a *public* Parallel
+    Futures experience specifically. The legitimate scenario-modeling
+    layer this used to be blocked on now exists — see "The Scenario
+    Modeling Foundation" above, including a real, deterministic,
+    internal-only `compareParallelFutures()` — but it's gated `internal`
+    pending a real member identity system, so no public page is wired to
+    it yet. Impact Comparison, built in the Simulation Room, remains the
+    honest, non-fabricated public version of this same instinct; CHEW
+    Lab's own Parallel Futures bay is still a fixed illustrative sketch,
+    explicitly labeled Simulation, with its transparency block now
+    disclosing that the real internal engine exists behind it,
     sound design, and a bespoke mobile choreography
     beyond the existing responsive breakpoints (CHEW Blind Spot, CHEW
     Domino, the Opportunity Radar, Future-Back, the Network Room, the

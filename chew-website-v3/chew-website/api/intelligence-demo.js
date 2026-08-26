@@ -41,7 +41,7 @@
 // reconstructing that string from the recommendation's free-text
 // rationale.
 
-const { computeRecommendation } = require('../lib/intelligenceEngine');
+const { computeRecommendation, getRequirementSequence } = require('../lib/intelligenceEngine');
 const { getCapabilityOverview } = require('../lib/capabilityGraph');
 const { isFeatureActive } = require('../lib/featureFlags');
 const { query } = require('../lib/db');
@@ -85,24 +85,7 @@ module.exports = async (req, res) => {
       goalId: scenario.goalId,
     });
 
-    const sequenceResult = await query(
-      `SELECT tr.requirement_key, tr.label, tr.sequence_order, tr.action_if_unmet,
-              c.slug AS capability_slug, c.name AS capability_name
-       FROM transition_requirements tr
-       JOIN goals g ON g.transition_id = tr.transition_id
-       LEFT JOIN capabilities c ON c.id = tr.capability_id
-       WHERE g.id = $1
-       ORDER BY tr.sequence_order ASC`,
-      [scenario.goalId]
-    );
-    const requirementSequence = sequenceResult.rows.map((row) => ({
-      key: row.requirement_key,
-      label: row.label,
-      sequenceOrder: row.sequence_order,
-      actionIfUnmet: row.action_if_unmet,
-      capabilitySlug: row.capability_slug,
-      capabilityName: row.capability_name,
-    }));
+    const requirementSequence = await getRequirementSequence(scenario.goalId);
 
     const capabilityOverview = await getCapabilityOverview();
 

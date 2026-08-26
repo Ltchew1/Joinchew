@@ -28,5 +28,7 @@ INSERT INTO feature_flags (slug, name, status, public_teaser_enabled, public_tit
   ('intelligence_engine', 'CHEW Intelligence System (MVP recommendation slice)', 'internal', FALSE, NULL, NULL, 'intelligence',
    'No real subject/user identity behind this yet (ARCHITECTURE.md Gap 1). Internal/test use only until that exists — do not flip to preview/beta/live without real identity in place first.'),
   ('intelligence_demo', 'CHEW Intelligence Reveal (public, fixed-scenario demo)', 'live', FALSE, NULL, NULL, 'intelligence',
-   'Public and safe by construction: api/intelligence-demo.js only ever computes against the two pre-seeded illustrative scenarios (db/seed-intelligence.sql), never an arbitrary subjectId/goalId. Not the same flag as intelligence_engine, which stays internal.')
+   'Public and safe by construction: api/intelligence-demo.js only ever computes against the two pre-seeded illustrative scenarios (db/seed-intelligence.sql), never an arbitrary subjectId/goalId. Not the same flag as intelligence_engine, which stays internal.'),
+  ('scenario_modeling', 'CHEW Scenario Modeling Foundation (internal)', 'internal', FALSE, NULL, NULL, 'intelligence',
+   'No real member identity system exists yet (ARCHITECTURE.md Gap 1), so every scenario row is owned by the one seeded illustrative intel_subjects row, never a real person. Internal/test use only — do not flip to preview/beta/live, and do not relax the scenarios.subject_type CHECK, until a real authenticated member identity layer exists.')
 ON CONFLICT (slug) DO NOTHING;
