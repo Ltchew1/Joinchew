@@ -735,6 +735,51 @@ Verified at 1280px desktop, 768px tablet, 375px mobile, and under
 switch before simulation controls become clickable (not a bug — by
 design). Zero JavaScript console errors in every run.
 
+## Wealth World — the Life Map and the capability registry, in one view (wealth-world.html)
+
+Named as the room that would either become "real intelligence underneath
+the spectacle" or "a decorative visualization," depending on whether it
+reused what already exists. It reuses two already-real, already-shipped
+datasets verbatim rather than inventing a third: the Life Map's 8
+territories and 13 curated relationship edges (identical data, copied
+from `script.js`'s `LIFEMAP_EDGES`), and the capability registry's 9 real
+capabilities with live provider counts (identical data to the Opportunity
+Radar, fetched from the same `capabilityOverview` field).
+
+**What's genuinely new, and clearly labeled as such:** the grouping
+between the two rings. There is no stored relationship between a Life Map
+territory and a capability row anywhere in the schema, so
+`CAP_TERRITORIES` is CHEW's own editorial pairing (e.g. "Accounting / Tax"
+grouped with Capital and Business) — every detail panel that shows this
+grouping says explicitly "CHEW's own grouping, not a stored relationship."
+Three real capabilities (Event Production, Transportation / Logistics,
+Relocation / Storage) don't map cleanly onto any of the 8 financial
+territories — rather than force a connection that doesn't exist, they're
+rendered in a visually separate row below the map, still real, still
+clickable, still showing real live status, just honestly ungrouped.
+
+Selecting a territory highlights its real Life Map connections and the
+real capabilities editorially grouped with it; selecting a capability
+highlights its live availability state and which territories it's grouped
+with. Caught and fixed a real layout bug before shipping: two pairs of
+capability satellite nodes (Insurance/Risk Review + Security/Protection,
+and Real-Asset Execution + Property Care) were positioned only 20° apart
+on the outer ring, close enough that their label text rendered
+overlapping and unreadable — fixed by widening the angular separation to
+32°, verified by screenshot before and after.
+
+Verified the live-update claim the same way as the Radar: seeded one real
+provider and capability link for `accounting_tax` in the scratch database,
+confirmed the node visually gained `is-available` styling and its detail
+panel reported "1 active provider," then reverted. Tested all 8
+territories and all 9 capabilities (6 grouped, 3 ungrouped) individually
+across desktop, mobile, and reduced-motion, asserting the exact connected-
+territory and connected-capability sets for every one against the real
+curated data (not just that something highlighted) — 17 selectable
+elements × 3 viewport conditions, all exact-matched. Confirmed keyboard
+`Tab`-then-`Enter` activation and zero JavaScript console errors
+throughout.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
@@ -802,14 +847,14 @@ the following exist in this repository yet:
     computed basis, unlike Future-Back — see above, and per direct
     instruction this stays unbuilt until a legitimate scenario-modeling
     layer exists — Impact Comparison, now built in the Simulation Room, is
-    the honest, non-fabricated version of this same instinct), the two
-    remaining browseable rooms (Wealth World, CHEW Lab — Network Room,
-    Unlock Room, Future Room, and Simulation Room are no longer on this
+    the honest, non-fabricated version of this same instinct), the one
+    remaining browseable room (CHEW Lab — Network Room, Unlock Room,
+    Future Room, Simulation Room, and Wealth World are no longer on this
     list, see above), sound design, and a bespoke mobile choreography
     beyond the existing responsive breakpoints (CHEW Blind Spot, CHEW
     Domino, the Opportunity Radar, Future-Back, the Network Room, the
-    Unlock Room, the Future Room, and the Simulation Room are no longer on
-    this list — see above, all eight now built). None of these need a
+    Unlock Room, the Future Room, the Simulation Room, and Wealth World
+    are no longer on this list — see above, all nine now built). None of these need a
     capability this repo
     lacks to build as a
     clearly-labeled demo/sample exhibit — they're exactly the kind of

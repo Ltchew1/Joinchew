@@ -1460,6 +1460,101 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   .simroom-chamber.is-active-tab { display: block; }
 }
 
+/* CHEW Wealth World: the Life Map's 8 real territories (verbatim curated
+   edges) as an inner ring, with the 9 real capabilities from the
+   registry (live provider status, same data as the Opportunity Radar) as
+   an outer ring. Territory-to-capability grouping is CHEW's own editorial
+   pairing, not a database relationship — labeled as such throughout. See
+   wealth-world.html. */
+.wealthworld-map-wrap { position: relative; width: 100%; max-width: 620px; aspect-ratio: 560 / 560; margin: 20px auto 0; }
+.wealthworld-svg { width: 100%; height: 100%; overflow: visible; display: block; }
+
+.wealthworld-svg .node-center circle { fill: url(#constGoldFill); }
+.wealthworld-svg .node-center text {
+  font-family: var(--font-display); font-size: 15px; font-weight: 700;
+  fill: #14120A; text-anchor: middle; dominant-baseline: middle;
+}
+
+.wealthworld-territory circle {
+  fill: rgba(255,255,255,0.03); stroke: var(--panel-border); stroke-width: 1.4;
+  transition: stroke 0.4s ease, fill 0.4s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1), filter 0.4s ease;
+  transform-box: fill-box; transform-origin: center;
+}
+.wealthworld-territory-label, .wealthworld-cap-label {
+  font-family: var(--font-body); font-size: 10.5px; fill: var(--text-muted);
+  text-anchor: middle; dominant-baseline: middle; letter-spacing: 0.01em;
+  transition: fill 0.4s ease, opacity 0.4s ease;
+}
+.wealthworld-spoke, .wealthworld-connector {
+  stroke: var(--panel-border); stroke-width: 1; opacity: 0.3;
+  transition: opacity 0.4s ease, stroke 0.4s ease;
+}
+.wealthworld-edge { stroke: var(--panel-border); stroke-width: 1; opacity: 0.2; transition: stroke 0.35s ease, opacity 0.35s ease, stroke-width 0.35s ease; }
+
+.wealthworld-cap-node circle {
+  fill: rgba(255,255,255,0.02); stroke: var(--panel-border); stroke-width: 1.2; stroke-dasharray: 3 2;
+  transition: stroke 0.4s ease, fill 0.4s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1), filter 0.4s ease;
+  transform-box: fill-box; transform-origin: center;
+}
+.wealthworld-cap-node.is-available circle { stroke-dasharray: none; stroke: var(--gold); }
+
+.wealthworld-map-wrap.has-selection .wealthworld-territory circle,
+.wealthworld-map-wrap.has-selection .wealthworld-cap-node circle { opacity: 0.35; }
+.wealthworld-map-wrap.has-selection .wealthworld-territory-label,
+.wealthworld-map-wrap.has-selection .wealthworld-cap-label { opacity: 0.35; }
+.wealthworld-map-wrap.has-selection .wealthworld-spoke,
+.wealthworld-map-wrap.has-selection .wealthworld-edge,
+.wealthworld-map-wrap.has-selection .wealthworld-connector { opacity: 0.08; }
+
+.wealthworld-territory.is-selected circle, .wealthworld-cap-node.is-selected circle {
+  stroke: var(--gold-light); stroke-width: 2; fill: rgba(201,162,39,0.16); opacity: 1 !important;
+  filter: drop-shadow(0 0 10px rgba(232,206,122,0.45)); transform: scale(1.14);
+}
+.wealthworld-territory.is-connected circle, .wealthworld-cap-node.is-connected circle {
+  stroke: var(--gold); opacity: 1 !important; fill: rgba(201,162,39,0.08);
+}
+.wealthworld-territory-label.is-selected, .wealthworld-cap-label.is-selected { fill: var(--gold-light); opacity: 1 !important; font-weight: 600; }
+.wealthworld-territory-label.is-connected, .wealthworld-cap-label.is-connected { fill: var(--text); opacity: 1 !important; }
+.wealthworld-spoke.is-lit, .wealthworld-edge.is-lit, .wealthworld-connector.is-lit { opacity: 0.9 !important; stroke: var(--gold-light); }
+
+.wealthworld-hit-layer { position: absolute; inset: 0; }
+.wealthworld-hit {
+  position: absolute; border-radius: 50%; background: transparent; border: none; padding: 0; cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+.wealthworld-hit:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+
+.wealthworld-unmapped { margin: 30px auto 0; max-width: 620px; }
+.wealthworld-unmapped-label { display: block; text-align: center; font-size: 0.76rem; color: var(--text-faint); font-style: italic; margin-bottom: 12px; }
+.wealthworld-unmapped-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.wealthworld-unmapped-btn {
+  padding: 9px 16px; border-radius: 999px; border: 1px dashed var(--panel-border); background: rgba(255,255,255,0.02);
+  color: var(--text-muted); font-size: 0.8rem; cursor: pointer; transition: border-color 0.3s ease, color 0.3s ease;
+}
+.wealthworld-unmapped-btn.is-available { border-style: solid; border-color: var(--gold); color: var(--text); }
+.wealthworld-unmapped-btn:hover, .wealthworld-unmapped-btn.is-selected { border-color: var(--gold-light); color: var(--text); }
+
+.wealthworld-detail {
+  margin: 26px auto 0; max-width: 520px; padding: 22px 26px; text-align: left;
+  border-radius: var(--radius); background: var(--panel); border: 1px solid var(--panel-border-soft);
+}
+.wealthworld-detail-eyebrow { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-light); margin-bottom: 12px; }
+.wealthworld-detail-list { list-style: none; margin: 0; padding: 0; }
+.wealthworld-detail-list li { font-size: 0.88rem; color: var(--text-muted); line-height: 1.55; margin: 0 0 10px; }
+.wealthworld-detail-list li:last-child { margin-bottom: 0; }
+.wealthworld-detail-list strong { color: var(--gold-light); font-family: var(--font-display); font-style: italic; font-weight: 600; }
+.wealthworld-detail-close {
+  display: block; margin: 16px auto 0; background: none; border: none; color: var(--text-faint);
+  font-size: 0.78rem; text-decoration: underline; cursor: pointer; padding: 4px 8px;
+}
+.wealthworld-detail-close:hover { color: var(--text-muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  .wealthworld-territory circle, .wealthworld-cap-node circle, .wealthworld-territory-label,
+  .wealthworld-cap-label, .wealthworld-spoke, .wealthworld-edge, .wealthworld-connector { transition: none; }
+}
+@media (max-width: 480px) { .wealthworld-map-wrap { max-width: 340px; } }
+
 /* ---------- Closing / legacy section ---------- */
 .legacy-close { position: relative; overflow: hidden; padding: 112px 0; }
 .legacy-close .hero-glow { opacity: 0.7; }
