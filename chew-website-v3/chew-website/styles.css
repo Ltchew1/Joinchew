@@ -1555,6 +1555,93 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 }
 @media (max-width: 480px) { .wealthworld-map-wrap { max-width: 340px; } }
 
+/* ---------- CHEW Lab ---------- */
+.chewlab-intro-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; margin-top: 8px; }
+.chewlab-sweep-btn {
+  flex-shrink: 0; padding: 13px 26px; border-radius: 999px; border: 1px solid var(--gold);
+  background: rgba(201,162,39,0.08); color: var(--gold-light); font-family: var(--font-body);
+  font-size: 0.86rem; font-weight: 600; letter-spacing: 0.03em; cursor: pointer;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+.chewlab-sweep-btn:hover, .chewlab-sweep-btn:focus-visible { background: rgba(201,162,39,0.16); box-shadow: 0 0 0 1px var(--gold-light); }
+.chewlab-sweep-status { font-size: 0.78rem; color: var(--text-faint); margin: 10px 0 0; min-height: 1.2em; }
+
+.chewlab-floor {
+  position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 28px;
+  padding: 28px; border-radius: var(--radius);
+  background:
+    repeating-linear-gradient(0deg, rgba(201,162,39,0.035) 0px, rgba(201,162,39,0.035) 1px, transparent 1px, transparent 64px),
+    repeating-linear-gradient(90deg, rgba(201,162,39,0.035) 0px, rgba(201,162,39,0.035) 1px, transparent 1px, transparent 64px),
+    rgba(255,255,255,0.015);
+  border: 1px solid var(--panel-border);
+}
+@media (max-width: 980px) { .chewlab-floor { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .chewlab-floor { grid-template-columns: 1fr; padding: 16px; gap: 16px; } }
+
+.chewlab-bay {
+  position: relative; background: var(--panel); border: 1px solid var(--panel-border-soft); border-radius: var(--radius);
+  padding: 24px 22px 20px; display: flex; flex-direction: column;
+  transition: transform 0.4s ease, border-color 0.3s ease, box-shadow 0.4s ease;
+}
+.chewlab-bay:hover, .chewlab-bay:focus-within { transform: translateY(-4px); border-color: var(--gold-light); box-shadow: 0 18px 40px rgba(0,0,0,0.35); }
+.chewlab-bay.is-sweeping { border-color: var(--gold-light); box-shadow: 0 0 0 1px rgba(232,206,122,0.45), 0 20px 46px rgba(201,162,39,0.16); }
+
+.chewlab-bay-eyebrow { display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); }
+.chewlab-bay-title { font-family: var(--font-display); font-style: italic; font-size: 1.28rem; margin: 6px 0 10px; color: var(--text); }
+
+.chewlab-status-badge {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px;
+  font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; width: fit-content;
+}
+.chewlab-bay[data-status="live"] .chewlab-status-badge,
+.chewlab-bay[data-status="preview"] .chewlab-status-badge { border: 1px solid var(--gold-light); color: var(--gold-light); background: rgba(201,162,39,0.12); }
+.chewlab-bay[data-status="experimental"] .chewlab-status-badge { border: 1px dashed var(--gold); color: var(--text); background: rgba(201,162,39,0.05); }
+.chewlab-bay[data-status="simulation"] .chewlab-status-badge { border: 1px solid var(--sample-blue); color: var(--sample-blue); background: rgba(123,156,190,0.08); }
+.chewlab-bay[data-status="research"] .chewlab-status-badge { border: 1px dashed var(--sample-blue); color: var(--sample-blue); background: transparent; }
+.chewlab-bay[data-status="needs-data"] .chewlab-status-badge { border: 1px dotted var(--text-faint); color: var(--text-faint); background: transparent; }
+
+.chewlab-bay-desc { font-size: 0.86rem; color: var(--text-muted); line-height: 1.55; margin: 12px 0 0; }
+
+.chewlab-bay-visual { position: relative; height: 118px; margin: 16px 0 4px; border-radius: 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
+.chewlab-bay-visual svg { width: 100%; height: 100%; display: block; }
+
+.chewlab-bay-link { font-size: 0.8rem; color: var(--gold-light); margin-top: 10px; display: inline-block; }
+
+.chewlab-transparency { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--panel-border); }
+.chewlab-transparency-toggle {
+  background: none; border: none; color: var(--text-faint); font-size: 0.76rem; text-decoration: underline;
+  cursor: pointer; padding: 0; font-family: inherit;
+}
+.chewlab-transparency-toggle:hover { color: var(--text-muted); }
+.chewlab-transparency-body { display: none; margin-top: 12px; }
+.chewlab-transparency-body.is-open { display: block; }
+.chewlab-transparency-label { display: block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-light); margin: 12px 0 4px; }
+.chewlab-transparency-label:first-child { margin-top: 0; }
+.chewlab-transparency-body p, .chewlab-transparency-body ul { margin: 0; padding: 0; }
+.chewlab-transparency-body ul { padding-left: 18px; }
+.chewlab-transparency-body li, .chewlab-transparency-body p { font-size: 0.8rem; color: var(--text-muted); line-height: 1.55; margin-bottom: 4px; }
+
+/* Bay 03 — Economic Weather gauges */
+.chewlab-weather-gauges { display: flex; align-items: flex-end; justify-content: space-around; height: 100%; padding: 12px 10px 10px; }
+.chewlab-gauge { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 22%; }
+.chewlab-gauge-bar { width: 100%; height: 62px; border-radius: 4px; background: rgba(255,255,255,0.05); position: relative; overflow: hidden; }
+.chewlab-gauge-bar-fill { position: absolute; left: 0; right: 0; bottom: 0; background: var(--gold); border-radius: 4px; height: var(--gauge-pct, 0%); transition: height 0.6s ease; }
+.chewlab-gauge.is-unavailable .chewlab-gauge-bar { border: 1px dashed var(--panel-border); }
+.chewlab-gauge.is-unavailable .chewlab-gauge-bar-fill { background: transparent; }
+.chewlab-gauge-label { font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); text-align: center; }
+.chewlab-gauge-value { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
+
+/* Bay 02 — Future-Back mini chain */
+.chewlab-chain { display: flex; align-items: center; justify-content: center; height: 100%; gap: 6px; padding: 0 12px; flex-wrap: nowrap; }
+.chewlab-chain-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--panel-border-soft); background: transparent; flex-shrink: 0; }
+.chewlab-chain-dot.is-resolved { background: var(--gold); border-color: var(--gold); }
+.chewlab-chain-dot.is-current { border-color: var(--gold-light); box-shadow: 0 0 0 3px rgba(232,206,122,0.18); }
+.chewlab-chain-line { flex: 1; height: 1px; background: var(--panel-border-soft); min-width: 6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .chewlab-bay, .chewlab-gauge-bar-fill { transition: none; }
+}
+
 /* ---------- Closing / legacy section ---------- */
 .legacy-close { position: relative; overflow: hidden; padding: 112px 0; }
 .legacy-close .hero-glow { opacity: 0.7; }

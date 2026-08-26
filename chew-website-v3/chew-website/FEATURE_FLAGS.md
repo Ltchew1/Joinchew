@@ -780,6 +780,64 @@ elements × 3 viewport conditions, all exact-matched. Confirmed keyboard
 `Tab`-then-`Enter` activation and zero JavaScript console errors
 throughout.
 
+## CHEW Lab — six experiment bays, each honestly labeled (chew-lab.html)
+
+The last named room, and the first page on this site to put a truthful
+status word directly on unfinished intelligence rather than only
+describing it in this document. Six bays, each carrying one of the
+directive's own status words and its own visible "What's real here"
+transparency block (Status / Uses / Does not yet use), collapsed by
+default and toggleable:
+
+- **Future-Back Planning (Preview)** — not a new build, a condensed live
+  view of the real Future Room: fetches the same
+  `/api/intelligence-demo` scenario, renders a real resolved/current/
+  unresolved dot chain from the real `requirementSequence` and
+  `chosenRequirementKey`, and links out to the full room.
+- **Economic Weather (Experimental)** — the first time this directive's
+  "blocked" item actually ships a real slice instead of staying fully
+  blocked. Two of its four gauges are genuinely computed: Readiness is
+  the real resolved/total requirement fraction (identical math to
+  Future-Back), Risk is the real count of unresolved `constraints` rows
+  for this scenario (`recommendation.basedOnConstraints`, already
+  computed server-side, never fabricated here). The other two —
+  Momentum and Liquidity — render as an honestly dashed gauge reading
+  "n/a," because CHEW's schema still has no history-over-time table to
+  compute a trend from; the bay's own transparency block says so
+  explicitly rather than inventing a plausible-looking number.
+- **Parallel Futures, Hidden Leverage, Friction Detection, Conflict
+  Detection (Simulation / Research)** — fixed, hand-built illustrative
+  sketches with no live data path. Each one's transparency block states
+  plainly what schema gap keeps it from being real today (no
+  dependency-modeling engine, no asset/relationship data, no action-
+  repetition history, no simultaneous-goal modeling), and each uses real
+  capability names from the registry only as illustrative labels, never
+  as claimed live structure.
+
+A page-level signature moment — "Walk The Floor" — sequentially lights
+up all six bays in a staggered sweep (a visual tour of the room, not a
+new computation), then settles into a status line stating the real
+split: two bays running on real data today, four still fixed research
+sketches. Under `prefers-reduced-motion`, the sweep is skipped entirely
+and the same status line is set immediately with no stagger.
+
+Tested against a live local PostgreSQL 16 database and a real Chromium/
+Playwright session: confirmed all 6 bays render with the exact expected
+status vocabulary; confirmed Future-Back's chain and description use
+the real fetched resolved/total count and goal title; confirmed the
+Economic Weather gauges show a real percent and a real constraint
+count while Momentum/Liquidity render exactly `n/a`; confirmed the
+transparency toggle opens/closes via both click and keyboard `Enter`
+with correct `aria-expanded` state; confirmed the sweep signature
+moment fires, animates, and lands on the correct completion text;
+confirmed the reduced-motion path sets that same text immediately with
+no stagger; confirmed the floor collapses to a single column on a
+390px mobile viewport; confirmed zero JavaScript runtime errors across
+all of the above (the only console noise was the Google Fonts request
+being blocked by the sandboxed test environment — identical, pre-
+existing behavior on every other page on this site, not something this
+page introduced).
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
@@ -834,27 +892,31 @@ the following exist in this repository yet:
     the public site has no identity system to hold (the Life Map's
     territory-selection interactivity itself is now built — see above —
     but it illuminates curated, editorial relationships, not anything
-    wired to a subject's real data); Economic Weather, "What Changed,"
-    Hidden Leverage, Friction
-    Detection, and Conflict Detection (each needs either state-over-time
-    tracking or pattern-recognition across a subject's history that
-    doesn't exist for the one seeded test subject — building these even
-    as "demo" would mean fabricating a history that was never seeded,
-    which is different from labeling a single static scenario as an
-    example).
+    wired to a subject's real data); the two Momentum/Liquidity gauges
+    inside CHEW Lab's Economic Weather bay specifically (Readiness and
+    Risk are now real — see above — but a genuine trend needs a
+    history-over-time table that doesn't exist yet); "What Changed,"
+    Hidden Leverage, Friction Detection, and Conflict Detection as real
+    (rather than fixed-illustrative) experiences (each needs either
+    state-over-time tracking or pattern-recognition across a subject's
+    history that doesn't exist for the one seeded test subject —
+    building these even as "demo" would mean fabricating a history that
+    was never seeded, which is different from labeling a single static
+    scenario as an example).
   - **Just not built yet, execution-bandwidth only**: Parallel Futures
     specifically (it needs invented hypothetical timeline data with no real
     computed basis, unlike Future-Back — see above, and per direct
     instruction this stays unbuilt until a legitimate scenario-modeling
     layer exists — Impact Comparison, now built in the Simulation Room, is
-    the honest, non-fabricated version of this same instinct), the one
-    remaining browseable room (CHEW Lab — Network Room, Unlock Room,
-    Future Room, Simulation Room, and Wealth World are no longer on this
-    list, see above), sound design, and a bespoke mobile choreography
+    the honest, non-fabricated version of this same instinct — CHEW
+    Lab's own Parallel Futures bay is a fixed illustrative sketch of the
+    same idea, explicitly labeled Simulation, not the real engine),
+    sound design, and a bespoke mobile choreography
     beyond the existing responsive breakpoints (CHEW Blind Spot, CHEW
     Domino, the Opportunity Radar, Future-Back, the Network Room, the
-    Unlock Room, the Future Room, the Simulation Room, and Wealth World
-    are no longer on this list — see above, all nine now built). None of these need a
+    Unlock Room, the Future Room, the Simulation Room, Wealth World, and
+    CHEW Lab are no longer on this list — see above, all ten now built).
+    None of these need a
     capability this repo
     lacks to build as a
     clearly-labeled demo/sample exhibit — they're exactly the kind of

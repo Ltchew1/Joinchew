@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHEW Lab (Experimental) | CHEW</title>
+<meta name="description" content="Inside CHEW's R&amp;D floor — six experiment bays, each honestly labeled Live, Preview, Experimental, Simulation, or Research, with a plain account of what's real and what isn't.">
+<link rel="canonical" href="https://www.joinchew.com/chew-lab.html">
+<meta name="robots" content="noindex, follow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="brand">
+      <img src="assets/chew-icon-official.png" alt="" width="40" height="40">
+      CHEW
+    </a>
+    <nav class="nav" id="site-nav">
+      <a href="index.html">Home</a>
+      <a href="how-it-works.html">How It Works</a>
+      <a href="services.html">Programs</a>
+      <a href="blueprint.html">Blueprint</a>
+      <a href="philosophy.html">Philosophy</a>
+      <a href="education.html">Education</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="apply.html" class="btn btn-gold btn-sm">I'm Ready to Chew</a>
+    </div>
+    <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="site-nav">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="hero-glow"></div>
+    <div class="container" style="position:relative;">
+      <span class="eyebrow">Experimental &middot; Research Floor</span>
+      <h1 style="max-width:26ch;">Inside CHEW's R&amp;D floor.</h1>
+      <p class="max-prose" style="font-size:1.05rem; margin-top:16px;">
+        Six experiment bays &mdash; some already running on real CHEW data, some still fixed
+        illustrative sketches of where the intelligence system is headed. Every bay is labeled
+        honestly, and every bay tells you plainly what it uses and what it doesn't.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0;">
+    <div class="container">
+      <div class="chewlab-intro-row" data-reveal>
+        <p class="max-prose" style="margin:0; font-size:0.92rem; color:var(--text-muted);">
+          Two bays below pull live from CHEW's real intelligence engine, against the same shared
+          illustrative example used across the site. Four are fixed research sketches &mdash;
+          fictional by design, and labeled that way in every one of their own status blocks.
+        </p>
+        <button type="button" class="chewlab-sweep-btn" id="chewlab-sweep-btn">Walk The Floor &rarr;</button>
+      </div>
+      <p class="chewlab-sweep-status" id="chewlab-sweep-status" role="status" aria-live="polite"></p>
+
+      <div class="chewlab-floor" id="chewlab-floor">
+
+        <!-- Bay 01 — Parallel Futures -->
+        <article class="chewlab-bay" data-status="simulation" data-bay="parallel">
+          <span class="chewlab-bay-eyebrow">Bay 01</span>
+          <span class="chewlab-status-badge">Simulation</span>
+          <h2 class="chewlab-bay-title">Parallel Futures</h2>
+          <div class="chewlab-bay-visual" aria-hidden="true">
+            <svg viewBox="0 0 220 118" preserveAspectRatio="xMidYMid meet">
+              <circle cx="18" cy="59" r="4" fill="var(--sample-blue)"></circle>
+              <path d="M18,59 C 80,20 150,20 202,16" fill="none" stroke="var(--sample-blue)" stroke-width="1.4" opacity="0.85"></path>
+              <path d="M18,59 C 80,45 150,55 202,59" fill="none" stroke="var(--sample-blue)" stroke-width="1.4" opacity="0.85"></path>
+              <path d="M18,59 C 80,90 150,98 202,102" fill="none" stroke="var(--sample-blue)" stroke-width="1.4" opacity="0.85"></path>
+              <circle cx="202" cy="16" r="4" fill="none" stroke="var(--sample-blue)" stroke-width="1.5"></circle>
+              <circle cx="202" cy="59" r="4" fill="none" stroke="var(--sample-blue)" stroke-width="1.5"></circle>
+              <circle cx="202" cy="102" r="4" fill="none" stroke="var(--sample-blue)" stroke-width="1.5"></circle>
+            </svg>
+          </div>
+          <p class="chewlab-bay-desc">
+            What would three different next moves actually cost, in time and dependency, side by
+            side &mdash; before committing to one.
+          </p>
+          <div class="chewlab-transparency">
+            <button type="button" class="chewlab-transparency-toggle" aria-expanded="false">What's real here &rarr;</button>
+            <div class="chewlab-transparency-body">
+              <span class="chewlab-transparency-label">Status</span>
+              <p>Simulation &mdash; a fixed, hand-built example of what a side-by-side comparison could look like. Nothing here is computed from a real subject.</p>
+              <span class="chewlab-transparency-label">Uses</span>
+              <ul><li>Real capability names from CHEW's registry, shown only as illustrative labels.</li></ul>
+              <span class="chewlab-transparency-label">Does not yet use</span>
+              <ul>
+                <li>Anyone's real facts or real requirement chain.</li>
+                <li>Any real dependency modeling between the three paths &mdash; there's no engine yet that computes how one choice changes another.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- Bay 02 — Future-Back Planning -->
+        <article class="chewlab-bay" data-status="preview" data-bay="futureback">
+          <span class="chewlab-bay-eyebrow">Bay 02</span>
+          <span class="chewlab-status-badge">Preview</span>
+          <h2 class="chewlab-bay-title">Future-Back Planning</h2>
+          <div class="chewlab-bay-visual">
+            <div class="chewlab-chain" id="chewlab-chain" aria-hidden="true"></div>
+          </div>
+          <p class="chewlab-bay-desc" id="chewlab-futureback-desc">
+            Start at a real goal and walk backward through the real requirement chain that leads to it.
+          </p>
+          <a href="future-room.html" class="chewlab-bay-link">Open the full Future Room &rarr;</a>
+          <div class="chewlab-transparency">
+            <button type="button" class="chewlab-transparency-toggle" aria-expanded="false">What's real here &rarr;</button>
+            <div class="chewlab-transparency-body">
+              <span class="chewlab-transparency-label">Status</span>
+              <p>Preview &mdash; already live and fully built out at the Future Room. This bay shows a condensed view of the same real chain.</p>
+              <span class="chewlab-transparency-label">Uses</span>
+              <ul><li>The real <code>transition_requirements</code> chain, the real <code>chosenRequirementKey</code> CHEW computes today, and the real goal title, for one illustrative example scenario.</li></ul>
+              <span class="chewlab-transparency-label">Does not yet use</span>
+              <ul><li>A real member identity system &mdash; this reads the same shared illustrative scenario as the rest of the site, not a signed-in visitor's own facts.</li></ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- Bay 03 — Economic Weather -->
+        <article class="chewlab-bay" data-status="experimental" data-bay="weather">
+          <span class="chewlab-bay-eyebrow">Bay 03</span>
+          <span class="chewlab-status-badge">Experimental</span>
+          <h2 class="chewlab-bay-title">Economic Weather</h2>
+          <div class="chewlab-bay-visual">
+            <div class="chewlab-weather-gauges" id="chewlab-weather-gauges" aria-hidden="true">
+              <div class="chewlab-gauge" data-gauge="readiness">
+                <div class="chewlab-gauge-bar"><div class="chewlab-gauge-bar-fill"></div></div>
+                <span class="chewlab-gauge-value">&mdash;</span>
+                <span class="chewlab-gauge-label">Readiness</span>
+              </div>
+              <div class="chewlab-gauge" data-gauge="risk">
+                <div class="chewlab-gauge-bar"><div class="chewlab-gauge-bar-fill"></div></div>
+                <span class="chewlab-gauge-value">&mdash;</span>
+                <span class="chewlab-gauge-label">Risk</span>
+              </div>
+              <div class="chewlab-gauge is-unavailable" data-gauge="momentum">
+                <div class="chewlab-gauge-bar"><div class="chewlab-gauge-bar-fill"></div></div>
+                <span class="chewlab-gauge-value">n/a</span>
+                <span class="chewlab-gauge-label">Momentum</span>
+              </div>
+              <div class="chewlab-gauge is-unavailable" data-gauge="liquidity">
+                <div class="chewlab-gauge-bar"><div class="chewlab-gauge-bar-fill"></div></div>
+                <span class="chewlab-gauge-value">n/a</span>
+                <span class="chewlab-gauge-label">Liquidity</span>
+              </div>
+            </div>
+          </div>
+          <p class="chewlab-bay-desc" id="chewlab-weather-desc">
+            A real readiness reading and a real list of unresolved constraints &mdash; plus two signals CHEW can't compute yet, marked honestly instead of guessed.
+          </p>
+          <div class="chewlab-transparency">
+            <button type="button" class="chewlab-transparency-toggle" aria-expanded="false">What's real here &rarr;</button>
+            <div class="chewlab-transparency-body">
+              <span class="chewlab-transparency-label">Status</span>
+              <p>Experimental &mdash; two of four signals are computed live from real data; two are deliberately left blank.</p>
+              <span class="chewlab-transparency-label">Uses</span>
+              <ul>
+                <li>Readiness: the real resolved/unresolved requirement fraction for this scenario &mdash; the same math behind Future-Back.</li>
+                <li>Risk: CHEW's real unresolved <code>constraints</code> records on file for this scenario.</li>
+              </ul>
+              <span class="chewlab-transparency-label">Does not yet use</span>
+              <ul><li>Any history of change over time. CHEW's schema doesn't store past states yet, so it can't honestly compute momentum or a trend &mdash; those two stay marked "n/a" until that exists, rather than being faked.</li></ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- Bay 04 — Hidden Leverage -->
+        <article class="chewlab-bay" data-status="research" data-bay="leverage">
+          <span class="chewlab-bay-eyebrow">Bay 04</span>
+          <span class="chewlab-status-badge">Research</span>
+          <h2 class="chewlab-bay-title">Hidden Leverage</h2>
+          <div class="chewlab-bay-visual" aria-hidden="true">
+            <svg viewBox="0 0 220 118" preserveAspectRatio="xMidYMid meet">
+              <line x1="70" y1="59" x2="150" y2="59" stroke="var(--sample-blue)" stroke-width="1.3" stroke-dasharray="4 5"></line>
+              <circle cx="70" cy="59" r="16" fill="rgba(123,156,190,0.14)" stroke="var(--sample-blue)" stroke-width="1.5"></circle>
+              <text x="70" y="63" text-anchor="middle" font-size="11" fill="var(--sample-blue)" font-family="var(--font-body)">$</text>
+              <circle cx="150" cy="59" r="14" fill="none" stroke="var(--panel-border-soft)" stroke-width="1.3" stroke-dasharray="3 4"></circle>
+              <text x="150" y="63" text-anchor="middle" font-size="11" fill="var(--text-faint)" font-family="var(--font-body)">?</text>
+            </svg>
+          </div>
+          <p class="chewlab-bay-desc">
+            A fictional example of an asset or relationship a person already has that could unlock a requirement faster than the obvious path.
+          </p>
+          <div class="chewlab-transparency">
+            <button type="button" class="chewlab-transparency-toggle" aria-expanded="false">What's real here &rarr;</button>
+            <div class="chewlab-transparency-body">
+              <span class="chewlab-transparency-label">Status</span>
+              <p>Research &mdash; a fixed illustrative sketch of a direction, not a working detector.</p>
+              <span class="chewlab-transparency-label">Uses</span>
+              <ul><li>Nothing from real data yet.</li></ul>
+              <span class="chewlab-transparency-label">Does not yet use</span>
+              <ul><li>Any real facts, assets, or relationships &mdash; there's no data source for this yet, and none is claimed.</li></ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- Bay 05 — Friction Detection -->
+        <article class="chewlab-bay" data-status="research" data-bay="friction">
+          <span class="chewlab-bay-eyebrow">Bay 05</span>
+          <span class="chewlab-status-badge">Research</span>
+          <h2 class="chewlab-bay-title">Friction Detection</h2>
+          <div class="chewlab-bay-visual" aria-hidden="true">
+            <svg viewBox="0 0 220 118" preserveAspectRatio="xMidYMid meet">
+              <path d="M 90,40 A 30,30 0 1 1 89,41" fill="none" stroke="var(--sample-blue)" stroke-width="1.4" stroke-dasharray="5 5"></path>
+              <path d="M89,41 l -7,-2 l 3,7 z" fill="var(--sample-blue)"></path>
+              <circle cx="90" cy="70" r="3" fill="var(--sample-blue)"></circle>
+            </svg>
+          </div>
+          <p class="chewlab-bay-desc">
+            A fictional example of a person repeatedly starting and abandoning the same requirement &mdash; a pattern CHEW doesn't yet track.
+          </p>
+          <div class="chewlab-transparency">
+            <button type="button" class="chewlab-transparency-toggle" aria-expanded="false">What's real here &rarr;</button>
+            <div class="chewlab-transparency-body">
+              <span class="chewlab-transparency-label">Status</span>
+              <p>Research &mdash; a fixed illustrative sketch, not a working detector.</p>
+              <span class="chewlab-transparency-label">Uses</span>
+              <ul><li>Nothing from real data yet.</li></ul>
+              <span class="chewlab-transparency-label">Does not yet use</span>
+              <ul><li>Any real action history. CHEW's schema doesn't record repeated attempts or abandonment yet, so this can't run against anyone's real state.</li></ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- Bay 06 — Conflict Detection -->
+        <article class="chewlab-bay" data-status="simulation" data-bay="conflict">
+          <span class="chewlab-bay-eyebrow">Bay 06</span>
+          <span class="chewlab-status-badge">Simulation</span>
+          <h2 class="chewlab-bay-title">Conflict Detection</h2>
+          <div class="chewlab-bay-visual" aria-hidden="true">
+            <svg viewBox="0 0 220 118" preserveAspectRatio="xMidYMid meet">
+              <path d="M20,25 L200,93" stroke="var(--sample-blue)" stroke-width="1.4" opacity="0.85"></path>
+              <path d="M20,93 L200,25" stroke="var(--sample-blue)" stroke-width="1.4" opacity="0.85"></path>
+              <circle cx="110" cy="59" r="5" fill="none" stroke="var(--gold-deep)" stroke-width="1.6"></circle>
+            </svg>
+          </div>
+          <p class="chewlab-bay-desc">
+            A fictional example of two real goals quietly competing for the same underlying capacity.
+          </p>
+          <div class="chewlab-transparency">
+            <button type="button" class="chewlab-transparency-toggle" aria-expanded="false">What's real here &rarr;</button>
+            <div class="chewlab-transparency-body">
+              <span class="chewlab-transparency-label">Status</span>
+              <p>Simulation &mdash; a fixed illustrative scenario, not computed from any real pair of goals.</p>
+              <span class="chewlab-transparency-label">Uses</span>
+              <ul><li>Real names of two capabilities from CHEW's registry, shown only as labels.</li></ul>
+              <span class="chewlab-transparency-label">Does not yet use</span>
+              <ul><li>Any real facts about which goals a person is actually pursuing at once, or how they'd actually conflict with each other.</li></ul>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--panel">
+    <div class="container max-prose">
+      <span class="eyebrow">What This Floor Actually Is</span>
+      <h2>Not a roadmap slide &mdash; a working boundary line.</h2>
+      <p>
+        Every bay above states, in its own words, what it uses and what it doesn't. That's not
+        decoration: it's the same rule the rest of CHEW's public intelligence experiences follow
+        &mdash; the Domino, the Radar, the Future Room, Simulation Room. Two bays here are already
+        wired to the real intelligence engine behind an illustrative example. Four are fixed
+        research sketches, labeled that way because they are that way. As the schema for real
+        history, real assets, and real conflict modeling gets built, bays move left to right on
+        this same status vocabulary &mdash; never the other direction.
+      </p>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  document.querySelectorAll('.chewlab-transparency-toggle').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var body = btn.nextElementSibling;
+      var isOpen = body.classList.toggle('is-open');
+      btn.setAttribute('aria-expanded', String(isOpen));
+      btn.textContent = isOpen ? "Hide what's real ←" : "What's real here →";
+    });
+  });
+
+  var chainEl = document.getElementById('chewlab-chain');
+  var futurebackDescEl = document.getElementById('chewlab-futureback-desc');
+  var weatherDescEl = document.getElementById('chewlab-weather-desc');
+  var gaugesEl = document.getElementById('chewlab-weather-gauges');
+
+  function setGauge(name, pct, valueText) {
+    var gauge = gaugesEl.querySelector('[data-gauge="' + name + '"]');
+    if (!gauge) return;
+    gauge.querySelector('.chewlab-gauge-bar-fill').style.setProperty('--gauge-pct', pct + '%');
+    gauge.querySelector('.chewlab-gauge-value').textContent = valueText;
+  }
+
+  fetch('/api/intelligence-demo?goal=home')
+    .then(function (res) { if (!res.ok) throw new Error('Lookup failed'); return res.json(); })
+    .then(function (data) {
+      var seq = data.requirementSequence || [];
+      var facts = data.recommendation.basedOnFacts || {};
+      var chosenKey = data.recommendation.chosenRequirementKey;
+      var constraints = data.recommendation.basedOnConstraints || [];
+      var resolvedCount = seq.filter(function (r) { return facts[r.key] && facts[r.key].met; }).length;
+      var total = seq.length;
+
+      var chainHtml = '';
+      seq.forEach(function (r, i) {
+        var resolved = facts[r.key] && facts[r.key].met;
+        var isCurrent = r.key === chosenKey;
+        chainHtml += '<div class="chewlab-chain-dot' + (resolved ? ' is-resolved' : '') + (isCurrent ? ' is-current' : '') + '" title="' + r.label.replace(/"/g, '&quot;') + '"></div>';
+        if (i < seq.length - 1) chainHtml += '<div class="chewlab-chain-line"></div>';
+      });
+      chainEl.innerHTML = chainHtml;
+
+      futurebackDescEl.textContent = total
+        ? resolvedCount + ' of ' + total + ' real requirements resolved toward "' + data.goalTitle + '" — walk the full chain in the Future Room.'
+        : 'Start at a real goal and walk backward through the real requirement chain that leads to it.';
+
+      var readinessPct = total ? Math.round((resolvedCount / total) * 100) : 0;
+      setGauge('readiness', readinessPct, readinessPct + '%');
+      var riskPct = Math.min(100, constraints.length * 28);
+      setGauge('risk', riskPct, String(constraints.length));
+
+      weatherDescEl.textContent = constraints.length
+        ? 'Readiness is real at ' + readinessPct + '%, with ' + constraints.length + ' real unresolved constraint(s) on file for this scenario. Momentum and Liquidity stay off — CHEW has no history to compute them from yet.'
+        : 'Readiness is real at ' + readinessPct + '%, with no unresolved constraints on file for this scenario. Momentum and Liquidity stay off — CHEW has no history to compute them from yet.';
+    })
+    .catch(function () {
+      futurebackDescEl.textContent = 'Real example data is temporarily unavailable — open the full Future Room directly.';
+      weatherDescEl.textContent = 'Real example data is temporarily unavailable right now.';
+    });
+
+  var sweepBtn = document.getElementById('chewlab-sweep-btn');
+  var sweepStatus = document.getElementById('chewlab-sweep-status');
+  var bays = Array.prototype.slice.call(document.querySelectorAll('.chewlab-bay'));
+  var sweepTimeouts = [];
+
+  function runSweep() {
+    sweepTimeouts.forEach(function (id) { clearTimeout(id); });
+    sweepTimeouts = [];
+    bays.forEach(function (b) { b.classList.remove('is-sweeping'); });
+
+    if (reduceMotion) {
+      sweepStatus.textContent = 'Six experiment bays: two running on real CHEW data today, four fixed research sketches.';
+      return;
+    }
+
+    bays.forEach(function (bay, i) {
+      sweepTimeouts.push(setTimeout(function () {
+        bay.classList.add('is-sweeping');
+        setTimeout(function () { bay.classList.remove('is-sweeping'); }, 900);
+      }, i * 160));
+    });
+    sweepTimeouts.push(setTimeout(function () {
+      sweepStatus.textContent = 'Six experiment bays: two running on real CHEW data today, four fixed research sketches.';
+    }, bays.length * 160 + 200));
+  }
+
+  sweepBtn.addEventListener('click', runSweep);
+})();
+</script>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-legal">
+      <span>&copy; 2026 CHEW LLC. All rights reserved.</span>
+      <span>CHEW LLC is a financial education and business-infrastructure company. CHEW does not provide credit repair services, does not promise or guarantee funding, approvals, score changes, or removal of information, and does not provide legal, tax, or investment advice. Results depend on individual circumstances, participation, and third-party decisions. See our <a href="disclaimer.html" style="color:inherit;">disclaimer</a>.</span>
+    </div>
+  </div>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>
