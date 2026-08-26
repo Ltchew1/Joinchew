@@ -1122,6 +1122,118 @@ identity-related change at all, since a conflict rule is declared
 between two `goals` rows, not two subjects — the same rule already
 generalizes to a real member's own goals once goals can belong to one.
 
+## Parallel Futures — real multi-goal comparison (lib/scenarioModel.js)
+
+The direct payoff of the two builds above: a caller can now compare 2-3
+real paths from one shared baseline across two real goals, side by
+side, using nothing this repo hasn't already built and tested. No third
+comparison engine was written — `compareCrossGoalFutures()` is a thin
+orchestrator over three already-real building blocks: the do-nothing
+baseline (never persisted, mirrors `compareParallelFutures`'s existing
+`leave_unresolved` precedent), the already-tested `createCrossGoalScenario()`
+for a declared cross-goal move, and one new function,
+`createComparisonMoveScenario()`, for a single-goal move evaluated
+inside a two-goal context.
+
+**A refactor first, to keep three call sites from drifting**: the
+`scenarios` INSERT statement was duplicated verbatim in `createScenario`
+and `createCrossGoalScenario` before this pass — exactly the shape of
+duplication that produced this build's one real bug so far (the
+`requiredValue`/`required_value` mismatch). Extracted into one
+`persistScenario()` function both now call, plus a shared
+`evaluateFactOverrideForGoal()` for "does this fact belong to this
+goal's own chain, and if not, what's the honest fallback" — reused by
+`createCrossGoalScenario`'s two sides and the new comparison move
+function alike. Re-ran the entire pre-existing single-goal and
+cross-goal test suites after this refactor with zero behavior change
+before writing a single line of new comparison logic.
+
+**`createComparisonMoveScenario()`** is the one genuinely new piece,
+and it draws a careful, deliberate line the other two building blocks
+don't need to: a single-goal move (e.g. "resolve credit_score on the
+home goal") is always legitimate on its own goal, so it never refuses
+outright the way `createCrossGoalScenario` does. It only reasons about
+the *other* goal in the comparison when `getConflictRule()` — the same
+sole authorization point as everywhere else in this file — finds a
+declared rule covering that exact fact between these two goals.
+Verified directly: resolving `credit_score` (no declared rule for it)
+inside a comparison against the business-funding goal produces an
+explicit `no_declared_relationship` effect on that goal, quoting
+neither a number nor the unrelated `documented_income` rule — proving
+the comparison doesn't leak one path's authorized relationship into
+another path that never earned it.
+
+**The exact three-path comparison this was built to prove**, run
+against the real seeded subject:
+
+- **Path A — Preserve documented income.** Never persisted (it *is* the
+  baseline). Both goals report `no_change_modeled`.
+- **Path B — Remove documented income.** Reuses `createCrossGoalScenario`
+  unmodified. Home goal: readiness genuinely worsens 1/3 → 0/3
+  (quantified, `deterministic`). Business goal: the real rule-backed
+  qualitative note (`assumption_dependent`) — no readiness effect at
+  all.
+- **Path C — Resolve credit score first.** New
+  `createComparisonMoveScenario` path. Home goal: `credit_score`
+  genuinely resolves, readiness improves (quantified, `deterministic`).
+  Business goal: an explicit `no_declared_relationship` note
+  (`unknown`) — CHEW does not invoke the `documented_income` rule here,
+  because `credit_score` is a different fact with no rule of its own.
+
+All three paths share one `comparisonGroupKey`; none is ranked. The
+returned `comparisonNote` states plainly that CHEW does not pick a
+winner because no priority weighting exists for this illustrative
+subject — verified directly that no `winner`/`recommendedPath`/`bestPath`
+field exists anywhere in the response.
+
+**Refusal is preserved at the comparison level, not just per-function**:
+a comparison containing an undeclared `cross_goal_fact_change` path (a
+`credit_score` cross-goal claim, which has no rule) throws before
+anything is persisted — verified no partial comparison, and no orphaned
+scenario rows from the paths that would have succeeded, are left behind.
+
+**Constraints and opportunities, honestly bounded**: per the
+directive's own request to show "constraints created/removed" and
+"opportunities affected" per path — this schema has no mechanism for a
+modeled move to create or resolve a constraint at all, so the
+comparison's note says that plainly rather than reporting a fabricated
+`0` for every path. Opportunity effects are the real `capabilityGraph.js`-backed
+`opportunity` entries already present in each path's `effects` array
+(none of this repo's real requirements happen to carry a linked
+capability in the current seed data, so every path here reports
+"unavailable" honestly — not because the feature doesn't work, but
+because that's what's actually seeded).
+
+**API**: `api/scenario-model.js` gained
+`POST {action: 'compareCrossGoalFutures', goalAId, goalBId, paths, timeHorizon}`
+— same file, same `scenario_modeling` `internal` gate, no new flag.
+
+**Tests performed**: a standalone Node suite covering input validation
+(2-3 paths, recognized move types), the full three-path Home/Business
+comparison above with every effect type asserted per path, the
+no-winner-field guarantee, comparison-level refusal on an undeclared
+path, uncertainty-vocabulary discipline across all three paths' effects,
+and `createComparisonMoveScenario`'s own `moveGoalId` validation — all
+passed on the first real run against a live local PostgreSQL 16
+database, alongside a full re-run of both pre-existing suites (86 total
+assertions across the three test files, zero failures). Separately over real
+HTTP: confirmed the endpoint 404s by default, temporarily flipped
+`scenario_modeling` to `preview` in the **scratch test database only**
+to run the identical three-path comparison end-to-end (confirmed
+byte-identical effect shapes to the direct Node test), flipped the flag
+back to `internal`, confirmed the 404 returned again, and deleted the
+test scenario rows. The production flag was never touched.
+
+**CHEW Lab connection**: the Parallel Futures bay's "Uses" note, written
+speculatively before this engine existed, now describes what actually
+exists — a real multi-goal comparison engine that never picks a
+winner — while its status stays `Simulation` and its public visual
+stays the fixed sketch, unchanged.
+
+**What must change once real member identity exists**: same answer as
+the two builds above — a real `subjectId`. Nothing about the comparison
+logic itself is subject-specific beyond that.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of

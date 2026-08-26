@@ -25,6 +25,14 @@
 //   Multi-goal Conflict Detection (see lib/scenarioModel.js's
 //   getConflictRule()) — refuses (404) unless goal_conflict_rules
 //   already declares a rule for exactly this goal pair and fact.
+// POST /api/scenario-model { action: 'compareCrossGoalFutures', goalAId, goalBId, paths, timeHorizon }
+//   Parallel Futures, real multi-goal comparison — 2-3 paths sharing one
+//   baseline capture across both goals. Each path is
+//   { label, move: { type: 'preserve' } }
+//   { label, move: { type: 'cross_goal_fact_change', factKey, hypotheticalValue } }
+//   { label, move: { type: 'resolve_requirement', goalId, requirementKey } }
+//   Never ranks the paths; refuses (404) if any cross_goal_fact_change
+//   path names an undeclared goal_conflict_rules pair/fact.
 
 const scenarioModel = require('../lib/scenarioModel');
 const { isFeatureActive } = require('../lib/featureFlags');
@@ -73,7 +81,7 @@ module.exports = async (req, res) => {
     }
 
     // POST
-    const { action, goalId, requirementKey, requirementKeys, timeHorizon, goalAId, goalBId, factKey, hypotheticalValue } = req.body || {};
+    const { action, goalId, requirementKey, requirementKeys, timeHorizon, goalAId, goalBId, factKey, hypotheticalValue, paths } = req.body || {};
 
     if (action === 'createCrossGoalScenario') {
       const goalAIdNum = parseInt(goalAId, 10);
@@ -88,6 +96,18 @@ module.exports = async (req, res) => {
       return res.status(201).json({ scenario });
     }
 
+    if (action === 'compareCrossGoalFutures') {
+      const goalAIdNum = parseInt(goalAId, 10);
+      const goalBIdNum = parseInt(goalBId, 10);
+      if (!Number.isInteger(goalAIdNum) || !Number.isInteger(goalBIdNum)) {
+        return res.status(400).json({ error: 'goalAId and goalBId (integers) are required.' });
+      }
+      const comparison = await scenarioModel.compareCrossGoalFutures({
+        subjectId: ILLUSTRATIVE_SUBJECT_ID, goalAId: goalAIdNum, goalBId: goalBIdNum, paths, timeHorizon,
+      });
+      return res.status(200).json({ comparison });
+    }
+
     const goalIdNum = parseInt(goalId, 10);
     if (!Number.isInteger(goalIdNum)) return res.status(400).json({ error: 'goalId (integer) is required.' });
 
@@ -99,7 +119,7 @@ module.exports = async (req, res) => {
     }
 
     if (action !== 'create') {
-      return res.status(400).json({ error: 'action must be "create", "compareParallelFutures", or "createCrossGoalScenario".' });
+      return res.status(400).json({ error: 'action must be "create", "compareParallelFutures", "createCrossGoalScenario", or "compareCrossGoalFutures".' });
     }
     if (!requirementKey) return res.status(400).json({ error: 'requirementKey is required to create a scenario.' });
 
@@ -113,7 +133,8 @@ module.exports = async (req, res) => {
       return res.status(404).json({ error: err.message });
     }
     if (err.message.startsWith('timeHorizon must be') || err.message.startsWith('requirementKeys must be')
-        || err.message.startsWith('hypotheticalValue is required')) {
+        || err.message.startsWith('hypotheticalValue is required') || err.message.startsWith('paths must be')
+        || err.message.startsWith('Each path needs') || err.message.startsWith('moveGoalId must be')) {
       return res.status(400).json({ error: err.message });
     }
     console.error('scenario-model error:', err.message);
