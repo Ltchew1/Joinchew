@@ -1234,6 +1234,161 @@ stays the fixed sketch, unchanged.
 the two builds above — a real `subjectId`. Nothing about the comparison
 logic itself is subject-specific beyond that.
 
+## The Hidden Leverage Foundation — one real evidence-backed discovery (lib/leverageModel.js)
+
+A deliberately different problem shape from everything above it, built
+that way on direct instruction: Scenario Modeling and Conflict Detection
+both start from a proposed change and ask what would happen; Hidden
+Leverage starts from what's *already real* and asks what's underused.
+Forcing it onto the `scenarios` table's baseline/proposed-move/effects
+shape would have manufactured a false resemblance between two genuinely
+different questions, so it wasn't — `leverage_items` is its own table,
+with its own vocabulary, described at length in `db/schema.sql`.
+
+**The hard rule this file exists to enforce**: every leverage item must
+trace to real stored evidence — a real fact, a real requirement it
+satisfies, a real `goal_conflict_rules` row, or a real capability link.
+There is no LLM call anywhere in `lib/leverageModel.js`, no
+brainstorming step, and no fallback that invents an asset, relationship,
+program, or provider. A detector that can't point to real evidence
+returns nothing.
+
+**Schema created**: `leverage_items` — `source_type`/`source_ref` (what
+real row this traces to), `leverage_category` (fixed vocabulary:
+`reusable_requirement`/`multi_goal_fact`/`dormant_capability`/
+`underused_resource`/`duplicate_effort_avoided` — only `multi_goal_fact`
+has a real detector this pass), `evidence` (structured JSONB pointers,
+never prose alone), `verification_state` (reuses
+`current_state_facts.fact_type`'s exact vocabulary rather than inventing
+a parallel one), `activation_status` (7-state real vocabulary including
+`stale` and `already_activated`), `uncertainty_classification` (adds
+`editorial` to the vocabulary `scenarios` uses, per direct instruction,
+for a future item built on a declared-but-not-stored mapping — no item
+this pass actually uses it). Same identity boundary as `scenarios`: a
+`CHECK (subject_type <> 'member')` blocks a `member` row at the database
+level, verified directly. A `uniq_leverage_items_evidence` index makes
+duplicate discovery structurally impossible, not just discouraged by
+application code — verified directly with a raw duplicate `INSERT`,
+which the database itself rejected.
+
+**Two real detectors, one that fires and one that honestly doesn't**:
+
+- `discoverMultiGoalFactLeverage()` finds the one real leverage case
+  this repo's seed data supports: `documented_income` is a real,
+  already-`true` fact that satisfies the home goal's real "Documented
+  income" requirement, and the real `goal_conflict_rules` row Conflict
+  Detection built declares that same fact also matters to the
+  business-funding goal. This is the exact "shared fact reuse" case the
+  directive named as the preferred first proof, and it reuses Conflict
+  Detection's own `listConflictRulesForGoal()` as its evidence source —
+  the declared-relationship infrastructure built for one feature turned
+  out to be exactly the evidence layer the next one needed. It also
+  runs a second, more literal check — a fact_key appearing verbatim in
+  more than one goal's own chain, no declared rule needed at all — which
+  is a real, exercised code path that currently and correctly finds
+  nothing, because no fact_key repeats across this repo's two seeded
+  goals. Proven empty by test, not assumed empty.
+- `discoverDormantCapabilityLeverage()` was built to prove the opposite
+  case: this repo's one real requirement→capability link
+  (`bookkeeping_current` → `accounting_tax`) is correctly recognized as
+  **not** dormant, because a `capability_id` link is the exact mechanism
+  the existing Opportunity Engine wiring already uses to actively
+  surface it — calling it "dormant" would have misrepresented something
+  already connected. This detector currently returns empty for every
+  real goal, on purpose: this schema has no way to declare "relevant but
+  unconnected" without an editorial or rule-based mapping it doesn't
+  have yet, and the directive was explicit that guessing from category
+  names or topical similarity is exactly the kind of fabrication to
+  avoid.
+
+**Two real bugs found and fixed by manual HTTP verification, after the
+Node test suite already passed clean** — worth naming because neither
+would have been caught by unit tests alone:
+
+1. Postgres's `jsonb` column type does not preserve object key
+   insertion order; it canonicalizes on write. The first version of the
+   staleness check compared `JSON.stringify(existingEvidence)` against a
+   freshly-built JS object — two representations of *identical* data
+   that differed only in key order, so every second discovery call
+   spuriously marked the just-created item stale. Fixed with a
+   `stableStringify()` that sorts keys recursively before comparing.
+2. The original discovery loop only ever revisited a fact when it
+   *currently* satisfied its own requirement — if the fact stopped
+   satisfying it, the loop simply skipped it and never touched the
+   already-stored item at all, leaving a now-untrue leverage item
+   looking exactly as fresh as ever. Fixed with an explicit staleness
+   sweep: any previously-discovered fact-sourced item not re-confirmed
+   in the current pass is marked `stale`, without its description or
+   evidence ever being rewritten.
+
+Both were caught specifically because a live HTTP smoke test against
+the running server was run *in addition to* the Node suite — the Node
+suite's own dev-server process had cached the pre-fix module in memory
+across edits, which is itself the reason the manual check mattered: a
+fix isn't verified until it's exercised through a freshly restarted
+process, not just a fresh require() in a short-lived test script.
+
+**API**: `api/leverage-model.js` — `GET ?action=discover|listActive|
+listAll`, `GET ?id=`, `POST {action:'activate', id}` — gated `internal`
+via a new `hidden_leverage_discovery` flag, same pattern as
+`scenario_modeling`. This endpoint IS the "one small inspectable
+internal view" the directive asked for instead of a built page — no
+HTML/CSS/JS was written for Hidden Leverage this pass, on purpose,
+per direct instruction not to build a large page before the engine
+exists.
+
+**Tests performed**: a standalone Node suite (31 assertions) covering
+real discovery from explicit shared fact, multi-goal reuse, no leverage
+when a real-and-met requirement has no declared rule (seeded
+`down_payment_savings_cents` as met, confirmed no item was created for
+it, reverted), no fabricated resource (every evidence field checked
+non-null and real), no duplicate leverage item, already-activated
+suppression, stale evidence (both the "evidence changed" and "evidence
+disappeared" cases), unsupported source type refusal with zero
+persistence, editorial-vs-deterministic vocabulary distinction, the
+real-capability-correctly-not-dormant case, unknown/nonexistent-subject
+handling, and consistent repeated discovery — all passed, alongside a
+full re-run of all three pre-existing suites together (117 total
+assertions across the four test files, zero failures). Separately over real
+HTTP, against a freshly restarted server: confirmed the endpoint 404s
+by default, temporarily flipped the flag to `preview` in the **scratch
+test database only**, ran `discover` three times confirming the same
+item id and a status that never spuriously staled, exercised
+`listAll`/`activate`/`listActive` end-to-end (confirmed an activated
+item disappears from the active listing), flipped the flag back to
+`internal`, confirmed the 404 returned, and deleted the test row. The
+production flag was never touched.
+
+**What remains unavailable**: `dormant_capability` and
+`underused_resource`/`duplicate_effort_avoided` as populated
+categories — each needs either an editorial/rule-based
+capability-relevance mapping or a real document/credential/relationship
+data source this schema doesn't have yet (see db/schema.sql's comment —
+`document`, `credential`, `relationship`/`provider`, and
+`program`/`benefit` source types were explicitly not added, per direct
+instruction, because none has real backing data in this repo today).
+
+**What was deliberately not inferred**: any relationship between two
+goals beyond what `goal_conflict_rules` already declares; any capability
+as "dormant" without a real unlinked-but-relevant mapping; any second
+leverage case invented for visual richness once the one real case was
+found — the directive was explicit that one real case is enough, and it
+was treated as enough.
+
+**CHEW Lab connection**: the Hidden Leverage bay's status moved from
+`Research` to `Experimental`, its "Uses" note now describes the one real
+discovered item by name, and its visual changed from a dashed
+placeholder to a solid gold fact-node branching to two real goals —
+while the bay itself still shows a fixed public sketch, since it isn't
+wired to the internal engine, exactly as instructed.
+
+**Next highest-leverage extension**: a `document` or `credential` source
+type the moment this repo gains a real document/credential object to
+detect from — until then, broadening `dormant_capability` via an
+explicit, human-authored (not inferred) capability-relevance mapping
+table is the next honest step, mirroring exactly how
+`goal_conflict_rules` made multi-goal reuse provable.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of

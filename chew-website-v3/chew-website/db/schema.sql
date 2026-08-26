@@ -722,3 +722,82 @@ CREATE INDEX IF NOT EXISTS idx_goal_conflict_rules_pair ON goal_conflict_rules (
 -- created after it, stays valid with both columns NULL.
 ALTER TABLE scenarios ADD COLUMN IF NOT EXISTS related_goal_id INTEGER REFERENCES goals (id);
 ALTER TABLE scenarios ADD COLUMN IF NOT EXISTS conflict_rule_id INTEGER REFERENCES goal_conflict_rules (id);
+
+-- ============================================================
+-- Hidden Leverage Foundation — evidence-only discovery, never
+-- brainstormed. See lib/leverageModel.js.
+-- ============================================================
+-- A leverage item answers: "what already exists in the subject's real
+-- data that could help a goal, but is underused or unconnected?" — the
+-- opposite direction from Scenario Modeling (which starts from a
+-- proposed change). Deliberately NOT built on the scenarios table: a
+-- leverage item has no baseline/effects/proposed-move shape, because it
+-- isn't modeling a hypothetical move — it's pointing at something real
+-- that already exists. Forcing it into the Scenario shape would be
+-- exactly the kind of "richness that isn't there" this feature must
+-- avoid.
+--
+-- source_type is intentionally sparse. Only 'fact' has a real detector
+-- as of this pass (lib/leverageModel.js's discoverMultiGoalFactLeverage).
+-- 'capability' and 'conflict_rule' are listed because they are legitimate
+-- future evidence sources this schema can already support without new
+-- tables, not because they're implemented yet — see FEATURE_FLAGS.md.
+--
+-- verification_state reuses current_state_facts.fact_type's exact
+-- vocabulary rather than inventing a parallel one: a leverage item
+-- built on a 'user_provided' fact is only as trustworthy as that fact
+-- already is everywhere else on this site.
+--
+-- uncertainty_classification adds 'editorial' to the vocabulary
+-- scenarios.uncertainty_classification uses, per direct instruction —
+-- a leverage item built on a declared-but-not-stored editorial mapping
+-- (e.g. Wealth World's CAP_TERRITORIES-style grouping) must be
+-- distinguishable from one built on a real stored rule. This is a
+-- separate CHECK from scenarios' own, deliberately — Hidden Leverage is
+-- not required to resemble Scenario Modeling's vocabulary exactly.
+--
+-- Identity boundary: identical pattern to scenarios — subject_type is
+-- identity-ready ('member' is a legal enum value) but a second CHECK
+-- actively blocks any row from using it until a real authenticated
+-- member identity layer exists.
+CREATE TABLE IF NOT EXISTS leverage_items (
+  id                          SERIAL PRIMARY KEY,
+  subject_type                TEXT NOT NULL CHECK (subject_type IN ('illustrative', 'member')),
+  subject_ref                 INTEGER NOT NULL REFERENCES intel_subjects (id),
+  source_type                 TEXT NOT NULL CHECK (source_type IN ('fact', 'capability', 'conflict_rule')),
+  source_ref                  INTEGER NOT NULL,  -- id within the table source_type names (e.g. current_state_facts.id)
+  leverage_category           TEXT NOT NULL CHECK (leverage_category IN
+                                 ('reusable_requirement', 'multi_goal_fact', 'dormant_capability',
+                                  'underused_resource', 'duplicate_effort_avoided')),
+  title                       TEXT NOT NULL,
+  description                 TEXT NOT NULL,
+  related_goal_ids            JSONB NOT NULL,
+  related_constraint_ids      JSONB NOT NULL,
+  related_opportunity_ids     JSONB NOT NULL,
+  related_capability_ids      JSONB NOT NULL,
+  applicability_rule          TEXT NOT NULL,  -- human-readable statement of exactly which real rule/mapping justifies this item
+  evidence                    JSONB NOT NULL,  -- structured pointers (fact id/key/value, requirement keys, conflict rule id) — never prose alone
+  verification_state          TEXT NOT NULL CHECK (verification_state IN ('user_provided', 'verified', 'computed', 'inferred')),
+  activation_status           TEXT NOT NULL DEFAULT 'discovered' CHECK (activation_status IN
+                                 ('discovered', 'available', 'needs_verification', 'needs_action',
+                                  'already_activated', 'unavailable', 'stale')),
+  suggested_action            TEXT NOT NULL,
+  expected_effect_type        TEXT NOT NULL CHECK (expected_effect_type IN
+                                 ('supports_multiple_goals', 'reduces_duplicate_effort', 'unlocks_capability')),
+  uncertainty_classification  TEXT NOT NULL CHECK (uncertainty_classification IN
+                                 ('known', 'deterministic', 'assumption_dependent', 'editorial', 'unknown')),
+  model_version                TEXT NOT NULL,
+  created_at                  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at                  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_verified_at            TIMESTAMPTZ,
+  CHECK (subject_type <> 'member')
+);
+
+CREATE INDEX IF NOT EXISTS idx_leverage_items_subject ON leverage_items (subject_type, subject_ref);
+CREATE INDEX IF NOT EXISTS idx_leverage_items_source ON leverage_items (source_type, source_ref);
+CREATE INDEX IF NOT EXISTS idx_leverage_items_status ON leverage_items (activation_status);
+-- Idempotent discovery: the same real evidence must never produce two
+-- rows — lib/leverageModel.js's find-or-create logic relies on this
+-- constraint existing, not just on its own care.
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_leverage_items_evidence
+  ON leverage_items (subject_ref, source_type, source_ref, leverage_category);
