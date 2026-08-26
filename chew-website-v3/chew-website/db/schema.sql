@@ -681,3 +681,44 @@ CREATE TABLE IF NOT EXISTS scenarios (
 
 CREATE INDEX IF NOT EXISTS idx_scenarios_subject ON scenarios (subject_type, subject_ref, goal_id);
 CREATE INDEX IF NOT EXISTS idx_scenarios_status ON scenarios (scenario_status);
+
+-- ============================================================
+-- Multi-goal Conflict Detection — explicit, rule-backed only
+-- ============================================================
+-- The one hard rule this table exists to enforce: CHEW must never infer
+-- that two goals conflict just because it "makes intuitive sense." A
+-- row here is a human-authored declaration — like transition_requirements'
+-- sequence_order or capability_id link — naming the exact real fact_key
+-- both goals' reasoning depends on, and the real-world mechanism why.
+-- lib/scenarioModel.js's cross-goal functions REFUSE to model an effect
+-- between any two goals that don't have a row here; there is no
+-- fallback path that lets a caller conjure a conflict on the fly.
+--
+-- Deliberately sparse by design (see FEATURE_FLAGS.md): this repo seeds
+-- exactly one real conflict — the two existing illustrative goals share
+-- a real dependence on the documented_income fact (both mortgage
+-- underwriting and business funding-readiness care about verifiable,
+-- consistent income) — rather than inventing a dozen plausible-sounding
+-- ones with no real mechanism behind them.
+CREATE TABLE IF NOT EXISTS goal_conflict_rules (
+  id             SERIAL PRIMARY KEY,
+  goal_a_id      INTEGER NOT NULL REFERENCES goals (id),
+  goal_b_id      INTEGER NOT NULL REFERENCES goals (id),
+  shared_fact_key TEXT NOT NULL,  -- the real fact_key at least one side's real requirement chain reads
+  conflict_type  TEXT NOT NULL CHECK (conflict_type IN ('shared_fact', 'shared_resource', 'shared_time')),
+  mechanism      TEXT NOT NULL,  -- human-authored explanation of why these goals actually compete
+  certainty      TEXT NOT NULL CHECK (certainty IN ('known', 'deterministic', 'assumption_dependent', 'estimated', 'unknown')),
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (goal_a_id <> goal_b_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_goal_conflict_rules_pair ON goal_conflict_rules (goal_a_id, goal_b_id);
+
+-- Cross-goal scenarios reuse the exact same scenarios table and the
+-- exact same versioning/staleness/persistence code path as a single-goal
+-- scenario — never a second, parallel persistence model. related_goal_id
+-- and conflict_rule_id are both nullable specifically so every
+-- single-goal scenario created before this addition, and every one
+-- created after it, stays valid with both columns NULL.
+ALTER TABLE scenarios ADD COLUMN IF NOT EXISTS related_goal_id INTEGER REFERENCES goals (id);
+ALTER TABLE scenarios ADD COLUMN IF NOT EXISTS conflict_rule_id INTEGER REFERENCES goal_conflict_rules (id);

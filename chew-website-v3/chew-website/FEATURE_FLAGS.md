@@ -988,6 +988,140 @@ one line — the `CHECK (subject_type <> 'member')` constraint on
 logic already operates per-subject, per-goal: it was simply never given
 a second subject to run against.
 
+## Multi-goal Conflict Detection — exactly one real, rule-backed conflict (lib/scenarioModel.js)
+
+The immediate follow-up directive named the risk explicitly: "do not
+create fictional cross-goal relationships simply because they make
+intuitive sense... build those [1-2 real ones] completely rather than
+inventing 20." That instruction is enforced in code, not just followed
+by discipline while writing seed data.
+
+**Schema created**: `goal_conflict_rules` (`db/schema.sql`) — a
+human-authored row naming exactly two real `goals`, the exact real
+`fact_key` they share, a fixed `conflict_type` vocabulary
+(`shared_fact`/`shared_resource`/`shared_time`), a plain-language
+`mechanism` explaining why they actually compete, and a `certainty`
+reusing the same vocabulary as scenario-level uncertainty
+(`known`/`deterministic`/`assumption_dependent`/`estimated`/`unknown`).
+`scenarios` gained two nullable columns, `related_goal_id` and
+`conflict_rule_id` — additive only; every scenario created before this
+change, and every single-goal scenario created after it, has both
+`NULL` and is otherwise unaffected. This repo's two existing
+illustrative goals genuinely share **zero** overlapping requirement
+keys (verified directly against the schema before writing any of this)
+— so rather than force a connection or silently add a new requirement
+row to an existing goal (which would have quietly changed its real
+resolved/total counts and broken every already-tested room that reads
+them), exactly **one** conflict rule was seeded: both "Buy a first
+home" and "Get business funding-ready" structurally depend on the
+subject's `documented_income` — a real fact already used by goal A's
+first requirement — because mortgage underwriting and business
+funding-readiness both genuinely care about verifiable, consistent
+income, even though goal B's own transition has no explicit
+`documented_income` requirement of its own. No other pair or fact was
+seeded, on purpose.
+
+**The refusal is the load-bearing part**: `getConflictRule()` is the
+*only* function that can authorize modeling an effect between two
+goals, and it only ever returns a match for a pair+fact a human
+explicitly declared in advance — there is no inference path, no
+similarity heuristic, and no fallback. Verified directly: asking it to
+model `credit_score` between the two real goals (a fact that sounds
+just as plausible as `documented_income` — both are financial!) throws
+`No rule-backed conflict is declared...`; asking about a goal pair with
+no rule at all throws the same way; and `createCrossGoalScenario()`
+itself refuses before doing any other work, not just the lower-level
+lookup function. A refused request persists nothing — verified the
+`scenarios` row count is identical before and after a refusal.
+
+**Effects, honestly asymmetric**: when the shared fact IS part of a
+goal's own real requirement chain (goal A, home), the exact same
+`computeEffects()` already used by single-goal scenarios is reused —
+no second effects engine. When it ISN'T (goal B, business), the engine
+reports exactly one `qualitative_conflict_note` effect quoting the
+rule's own `mechanism` text and `certainty` verbatim, and explicitly
+does **not** produce a `readiness` effect for that goal at all — proven
+directly in tests (`goal B has NO readiness effect at all`), because
+fabricating a number for a goal whose real schema has no requirement
+tied to the fact would be exactly the kind of invented precision this
+whole build has refused everywhere else.
+
+**A real correctness fix this surfaced**: modeling `documented_income`
+becoming `false` (the model of "losing verifiable income," the same
+shape as the directive's own "leave employment" example) is a
+*regression* — a previously-met requirement becoming unmet — which
+`computeEffects()` had never been exercised against before (every prior
+scenario only ever modeled resolving a requirement). Its binary
+resolved-or-not logic would have mislabeled a regression as "remains
+unmet," which is not fabricated but also not what actually happened.
+Fixed by distinguishing four real states instead of two
+(`requirement_resolved` / `requirement_newly_unmet` /
+`requirement_remains_resolved` / `requirement_remains_blocked`) and
+adding a matching `readiness_worsens` state alongside
+`readiness_improves`/`readiness_unchanged`. Re-verified the entire
+existing single-goal test suite still passes unchanged after this fix.
+
+**A genuine finding, not staged**: modeling that regression on the real
+seeded data shows CHEW's current focus pulling *backward* — from
+`credit_score` (sequence 2, the real prior focus) to `documented_income`
+(sequence 1) — the moment the earlier-sequence requirement becomes
+unmet again, exactly matching the documented "first unmet by
+sequence_order" rule with no special-casing. This wasn't designed in;
+it fell out of reusing the real rule against a state that hadn't been
+tried before.
+
+**Staleness and versioning are reused, generalized, not reimplemented**:
+`checkStaleness()` now compares a cross-goal scenario's *two* preserved
+baselines against the real current facts (either goal drifting is
+enough to flip `scenario_status` to `stale`); verified directly that
+changing goal B's real `bookkeeping_current` fact — a fact that has
+nothing to do with goal A — correctly staled a scenario whose primary
+`goal_id` is goal A, and that the stored `effects` array stayed
+byte-identical across that flip.
+
+**API**: `api/scenario-model.js` gained `GET ?action=listConflictRules`
+and `POST {action: 'createCrossGoalScenario', goalAId, goalBId, factKey,
+hypotheticalValue, timeHorizon}` — same file, same `scenario_modeling`
+`internal` gate, no new feature flag. An undeclared pair/fact correctly
+returns `404`, matching how this file already treats "not found."
+
+**Tests performed**: a standalone Node suite exercised the new
+functions directly against a live local PostgreSQL 16 database — rule
+lookup (both orderings), the refusal path (undeclared fact for a real
+pair, an entirely undeclared pair, and refusal from
+`createCrossGoalScenario` itself), the one real cross-goal scenario's
+full effect set on both sides, the qualitative-note honesty checks
+above, cross-goal staleness, and the "no persisted row on refusal"
+check — all passed, alongside a full re-run of the pre-existing
+single-goal suite. Separately over real HTTP: confirmed the endpoint
+404s by default, temporarily flipped `scenario_modeling` to `preview`
+in the **scratch test database only** to exercise
+`listConflictRules`/`createCrossGoalScenario` end-to-end (confirming
+the undeclared-fact request 404s and the declared one returns 201 with
+the same asymmetric effect shape as the direct Node tests), flipped the
+flag back to `internal`, confirmed the 404 returned again, and deleted
+the test scenario rows. The production flag was never touched. Also
+caught and fixed, mid-session, an unrelated pre-existing idempotency
+gap in `db/seed-intelligence.sql` (no unique constraint on
+`transition_requirements`, so repeated re-runs of the seed script had
+silently tripled rows in the long-lived scratch database this session
+reuses) — reset the scratch database once and re-seeded cleanly; this
+is a scratch-test-environment artifact, not a production data issue,
+since production seeds once.
+
+**CHEW Lab connection**: the Conflict Detection bay's transparency
+block now discloses that CHEW has a real, rule-backed internal engine
+that refuses undeclared relationships — while its status stays
+`Simulation` and its visual stays the fixed illustrative sketch, since
+this public page still isn't wired to the internal endpoint.
+
+**What must change once real member identity exists**: same answer as
+the Scenario Modeling Foundation above — a real `subjectId` instead of
+the hardcoded illustrative one. `goal_conflict_rules` itself needs no
+identity-related change at all, since a conflict rule is declared
+between two `goals` rows, not two subjects — the same rule already
+generalizes to a real member's own goals once goals can belong to one.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
@@ -1046,13 +1180,19 @@ the following exist in this repository yet:
     inside CHEW Lab's Economic Weather bay specifically (Readiness and
     Risk are now real — see above — but a genuine trend needs a
     history-over-time table that doesn't exist yet); "What Changed,"
-    Hidden Leverage, Friction Detection, and Conflict Detection as real
-    (rather than fixed-illustrative) experiences (each needs either
+    Hidden Leverage, and Friction Detection as real (rather than
+    fixed-illustrative) public experiences (each needs either
     state-over-time tracking or pattern-recognition across a subject's
     history that doesn't exist for the one seeded test subject —
     building these even as "demo" would mean fabricating a history that
     was never seeded, which is different from labeling a single static
-    scenario as an example).
+    scenario as an example). Conflict Detection as a *public* experience
+    specifically belongs in this same bucket now, not the "just not
+    built yet" one below — a real, rule-backed internal engine exists
+    (see "Multi-goal Conflict Detection" above), gated `internal`
+    pending a real member identity system; CHEW Lab's own Conflict
+    Detection bay discloses that engine's existence but stays a fixed
+    public sketch, on purpose, until identity exists to wire it to.
   - **Just not built yet, execution-bandwidth only**: a *public* Parallel
     Futures experience specifically. The legitimate scenario-modeling
     layer this used to be blocked on now exists — see "The Scenario

@@ -17,9 +17,14 @@
 // GET  /api/scenario-model?action=baseline&goalId=1
 // GET  /api/scenario-model?action=list&goalId=1
 // GET  /api/scenario-model?action=futureBack&goalId=1
+// GET  /api/scenario-model?action=listConflictRules&goalId=1
 // GET  /api/scenario-model?id=5
 // POST /api/scenario-model { action: 'create', goalId, requirementKey, timeHorizon }
 // POST /api/scenario-model { action: 'compareParallelFutures', goalId, requirementKeys, timeHorizon }
+// POST /api/scenario-model { action: 'createCrossGoalScenario', goalAId, goalBId, factKey, hypotheticalValue, timeHorizon }
+//   Multi-goal Conflict Detection (see lib/scenarioModel.js's
+//   getConflictRule()) — refuses (404) unless goal_conflict_rules
+//   already declares a rule for exactly this goal pair and fact.
 
 const scenarioModel = require('../lib/scenarioModel');
 const { isFeatureActive } = require('../lib/featureFlags');
@@ -58,13 +63,31 @@ module.exports = async (req, res) => {
         const trace = await scenarioModel.buildFutureBackTrace({ subjectId: ILLUSTRATIVE_SUBJECT_ID, goalId: goalIdNum });
         return res.status(200).json({ futureBack: trace });
       }
+      if (action === 'listConflictRules') {
+        const rules = await scenarioModel.listConflictRulesForGoal(goalIdNum);
+        return res.status(200).json({ rules });
+      }
       // default GET action: baseline
       const baseline = await scenarioModel.buildBaselineSnapshot({ subjectId: ILLUSTRATIVE_SUBJECT_ID, goalId: goalIdNum });
       return res.status(200).json({ baseline });
     }
 
     // POST
-    const { action, goalId, requirementKey, requirementKeys, timeHorizon } = req.body || {};
+    const { action, goalId, requirementKey, requirementKeys, timeHorizon, goalAId, goalBId, factKey, hypotheticalValue } = req.body || {};
+
+    if (action === 'createCrossGoalScenario') {
+      const goalAIdNum = parseInt(goalAId, 10);
+      const goalBIdNum = parseInt(goalBId, 10);
+      if (!Number.isInteger(goalAIdNum) || !Number.isInteger(goalBIdNum)) {
+        return res.status(400).json({ error: 'goalAId and goalBId (integers) are required.' });
+      }
+      if (!factKey) return res.status(400).json({ error: 'factKey is required.' });
+      const scenario = await scenarioModel.createCrossGoalScenario({
+        subjectId: ILLUSTRATIVE_SUBJECT_ID, goalAId: goalAIdNum, goalBId: goalBIdNum, factKey, hypotheticalValue, timeHorizon,
+      });
+      return res.status(201).json({ scenario });
+    }
+
     const goalIdNum = parseInt(goalId, 10);
     if (!Number.isInteger(goalIdNum)) return res.status(400).json({ error: 'goalId (integer) is required.' });
 
@@ -76,7 +99,7 @@ module.exports = async (req, res) => {
     }
 
     if (action !== 'create') {
-      return res.status(400).json({ error: 'action must be "create" or "compareParallelFutures".' });
+      return res.status(400).json({ error: 'action must be "create", "compareParallelFutures", or "createCrossGoalScenario".' });
     }
     if (!requirementKey) return res.status(400).json({ error: 'requirementKey is required to create a scenario.' });
 
@@ -86,10 +109,11 @@ module.exports = async (req, res) => {
     return res.status(201).json({ scenario });
   } catch (err) {
     if (err.message === 'Goal not found for this subject.' || err.message === 'Scenario not found.'
-        || err.message.includes('is not part of this goal')) {
+        || err.message.includes('is not part of this goal') || err.message.startsWith('No rule-backed conflict is declared')) {
       return res.status(404).json({ error: err.message });
     }
-    if (err.message.startsWith('timeHorizon must be') || err.message.startsWith('requirementKeys must be')) {
+    if (err.message.startsWith('timeHorizon must be') || err.message.startsWith('requirementKeys must be')
+        || err.message.startsWith('hypotheticalValue is required')) {
       return res.status(400).json({ error: err.message });
     }
     console.error('scenario-model error:', err.message);

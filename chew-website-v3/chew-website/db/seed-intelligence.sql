@@ -114,3 +114,31 @@ INSERT INTO current_state_facts (subject_id, fact_key, fact_value, fact_type, so
 INSERT INTO goals (subject_id, transition_id, title, category, priority, target_date, status)
 SELECT 1, id, 'Get business funding-ready (example)', 'business', 1, (now() + interval '6 months')::date, 'active'
 FROM transitions WHERE slug = 'business_docs_to_funding_ready';
+
+-- Multi-goal Conflict Detection — the ONE real, human-authored conflict
+-- this repo declares between the two illustrative goals above (see
+-- db/schema.sql's goal_conflict_rules comment for why this is
+-- deliberately sparse rather than a list of a dozen plausible-sounding
+-- guesses). documented_income is a genuinely real, already-seeded
+-- fact_key that goal 1's requirement chain reads directly; it is not
+-- invented for this rule. The mechanism it names — mortgage
+-- underwriting and business funding-readiness both structurally care
+-- about verifiable, consistent income — is a real, general financial
+-- fact, not a pattern this repo detected from any data.
+INSERT INTO goal_conflict_rules (goal_a_id, goal_b_id, shared_fact_key, conflict_type, mechanism, certainty)
+SELECT ga.id, gb.id, 'documented_income', 'shared_fact',
+  'Both "Buy a first home" and "Get business funding-ready" structurally depend on the subject having '
+  || 'verifiable, consistent income: mortgage underwriting requires it directly (goal A''s real '
+  || 'documented_income requirement), and business funding-readiness relies on the same underlying '
+  || 'financial standing even though this repo''s current business-funding transition has no explicit '
+  || 'documented_income requirement of its own. A move that changes documented_income (e.g. leaving '
+  || 'steady employment) has a real, computable effect on goal A and a real but not-yet-quantified '
+  || 'effect on goal B.',
+  'assumption_dependent'
+FROM (SELECT MIN(id) AS id FROM goals WHERE subject_id = 1 AND title = 'Buy a first home (example)') ga,
+     (SELECT MIN(id) AS id FROM goals WHERE subject_id = 1 AND title = 'Get business funding-ready (example)') gb
+WHERE ga.id IS NOT NULL AND gb.id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM goal_conflict_rules existing
+    WHERE existing.goal_a_id = ga.id AND existing.goal_b_id = gb.id AND existing.shared_fact_key = 'documented_income'
+  );

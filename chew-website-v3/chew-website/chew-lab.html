@@ -255,11 +255,14 @@
             <button type="button" class="chewlab-transparency-toggle" aria-expanded="false">What's real here &rarr;</button>
             <div class="chewlab-transparency-body">
               <span class="chewlab-transparency-label">Status</span>
-              <p>Simulation &mdash; a fixed illustrative scenario, not computed from any real pair of goals.</p>
+              <p>Simulation &mdash; this public bay still shows a fixed illustrative scenario, not live output from a real pair of goals.</p>
               <span class="chewlab-transparency-label">Uses</span>
-              <ul><li>Real names of two capabilities from CHEW's registry, shown only as labels.</li></ul>
+              <ul>
+                <li>Real names of two capabilities from CHEW's registry, shown only as labels.</li>
+                <li>Internally, CHEW now has a real, rule-backed Conflict Detection engine: it refuses to model an effect between any two goals unless a human has explicitly declared, in advance, exactly which real fact they share and why (never an inferred or "intuitive" relationship). Today it knows about exactly one real declared conflict &mdash; between this site's two illustrative example goals &mdash; deliberately not a dozen invented ones.</li>
+              </ul>
               <span class="chewlab-transparency-label">Does not yet use</span>
-              <ul><li>Any real facts about which goals a person is actually pursuing at once, or how they'd actually conflict with each other.</li></ul>
+              <ul><li>This bay isn't wired to that internal engine yet, so what you see here stays a fixed sketch rather than live output, to avoid implying member-specific modeling is live.</li></ul>
             </div>
           </div>
         </article>

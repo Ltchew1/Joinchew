@@ -43,7 +43,8 @@ const TIME_HORIZONS = ['immediate', '30_days', '90_days', '6_months', '12_months
 const REVERSIBILITY_STATES = ['easily_reversible', 'moderately_reversible', 'difficult_to_reverse', 'irreversible', 'unknown'];
 const UNCERTAINTY_CLASSES = ['known', 'deterministic', 'assumption_dependent', 'estimated', 'unknown'];
 const SCENARIO_STATUSES = ['current', 'stale'];
-const MOVE_TYPES = ['resolve_requirement', 'leave_unresolved'];
+const MOVE_TYPES = ['resolve_requirement', 'leave_unresolved', 'cross_goal_fact_change'];
+const CONFLICT_TYPES = ['shared_fact', 'shared_resource', 'shared_time'];
 
 // Financial dimensions this schema simply does not track for the
 // seeded illustrative subject. Named explicitly, per-field, rather than
@@ -107,6 +108,55 @@ async function findRequirement(requirementSequence, requirementKey) {
   const req = requirementSequence.find((r) => r.key === requirementKey);
   if (!req) throw new Error(`Requirement "${requirementKey}" is not part of this goal's real requirement chain.`);
   return req;
+}
+
+// The one enforcement point for "do not invent cross-goal relationships
+// just because they make intuitive sense": this is the ONLY place that
+// can authorize modeling an effect between two goals, and it only ever
+// says yes to a row a human explicitly authored in goal_conflict_rules
+// (db/seed-intelligence.sql) for exactly this pair and exactly this
+// fact_key. There is no inference path, no similarity heuristic, and no
+// fallback that lets a caller model a conflict CHEW hasn't been told
+// about — an unmatched pair/fact combination throws, it never guesses.
+async function getConflictRule({ goalAId, goalBId, factKey }) {
+  const result = await query(
+    `SELECT * FROM goal_conflict_rules
+     WHERE ((goal_a_id = $1 AND goal_b_id = $2) OR (goal_a_id = $2 AND goal_b_id = $1))
+       AND shared_fact_key = $3`,
+    [goalAId, goalBId, factKey]
+  );
+  const row = result.rows[0];
+  if (!row) {
+    throw new Error(
+      `No rule-backed conflict is declared between goals ${goalAId} and ${goalBId} for fact "${factKey}" — `
+      + `refusing to model an undeclared cross-goal relationship. Add a row to goal_conflict_rules first.`
+    );
+  }
+  return {
+    id: row.id,
+    goalAId: row.goal_a_id,
+    goalBId: row.goal_b_id,
+    sharedFactKey: row.shared_fact_key,
+    conflictType: row.conflict_type,
+    mechanism: row.mechanism,
+    certainty: row.certainty,
+  };
+}
+
+async function listConflictRulesForGoal(goalId) {
+  const result = await query(
+    `SELECT * FROM goal_conflict_rules WHERE goal_a_id = $1 OR goal_b_id = $1 ORDER BY id ASC`,
+    [goalId]
+  );
+  return result.rows.map((row) => ({
+    id: row.id,
+    goalAId: row.goal_a_id,
+    goalBId: row.goal_b_id,
+    sharedFactKey: row.shared_fact_key,
+    conflictType: row.conflict_type,
+    mechanism: row.mechanism,
+    certainty: row.certainty,
+  }));
 }
 
 // "What CHEW actually knew, at read time" — every field here is a real,
@@ -182,22 +232,50 @@ function computeEffects({ requirementSequence, before, after, targetRequirement 
   const delta = ChewScenarioEngine.computeRequirementDelta(before.state, after.state);
   const effects = [];
 
+  // Four real, distinct states — not just "resolved or not." A move
+  // can also make a previously-met requirement newly unmet (the
+  // cross-goal "documented_income becomes false" case below needs
+  // this), or leave an already-met requirement met. Collapsing these
+  // into a binary would misreport a regression as "remains unmet" —
+  // technically not fabricated, but not what actually happened either.
+  const isNewlyResolved = delta.newlyResolvedKeys.includes(targetRequirement.key);
+  const isNewlyUnresolved = delta.newlyUnresolvedKeys.includes(targetRequirement.key);
+  const afterMet = !!(after.state.perRequirement.find((r) => r.key === targetRequirement.key) || {}).met;
+  let reqEffectType;
+  let reqDirection;
+  let reqExplanation;
+  if (isNewlyResolved) {
+    reqEffectType = 'requirement_resolved'; reqDirection = 'positive';
+    reqExplanation = `"${targetRequirement.label}" moves from unmet to met under this move.`;
+  } else if (isNewlyUnresolved) {
+    reqEffectType = 'requirement_newly_unmet'; reqDirection = 'negative';
+    reqExplanation = `"${targetRequirement.label}" moves from met to unmet under this move.`;
+  } else if (afterMet) {
+    reqEffectType = 'requirement_remains_resolved'; reqDirection = 'none';
+    reqExplanation = `"${targetRequirement.label}" was already met and remains met under this move.`;
+  } else {
+    reqEffectType = 'requirement_remains_blocked'; reqDirection = 'none';
+    reqExplanation = `"${targetRequirement.label}" remains unmet under this move.`;
+  }
+
   effects.push({
     entity: targetRequirement.key,
-    effectType: delta.newlyResolvedKeys.includes(targetRequirement.key) ? 'requirement_resolved' : 'requirement_remains_blocked',
-    direction: delta.newlyResolvedKeys.includes(targetRequirement.key) ? 'positive' : 'none',
-    explanation: delta.newlyResolvedKeys.includes(targetRequirement.key)
-      ? `"${targetRequirement.label}" moves from unmet to met under this move.`
-      : `"${targetRequirement.label}" remains unmet under this move.`,
+    effectType: reqEffectType,
+    direction: reqDirection,
+    explanation: reqExplanation,
     ruleSource: 'transition_requirements.comparison + evaluateRequirement() (lib/intelligenceEngine.js)',
     uncertaintyClass: 'deterministic',
     timeRelevance: 'at_evaluation',
   });
 
+  let readinessEffectType = 'readiness_unchanged';
+  let readinessDirection = 'none';
+  if (delta.resolvedCountAfter > delta.resolvedCountBefore) { readinessEffectType = 'readiness_improves'; readinessDirection = 'positive'; }
+  else if (delta.resolvedCountAfter < delta.resolvedCountBefore) { readinessEffectType = 'readiness_worsens'; readinessDirection = 'negative'; }
   effects.push({
     entity: 'readiness',
-    effectType: delta.resolvedCountAfter > delta.resolvedCountBefore ? 'readiness_improves' : 'readiness_unchanged',
-    direction: delta.resolvedCountAfter > delta.resolvedCountBefore ? 'positive' : 'none',
+    effectType: readinessEffectType,
+    direction: readinessDirection,
     explanation: `Readiness moves from ${delta.resolvedCountBefore}/${delta.total} to ${delta.resolvedCountAfter}/${delta.total} real resolved requirements under this move.`,
     ruleSource: 'scenario-engine.js deriveState() resolvedCount',
     uncertaintyClass: 'deterministic',
@@ -273,6 +351,8 @@ function rowToScenario(row) {
     subjectType: row.subject_type,
     subjectRef: row.subject_ref,
     goalId: row.goal_id,
+    relatedGoalId: row.related_goal_id,
+    conflictRuleId: row.conflict_rule_id,
     title: row.title,
     description: row.description,
     baselineSnapshot: row.baseline_snapshot,
@@ -334,16 +414,18 @@ async function createScenario({ subjectId, goalId, requirementKey, timeHorizon, 
 
   const insertResult = await query(
     `INSERT INTO scenarios
-       (subject_type, subject_ref, goal_id, title, description, baseline_snapshot, proposed_move,
-        assumptions, time_horizon, effects, dependencies, affected_goals, affected_constraints,
-        affected_opportunities, risks, reversibility, uncertainty_classification, scenario_status,
-        model_version, rule_version, baseline_computed_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+       (subject_type, subject_ref, goal_id, related_goal_id, conflict_rule_id, title, description,
+        baseline_snapshot, proposed_move, assumptions, time_horizon, effects, dependencies,
+        affected_goals, affected_constraints, affected_opportunities, risks, reversibility,
+        uncertainty_classification, scenario_status, model_version, rule_version, baseline_computed_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
      RETURNING *`,
     [
       'illustrative',
       subjectId,
       goalId,
+      null,
+      null,
       title || `Resolve "${targetRequirement.label}"`,
       description || (alreadyMet
         ? `Modeled against a requirement already met in the real baseline — included for completeness, not as a dramatic result.`
@@ -391,14 +473,24 @@ async function listScenarios({ subjectId, goalId }) {
 // world has moved since this scenario was captured — flip scenario_status
 // to 'stale' and persist that flip, but never recompute or overwrite
 // the scenario's stored effects. Returns the (possibly just-updated) row.
+function singleGoalBaselineDrifted(baseline, currentFacts) {
+  const currentResolvedMap = resolvedMapFromFacts(baseline.requirementSequence, currentFacts);
+  return baseline.requirementState.some((r) => !!currentResolvedMap[r.key] !== r.met);
+}
+
 async function checkStaleness(row) {
   if (row.scenario_status === 'stale') return rowToScenario(row);
 
   const baseline = row.baseline_snapshot;
   const currentFacts = await getRealFactsMap(row.subject_ref);
-  const currentResolvedMap = resolvedMapFromFacts(baseline.requirementSequence, currentFacts);
 
-  const driftFound = baseline.requirementState.some((r) => !!currentResolvedMap[r.key] !== r.met);
+  // Cross-goal scenarios (see createCrossGoalScenario) preserve TWO
+  // baselines under { goalA, goalB } instead of one flat shape — check
+  // both against the same real subject's current facts; either side
+  // drifting is enough to mark the whole scenario stale.
+  const driftFound = (baseline.goalA && baseline.goalB)
+    ? (singleGoalBaselineDrifted(baseline.goalA, currentFacts) || singleGoalBaselineDrifted(baseline.goalB, currentFacts))
+    : singleGoalBaselineDrifted(baseline, currentFacts);
   if (!driftFound) return rowToScenario(row);
 
   const updateResult = await query(
@@ -434,6 +526,131 @@ async function compareParallelFutures({ subjectId, goalId, requirementKeys, time
   };
 }
 
+// Multi-goal Conflict Detection: models one real fact changing and its
+// effect on TWO real goals at once — but only for a pair+fact that a
+// human has explicitly declared conflict via goal_conflict_rules (see
+// getConflictRule() above). When the fact is part of a goal's own real
+// requirement chain, that side is fully quantified by reusing the exact
+// same computeEffects() used for a single-goal scenario. When it isn't
+// (as with goal B in this repo's one seeded rule — business
+// funding-readiness has no documented_income requirement of its own),
+// that side is reported as a single honest qualitative note carrying
+// the rule's own mechanism text and certainty — never a fabricated
+// readiness number standing in for logic this schema doesn't have.
+async function createCrossGoalScenario({ subjectId, goalAId, goalBId, factKey, hypotheticalValue, timeHorizon, title, description }) {
+  assertHorizon(timeHorizon);
+  if (hypotheticalValue === undefined || hypotheticalValue === null) {
+    throw new Error('hypotheticalValue is required to model a cross-goal fact change.');
+  }
+
+  const rule = await getConflictRule({ goalAId, goalBId, factKey });
+
+  const baselineA = await buildBaselineSnapshot({ subjectId, goalId: goalAId });
+  const baselineB = await buildBaselineSnapshot({ subjectId, goalId: goalBId });
+  const factsByKey = await getRealFactsMap(subjectId);
+  const capabilityOverview = await getCapabilityOverview();
+
+  async function evaluateSide(baseline) {
+    const inChain = baseline.requirementSequence.some((r) => r.key === factKey);
+    if (!inChain) {
+      return {
+        goalId: baseline.goal.id,
+        goalTitle: baseline.goal.title,
+        inChain: false,
+        effects: [{
+          entity: `goal_${baseline.goal.id}`,
+          effectType: 'qualitative_conflict_note',
+          direction: 'unknown',
+          explanation: rule.mechanism,
+          ruleSource: `goal_conflict_rules (human-authored, id ${rule.id})`,
+          uncertaintyClass: rule.certainty,
+          timeRelevance: timeHorizon,
+        }],
+      };
+    }
+    const targetRequirement = await findRequirement(baseline.requirementSequence, factKey);
+    const beforeEval = await evaluateMove({ requirementSequence: baseline.requirementSequence, factsByKey, capabilityOverview, factOverrides: null });
+    const afterEval = await evaluateMove({
+      requirementSequence: baseline.requirementSequence, factsByKey, capabilityOverview,
+      factOverrides: { [factKey]: hypotheticalValue },
+    });
+    return {
+      goalId: baseline.goal.id,
+      goalTitle: baseline.goal.title,
+      inChain: true,
+      effects: computeEffects({ requirementSequence: baseline.requirementSequence, before: beforeEval, after: afterEval, targetRequirement }),
+    };
+  }
+
+  const sideA = await evaluateSide(baselineA);
+  const sideB = await evaluateSide(baselineB);
+  const tagSide = (side) => side.effects.map((e) => ({ ...e, goalId: side.goalId, goalTitle: side.goalTitle }));
+  const combinedEffects = [...tagSide(sideA), ...tagSide(sideB)];
+
+  const assumptions = [
+    `This conflict is limited to exactly what goal_conflict_rules declares (rule #${rule.id}, shared fact "${rule.sharedFactKey}") — CHEW does not infer any other relationship between these two goals beyond this one authored rule.`,
+    `The fact "${factKey}" is modeled as becoming "${hypotheticalValue}" — no intermediate or partial state is modeled.`,
+    'All other real facts on file for both goals remain exactly as they were at baseline capture.',
+  ];
+
+  const risks = [
+    (!sideA.inChain || !sideB.inChain)
+      ? `The side whose real requirement chain doesn't reference "${factKey}" (${!sideA.inChain ? sideA.goalTitle : sideB.goalTitle}) is reported qualitatively only — CHEW does not fabricate a readiness number for a goal whose schema has no requirement tied to this fact.`
+      : `Both goals' requirement chains reference "${factKey}" directly, so both sides of this scenario are quantified.`,
+    'The schema has no field capturing how reversible this cross-goal move actually is in the real world, so reversibility is reported as "unknown."',
+  ];
+
+  const proposedMove = {
+    type: 'cross_goal_fact_change',
+    factKey,
+    hypotheticalValue,
+    description: `Model "${factKey}" becoming "${hypotheticalValue}" and its effect on both "${baselineA.goal.title}" and "${baselineB.goal.title}".`,
+  };
+
+  const baselineComputedAt = baselineA.capturedAt > baselineB.capturedAt ? baselineA.capturedAt : baselineB.capturedAt;
+
+  const insertResult = await query(
+    `INSERT INTO scenarios
+       (subject_type, subject_ref, goal_id, related_goal_id, conflict_rule_id, title, description,
+        baseline_snapshot, proposed_move, assumptions, time_horizon, effects, dependencies,
+        affected_goals, affected_constraints, affected_opportunities, risks, reversibility,
+        uncertainty_classification, scenario_status, model_version, rule_version, baseline_computed_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
+     RETURNING *`,
+    [
+      'illustrative',
+      subjectId,
+      goalAId,
+      goalBId,
+      rule.id,
+      title || `Cross-goal: "${factKey}" between "${baselineA.goal.title}" and "${baselineB.goal.title}"`,
+      description || rule.mechanism,
+      JSON.stringify({ goalA: baselineA, goalB: baselineB }),
+      JSON.stringify(proposedMove),
+      JSON.stringify(assumptions),
+      timeHorizon,
+      JSON.stringify(combinedEffects),
+      JSON.stringify({ goalA: baselineA.requirementSequence, goalB: baselineB.requirementSequence }),
+      JSON.stringify([{ id: baselineA.goal.id, title: baselineA.goal.title }, { id: baselineB.goal.id, title: baselineB.goal.title }]),
+      JSON.stringify([...baselineA.constraintState, ...baselineB.constraintState]),
+      JSON.stringify({
+        note: 'See the effects array entries with entity "opportunity" or "qualitative_conflict_note" for per-goal detail.',
+        goalAQuantified: sideA.inChain,
+        goalBQuantified: sideB.inChain,
+      }),
+      JSON.stringify(risks),
+      'unknown',
+      rule.certainty,
+      'current',
+      MODEL_VERSION,
+      RULE_VERSION,
+      baselineComputedAt,
+    ]
+  );
+
+  return rowToScenario(insertResult.rows[0]);
+}
+
 // Future-Back MVP: reverses the real requirement chain into
 // outcome <- required conditions <- current missing conditions <- next
 // available action, reusing the identical baseline capture — no second
@@ -459,8 +676,9 @@ async function buildFutureBackTrace({ subjectId, goalId }) {
 
 module.exports = {
   SUBJECT_TYPES, TIME_HORIZONS, REVERSIBILITY_STATES, UNCERTAINTY_CLASSES, SCENARIO_STATUSES, MOVE_TYPES,
-  MODEL_VERSION, RULE_VERSION, UNAVAILABLE_DATA_POINTS,
+  CONFLICT_TYPES, MODEL_VERSION, RULE_VERSION, UNAVAILABLE_DATA_POINTS,
   buildBaselineSnapshot, createScenario, getScenario, listScenarios, checkStaleness,
   compareParallelFutures, buildFutureBackTrace,
+  getConflictRule, listConflictRulesForGoal, createCrossGoalScenario,
   resolvedMapFromFacts, resolvedValueFor, // exported for direct unit testing only
 };
