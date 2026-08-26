@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Simulation Room (Early Preview) | CHEW</title>
+<meta name="description" content="A controlled state laboratory over CHEW's real requirement chain and capability registry. Reality stays immutable on one side; a temporary simulation on the other shows exactly what changes — and what doesn't — when you alter one condition.">
+<link rel="canonical" href="https://www.joinchew.com/simulation-room.html">
+<meta name="robots" content="noindex, follow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="scenario-engine.js"></script>
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="brand">
+      <img src="assets/chew-icon-official.png" alt="" width="40" height="40">
+      CHEW
+    </a>
+    <nav class="nav" id="site-nav">
+      <a href="index.html">Home</a>
+      <a href="how-it-works.html">How It Works</a>
+      <a href="services.html">Programs</a>
+      <a href="blueprint.html">Blueprint</a>
+      <a href="philosophy.html">Philosophy</a>
+      <a href="education.html">Education</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="apply.html" class="btn btn-gold btn-sm">I'm Ready to Chew</a>
+    </div>
+    <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="site-nav">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="hero-glow"></div>
+    <div class="container" style="position:relative;">
+      <span class="eyebrow">Early Preview &middot; Not a Finished Product</span>
+      <h1 style="max-width:24ch;">Reality doesn't move. The simulation does.</h1>
+      <p class="max-prose" style="font-size:1.05rem; margin-top:16px;">
+        Two chambers, the same real requirement chain. Reality is CHEW's actual current state and
+        never changes here. Simulation is a temporary sandbox &mdash; alter one condition and see
+        the exact, honest difference it makes: what moves, and just as often, what doesn't.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0;">
+    <div class="container">
+      <div class="unlockroom-scenario-picker" id="simroom-scenario-picker" role="group" aria-label="Choose an example scenario" data-reveal>
+        <button type="button" class="unlockroom-scenario-btn" data-goal="home">Buy a home</button>
+        <button type="button" class="unlockroom-scenario-btn" data-goal="funding">Get business funding-ready</button>
+      </div>
+      <p class="netroom-status" id="simroom-status" role="status" aria-live="polite"></p>
+
+      <div id="simroom-body" hidden>
+        <div class="simroom-tabs" id="simroom-tabs">
+          <button type="button" class="simroom-tab-btn is-active" data-tab="reality">Reality</button>
+          <button type="button" class="simroom-tab-btn" data-tab="simulation">Simulation</button>
+        </div>
+
+        <div class="simroom-chambers">
+          <section class="simroom-chamber simroom-chamber--reality is-active-tab" id="simroom-reality-chamber" aria-label="Reality — CHEW's real current state, immutable">
+            <span class="simroom-chamber-label">Reality — Live, Immutable</span>
+            <p class="simroom-stat-row"><strong id="simroom-reality-resolved">0</strong> of <span id="simroom-reality-total">0</span> real requirements resolved</p>
+            <ol class="simroom-node-row" id="simroom-reality-nodes"></ol>
+            <p class="simroom-focus-line">Current focus: <strong id="simroom-reality-focus"></strong></p>
+            <p class="simroom-coverage-line" id="simroom-reality-coverage"></p>
+          </section>
+
+          <section class="simroom-chamber simroom-chamber--simulation" id="simroom-simulation-chamber" aria-label="Simulation — a temporary sandbox, not your current state">
+            <span class="simroom-chamber-label">Simulation — Not Your Current State</span>
+            <p class="simroom-stat-row"><strong id="simroom-sim-resolved">0</strong> of <span id="simroom-sim-total">0</span> real requirements resolved</p>
+            <ol class="simroom-node-row" id="simroom-sim-nodes"></ol>
+            <p class="simroom-focus-line">Current focus: <strong id="simroom-sim-focus"></strong></p>
+            <div class="simroom-capability-toggles" id="simroom-capability-toggles"></div>
+            <button type="button" class="simroom-reset-btn" id="simroom-reset-btn">Reset to Reality</button>
+          </section>
+        </div>
+
+        <div class="simroom-delta" id="simroom-delta"></div>
+
+        <div class="simroom-comparison" id="simroom-comparison" hidden>
+          <h3>Impact Comparison</h3>
+          <p class="simroom-comparison-caveat">Pick two of this example's real unmet requirements and see, in isolation, what resolving each would actually change.</p>
+          <div class="simroom-comparison-picker" id="simroom-comparison-picker"></div>
+          <div class="simroom-comparison-result" id="simroom-comparison-result"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--panel">
+    <div class="container max-prose">
+      <span class="eyebrow">What This Actually Is</span>
+      <h2>Reality and simulation, computed by the same real rule &mdash; on purpose.</h2>
+      <p>
+        Both chambers start from the exact same live fetch of <code>requirementSequence</code>,
+        <code>basedOnFacts</code>, and <code>capabilityOverview</code>. Reality never changes; the
+        Simulation chamber's toggles run through the same <code>scenario-engine.js</code> logic the
+        Unlock Room uses, including the identical "first unresolved requirement, in CHEW's real
+        order, becomes current focus" rule the real engine documents in
+        <code>lib/intelligenceEngine.js</code>. Resolving a requirement that isn't already blocking
+        anything upstream will honestly show no change to current focus &mdash; CHEW doesn't
+        pretend order doesn't matter. Capability-coverage impact is only shown where a requirement
+        actually links to a real capability in this example; where none do, that's stated plainly
+        instead of a invented percentage. Nothing here writes to a database or calls CHEW's real
+        completion path.
+      </p>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var pickerEl = document.getElementById('simroom-scenario-picker');
+  var statusEl = document.getElementById('simroom-status');
+  var bodyEl = document.getElementById('simroom-body');
+  var tabsEl = document.getElementById('simroom-tabs');
+  var realityChamberEl = document.getElementById('simroom-reality-chamber');
+  var simChamberEl = document.getElementById('simroom-simulation-chamber');
+  var realityNodesEl = document.getElementById('simroom-reality-nodes');
+  var simNodesEl = document.getElementById('simroom-sim-nodes');
+  var realityResolvedEl = document.getElementById('simroom-reality-resolved');
+  var realityTotalEl = document.getElementById('simroom-reality-total');
+  var realityFocusEl = document.getElementById('simroom-reality-focus');
+  var realityCoverageEl = document.getElementById('simroom-reality-coverage');
+  var simResolvedEl = document.getElementById('simroom-sim-resolved');
+  var simTotalEl = document.getElementById('simroom-sim-total');
+  var simFocusEl = document.getElementById('simroom-sim-focus');
+  var capTogglesEl = document.getElementById('simroom-capability-toggles');
+  var resetBtn = document.getElementById('simroom-reset-btn');
+  var deltaEl = document.getElementById('simroom-delta');
+  var comparisonEl = document.getElementById('simroom-comparison');
+  var comparisonPickerEl = document.getElementById('simroom-comparison-picker');
+  var comparisonResultEl = document.getElementById('simroom-comparison-result');
+
+  var requirementSequence = null;
+  var basedOnFacts = null;
+  var capabilityOverview = null;
+  var baselineResolvedMap = null;
+  var baselineAvailabilityMap = null;
+  var simResolvedMap = null;
+  var simAvailabilityMap = null;
+  var compareSelection = [];
+
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  }
+
+  function labelFor(key) {
+    var t = requirementSequence.filter(function (r) { return r.key === key; })[0];
+    return t ? t.label : key;
+  }
+
+  function renderNodeRow(container, derived, interactive) {
+    container.innerHTML = derived.perRequirement.map(function (r) {
+      var isCurrent = r.key === derived.chosenKey;
+      var cls = 'is-' + (r.met ? 'met' : 'unmet') + (isCurrent ? ' is-current' : '');
+      if (interactive) {
+        return '<li><button type="button" class="simroom-node-btn ' + (r.met ? 'is-met' : '') + (isCurrent ? ' is-current' : '') +
+          '" role="switch" aria-checked="' + r.met + '" data-key="' + r.key + '" aria-label="' + escapeHtml(r.label) + ' — ' +
+          (r.met ? 'resolved' : (isCurrent ? 'current focus, not yet resolved' : 'not yet resolved')) + '">' +
+          '<span class="simroom-node-dot" aria-hidden="true"></span>' + escapeHtml(r.label) + '</button></li>';
+      }
+      return '<li class="simroom-node ' + cls + '">' +
+        '<span class="simroom-node-dot" aria-hidden="true"></span>' + escapeHtml(r.label) + '</li>';
+    }).join('');
+  }
+
+  function renderCapabilityToggles() {
+    var linked = requirementSequence.filter(function (t) { return !!t.capabilitySlug; });
+    if (!linked.length) {
+      capTogglesEl.innerHTML = '<p class="simroom-coverage-line">No requirement in this example connects to a real capability, so there is nothing to toggle here.</p>';
+      return;
+    }
+    var seen = {};
+    var uniqueCaps = linked.filter(function (t) {
+      if (seen[t.capabilitySlug]) return false;
+      seen[t.capabilitySlug] = true;
+      return true;
+    });
+    capTogglesEl.innerHTML = uniqueCaps.map(function (t) {
+      var available = !!simAvailabilityMap[t.capabilitySlug];
+      return '<button type="button" class="simroom-capability-toggle-btn' + (available ? ' is-available' : '') +
+        '" data-slug="' + t.capabilitySlug + '" role="switch" aria-checked="' + available + '" aria-label="' +
+        escapeHtml(t.capabilityName) + ' capability — ' + (available ? 'available' : 'not available') + '">' +
+        '<span>' + escapeHtml(t.capabilityName) + '</span>' +
+        '<span class="simroom-capability-toggle-state">' + (available ? 'Available' : 'Not available') + '</span>' +
+        '</button>';
+    }).join('');
+  }
+
+  function coverageLine(coverage) {
+    if (!coverage) return 'Capability coverage: <strong>impact not currently modeled</strong> — no requirement here connects to a real capability.';
+    return 'Capability coverage: <strong>' + coverage.availableCount + ' of ' + coverage.linkedCount + '</strong> linked capabilities have an active provider (' + coverage.coveragePct + '%).';
+  }
+
+  function render() {
+    var baselineDerived = ChewScenarioEngine.deriveState(requirementSequence, baselineResolvedMap);
+    var simDerived = ChewScenarioEngine.deriveState(requirementSequence, simResolvedMap);
+    var baselineCoverage = ChewScenarioEngine.deriveCapabilityCoverage(requirementSequence, baselineAvailabilityMap);
+    var simCoverage = ChewScenarioEngine.deriveCapabilityCoverage(requirementSequence, simAvailabilityMap);
+    var delta = ChewScenarioEngine.computeRequirementDelta(baselineDerived, simDerived);
+    var capDelta = ChewScenarioEngine.computeCapabilityDelta(baselineCoverage, simCoverage);
+
+    renderNodeRow(realityNodesEl, baselineDerived, false);
+    renderNodeRow(simNodesEl, simDerived, true);
+    realityResolvedEl.textContent = baselineDerived.resolvedCount;
+    realityTotalEl.textContent = baselineDerived.total;
+    realityFocusEl.textContent = baselineDerived.chosenKey ? labelFor(baselineDerived.chosenKey) : 'None — every real requirement is already resolved.';
+    realityCoverageEl.innerHTML = coverageLine(baselineCoverage);
+
+    simResolvedEl.textContent = simDerived.resolvedCount;
+    simTotalEl.textContent = simDerived.total;
+    simFocusEl.textContent = simDerived.chosenKey ? labelFor(simDerived.chosenKey) : 'None — every requirement is resolved in this simulation.';
+
+    renderCapabilityToggles();
+    bindNodeButtons();
+    renderDelta(delta, capDelta);
+  }
+
+  function bindNodeButtons() {
+    simNodesEl.querySelectorAll('.simroom-node-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { toggleRequirement(btn.getAttribute('data-key')); });
+    });
+    capTogglesEl.querySelectorAll('.simroom-capability-toggle-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { toggleCapability(btn.getAttribute('data-slug')); });
+    });
+  }
+
+  function firePulse(selector) {
+    if (reduceMotion) return;
+    var el = simChamberEl.querySelector(selector);
+    if (!el) return;
+    el.classList.remove('is-pulsing');
+    void el.offsetWidth;
+    el.classList.add('is-pulsing');
+    setTimeout(function () { el.classList.remove('is-pulsing'); }, 1700);
+  }
+
+  function toggleRequirement(key) {
+    var before = ChewScenarioEngine.deriveState(requirementSequence, simResolvedMap);
+    simResolvedMap[key] = !simResolvedMap[key];
+    var after = ChewScenarioEngine.deriveState(requirementSequence, simResolvedMap);
+    render();
+    firePulse('.simroom-node-btn[data-key="' + key + '"]');
+    if (before.chosenKey !== after.chosenKey) {
+      if (before.chosenKey) firePulse('.simroom-node-btn[data-key="' + before.chosenKey + '"]');
+      if (after.chosenKey) firePulse('.simroom-node-btn[data-key="' + after.chosenKey + '"]');
+    }
+  }
+
+  function toggleCapability(slug) {
+    simAvailabilityMap[slug] = !simAvailabilityMap[slug];
+    render();
+    firePulse('.simroom-capability-toggle-btn[data-slug="' + slug + '"]');
+    requirementSequence.filter(function (t) { return t.capabilitySlug === slug; }).forEach(function (t) {
+      firePulse('.simroom-node-btn[data-key="' + t.key + '"]');
+    });
+  }
+
+  function renderDelta(delta, capDelta) {
+    var html = '<span class="simroom-delta-eyebrow">What Changed</span>';
+    html += '<div class="simroom-delta-row"><span class="simroom-delta-before">' + delta.resolvedCountBefore + ' / ' + delta.total + ' resolved</span>' +
+      '<span class="simroom-delta-arrow">&rarr;</span><span class="simroom-delta-after">' + delta.resolvedCountAfter + ' / ' + delta.total + ' resolved</span></div>';
+
+    var focusBeforeLabel = delta.chosenKeyBefore ? escapeHtml(labelFor(delta.chosenKeyBefore)) : 'None (fully resolved)';
+    var focusAfterLabel = delta.chosenKeyAfter ? escapeHtml(labelFor(delta.chosenKeyAfter)) : 'None (fully resolved)';
+    html += '<div class="simroom-delta-row"><span class="simroom-delta-before">Focus: ' + focusBeforeLabel + '</span>';
+    if (delta.chosenKeyChanged) {
+      html += '<span class="simroom-delta-arrow">&rarr;</span><span class="simroom-delta-after">' + focusAfterLabel + '</span>';
+    } else {
+      html += '<span class="simroom-delta-note">Unchanged — nothing you\'ve toggled is currently blocking this focus in CHEW\'s real order.</span>';
+    }
+    html += '</div>';
+
+    if (capDelta) {
+      var b = capDelta.before, a = capDelta.after;
+      html += '<div class="simroom-delta-row"><span class="simroom-delta-before">Capability coverage: ' + b.coveragePct + '%</span>' +
+        '<span class="simroom-delta-arrow">&rarr;</span><span class="simroom-delta-after">' + a.coveragePct + '%</span></div>';
+    } else {
+      html += '<div class="simroom-delta-row"><span class="simroom-delta-note">Capability coverage: impact not currently modeled — no requirement here connects to a real capability.</span></div>';
+    }
+
+    deltaEl.innerHTML = html;
+  }
+
+  function renderComparisonPicker() {
+    var unmetBaseline = requirementSequence.filter(function (t) { return !baselineResolvedMap[t.key]; });
+    if (unmetBaseline.length < 2) {
+      comparisonEl.hidden = false;
+      comparisonPickerEl.innerHTML = '';
+      comparisonResultEl.innerHTML = '<p class="simroom-coverage-line">Not enough real unresolved requirements in this example to compare — fewer than two are currently unmet.</p>';
+      return;
+    }
+    comparisonEl.hidden = false;
+    compareSelection = [unmetBaseline[0].key, unmetBaseline[1].key];
+    comparisonPickerEl.innerHTML = unmetBaseline.map(function (t) {
+      return '<button type="button" class="simroom-compare-chip" data-key="' + t.key + '">' + escapeHtml(t.label) + '</button>';
+    }).join('');
+    comparisonPickerEl.querySelectorAll('.simroom-compare-chip').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var key = chip.getAttribute('data-key');
+        var idx = compareSelection.indexOf(key);
+        if (idx !== -1) {
+          compareSelection.splice(idx, 1);
+        } else if (compareSelection.length < 2) {
+          compareSelection.push(key);
+        }
+        renderComparisonState();
+      });
+    });
+    renderComparisonState();
+  }
+
+  function renderComparisonState() {
+    comparisonPickerEl.querySelectorAll('.simroom-compare-chip').forEach(function (chip) {
+      var key = chip.getAttribute('data-key');
+      var selected = compareSelection.indexOf(key) !== -1;
+      chip.classList.toggle('is-selected', selected);
+      chip.disabled = !selected && compareSelection.length >= 2;
+    });
+
+    var baselineDerived = ChewScenarioEngine.deriveState(requirementSequence, baselineResolvedMap);
+    comparisonResultEl.innerHTML = compareSelection.map(function (key) {
+      var map = Object.assign({}, baselineResolvedMap);
+      map[key] = true;
+      var isolatedDerived = ChewScenarioEngine.deriveState(requirementSequence, map);
+      var isolatedDelta = ChewScenarioEngine.computeRequirementDelta(baselineDerived, isolatedDerived);
+      var moves = isolatedDelta.chosenKeyChanged;
+      return '<div class="simroom-compare-card' + (moves ? ' is-mover' : '') + '">' +
+        '<span class="simroom-compare-card-title">Resolving: ' + escapeHtml(labelFor(key)) + '</span>' +
+        '<span class="simroom-compare-card-line">Resolved count: ' + isolatedDelta.resolvedCountBefore + ' → ' + isolatedDelta.resolvedCountAfter + '</span>' +
+        '<span class="simroom-compare-card-line simroom-compare-card-line--movement">' +
+        (moves ? 'Moves current focus to: ' + escapeHtml(labelFor(isolatedDelta.chosenKeyAfter)) : 'No downstream movement — isn\'t blocking anything upstream yet') +
+        '</span></div>';
+    }).join('');
+  }
+
+  function switchTab(tab) {
+    tabsEl.querySelectorAll('.simroom-tab-btn').forEach(function (b) { b.classList.toggle('is-active', b.getAttribute('data-tab') === tab); });
+    realityChamberEl.classList.toggle('is-active-tab', tab === 'reality');
+    simChamberEl.classList.toggle('is-active-tab', tab === 'simulation');
+  }
+  tabsEl.querySelectorAll('.simroom-tab-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () { switchTab(btn.getAttribute('data-tab')); });
+  });
+
+  resetBtn.addEventListener('click', function () {
+    simResolvedMap = Object.assign({}, baselineResolvedMap);
+    simAvailabilityMap = Object.assign({}, baselineAvailabilityMap);
+    render();
+  });
+
+  function runScenario(goal) {
+    pickerEl.querySelectorAll('.unlockroom-scenario-btn').forEach(function (b) {
+      b.classList.toggle('is-active', b.getAttribute('data-goal') === goal);
+    });
+    statusEl.textContent = 'CHEW is loading the real chain…';
+    bodyEl.hidden = true;
+
+    fetch('/api/intelligence-demo?goal=' + encodeURIComponent(goal))
+      .then(function (res) {
+        if (!res.ok) return res.json().then(function (d) { throw new Error(d.error || 'Lookup failed'); });
+        return res.json();
+      })
+      .then(function (data) {
+        statusEl.textContent = '';
+        requirementSequence = data.requirementSequence || [];
+        basedOnFacts = data.recommendation.basedOnFacts;
+        capabilityOverview = data.capabilityOverview || null;
+
+        baselineResolvedMap = ChewScenarioEngine.cloneResolvedMap(requirementSequence, basedOnFacts);
+        baselineAvailabilityMap = ChewScenarioEngine.cloneAvailabilityMap(capabilityOverview);
+        simResolvedMap = Object.assign({}, baselineResolvedMap);
+        simAvailabilityMap = Object.assign({}, baselineAvailabilityMap);
+
+        render();
+        renderComparisonPicker();
+        bodyEl.hidden = false;
+        switchTab('reality');
+        if (!reduceMotion) bodyEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      })
+      .catch(function (err) {
+        statusEl.textContent = err.message || 'CHEW could not load this scenario right now.';
+      });
+  }
+
+  pickerEl.querySelectorAll('.unlockroom-scenario-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () { runScenario(btn.getAttribute('data-goal')); });
+  });
+})();
+</script>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-legal">
+      <span>&copy; 2026 CHEW LLC. All rights reserved.</span>
+      <span>CHEW LLC is a financial education and business-infrastructure company. CHEW does not provide credit repair services, does not promise or guarantee funding, approvals, score changes, or removal of information, and does not provide legal, tax, or investment advice. Results depend on individual circumstances, participation, and third-party decisions. See our <a href="disclaimer.html" style="color:inherit;">disclaimer</a>.</span>
+    </div>
+  </div>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>

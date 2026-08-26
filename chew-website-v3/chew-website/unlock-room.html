@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<script src="scenario-engine.js"></script>
 </head>
 <body>
 <header class="site-header">
@@ -178,16 +179,15 @@
   }
 
   function updateStats() {
-    var keys = requirementSequence.map(function (t) { return t.key; });
-    var openCount = keys.filter(function (k) { return doorState[k]; }).length;
-    statNumEl.textContent = openCount;
-    statTotalEl.textContent = keys.length;
+    var derived = ChewScenarioEngine.deriveState(requirementSequence, doorState);
+    statNumEl.textContent = derived.resolvedCount;
+    statTotalEl.textContent = derived.total;
 
     var consecutive = 0;
-    for (var i = 0; i < keys.length; i++) {
-      if (doorState[keys[i]]) consecutive++; else break;
+    for (var i = 0; i < derived.perRequirement.length; i++) {
+      if (derived.perRequirement[i].met) consecutive++; else break;
     }
-    var pct = keys.length ? Math.round((consecutive / keys.length) * 100) : 0;
+    var pct = derived.total ? Math.round((consecutive / derived.total) * 100) : 0;
     pathwayFillEl.style.width = pct + '%';
   }
 
@@ -208,10 +208,7 @@
         requirementSequence = data.requirementSequence || [];
         capabilityOverview = data.capabilityOverview || null;
         realFacts = data.recommendation.basedOnFacts;
-        doorState = {};
-        requirementSequence.forEach(function (t) {
-          doorState[t.key] = !!(realFacts[t.key] && realFacts[t.key].met);
-        });
+        doorState = ChewScenarioEngine.cloneResolvedMap(requirementSequence, realFacts);
         renderCorridor();
         bodyEl.hidden = false;
         if (!reduceMotion) bodyEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -227,10 +224,7 @@
 
   resetBtn.addEventListener('click', function () {
     if (!requirementSequence) return;
-    doorState = {};
-    requirementSequence.forEach(function (t) {
-      doorState[t.key] = !!(realFacts[t.key] && realFacts[t.key].met);
-    });
+    doorState = ChewScenarioEngine.cloneResolvedMap(requirementSequence, realFacts);
     requirementSequence.forEach(function (t) { updateDoor(t.key); });
     updateStats();
   });

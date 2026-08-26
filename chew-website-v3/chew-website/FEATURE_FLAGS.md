@@ -626,6 +626,115 @@ capability cross-reference, all navigation controls (buttons, scrubber,
 arrow keys) landing on the exact expected index, the pulse landing on the
 real current focus, zero JavaScript console errors.
 
+## scenario-engine.js — a shared, reusable scenario-state architecture
+
+A later directive explicitly required this: "Do not build another
+isolated sandbox implementation." `scenario-engine.js` extracts the pure,
+DOM-free logic behind "what's resolved, what's current focus, what's the
+difference between two states" into functions now shared by both the
+Unlock Room and the Simulation Room — `deriveState`,
+`computeRequirementDelta`, `deriveCapabilityCoverage`,
+`computeCapabilityDelta`, and clone helpers for turning real API
+responses into the maps these functions consume.
+
+`deriveState`'s "first unmet requirement, by real sequence_order, becomes
+current focus" rule is not a guess: it is `lib/intelligenceEngine.js`'s
+own documented behavior, copied verbatim in a comment at the top of
+`scenario-engine.js` and verified against that file's actual evaluation
+loop before being reimplemented client-side. Because the rule has no
+hidden inputs beyond real order and a met/unmet flag per requirement,
+recomputing it against a hypothetical (toggled) fact set is guaranteed to
+match what the server would compute for that same hypothetical set — this
+is what makes the Simulation Room's "focus changes" honest rather than
+guessed.
+
+Unit-tested directly with `node` before any page used it (no browser
+needed for pure functions): a requirement toggle that moves current focus,
+one that doesn't, un-resolving an already-met requirement moving focus
+backward, the all-resolved edge case, capability coverage math, and the
+"no linked capability" case returning `null` rather than a fabricated 0%.
+The Unlock Room was then refactored to call `deriveState`/
+`cloneResolvedMap` instead of its own inline filtering — its entire
+existing Playwright suite was re-run afterward and passed with zero
+behavior change, confirming the refactor was safe.
+
+## The Simulation Room — a controlled state laboratory, not a fortune teller (simulation-room.html)
+
+The directive's core distinction — "REALITY = what CHEW actually knows
+right now. SIMULATION = what the system would look like if the user
+temporarily changed specific assumptions. Never blur those two states." —
+is enforced structurally, not just visually: `baselineResolvedMap` and
+`baselineAvailabilityMap` are built once from the live API response and
+never mutated again for the rest of the session; every toggle mutates a
+separate `simResolvedMap`/`simAvailabilityMap` clone. The Reality chamber
+renders directly from the baseline maps and has no interactive controls
+at all — there is no code path by which touching the Simulation chamber
+could change what Reality displays.
+
+**What's honestly simulatable, and why not more:** the real schema has no
+branching dependency graph — `transition_requirements` is a strict linear
+order (`sequence_order`), and capability availability is informational,
+never a gate on requirement resolution in the real engine. Rather than
+fabricate a multi-blocker graph the directive's own examples imply
+("removes 3 downstream blockers"), the room surfaces the real, more
+interesting structural fact: in a strictly linear model, resolving the
+*current focus* requirement is the only toggle that ever advances what
+CHEW recommends next — resolving any other unmet requirement increases
+the resolved count but produces **no downstream movement**, and the room
+says so explicitly rather than implying every toggle matters equally. This
+is the literal mechanism behind the directive's Impact Comparison feature:
+selecting the current-focus requirement and a later one and comparing
+them proves, from real data, why order matters — without inventing a
+graph that doesn't exist. Capability-availability toggles are a fully
+separate, independently honest axis (real per-capability `available`
+booleans from `capabilityOverview`), producing a real
+`linkedCount`/`availableCount` coverage delta — and explicitly rendering
+"impact not currently modeled" rather than a fabricated percentage for any
+scenario where no requirement links to a capability (the home scenario,
+today).
+
+**Delta Engine**: every toggle re-derives both states through
+`scenario-engine.js` and renders a structured before → after: resolved
+count, current focus (with an explicit "Unchanged — nothing you've
+toggled is currently blocking this focus in CHEW's real order" line when
+true), and capability coverage. **Impact Comparison**: picking any two of
+the scenario's real baseline-unmet requirements computes each one's
+isolated delta (baseline + only that one resolved) independently, so
+comparing two candidates never lets a simulation-chamber toggle leak into
+the comparison.
+
+**Signature moment**: a bounded pulse fires only on the genuinely affected
+nodes — the toggled node itself, plus the old and new current-focus nodes
+only if focus actually changed, or the linked requirement nodes when a
+capability toggle changes their displayed status. Untouched nodes never
+animate. Finite, capped-iteration CSS animation, no continuous loops.
+
+**Mobile**: a Reality/Simulation tab switch below 900px (not a squeezed
+two-column layout) — same toggle logic, same Delta Engine, no horizontal
+overflow, no perspective effects.
+
+**Truth boundary, always visible**: the Simulation chamber is permanently
+labeled "SIMULATION — NOT YOUR CURRENT STATE"; nothing in this page calls
+`completeAction()`, `recordConsent()`, or any write endpoint — every
+toggle is a client-only map mutation, discarded on reload or "Reset to
+Reality."
+
+Tested the full required matrix: partially-resolved baseline (home,
+1-of-3), fully unresolved baseline (funding, 0-of-2), a single
+non-blocking toggle (confirmed zero focus change), a blocking toggle
+(confirmed focus advance), multiple toggles reaching full resolution,
+reset restoring the exact original baseline, a capability toggle
+confirmed to leave resolved-count untouched (proving the two axes are
+independent), keyboard `Enter` parity with click, and a forced
+fully-resolved *baseline* edge case (seeded directly in the scratch
+database) confirming the Reality chamber, Simulation chamber, and Impact
+Comparison all degrade honestly ("Not enough real unresolved requirements
+... to compare") rather than breaking — reverted immediately after.
+Verified at 1280px desktop, 768px tablet, 375px mobile, and under
+`prefers-reduced-motion`, including that narrow viewports require the tab
+switch before simulation controls become clickable (not a bug — by
+design). Zero JavaScript console errors in every run.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
@@ -692,13 +801,15 @@ the following exist in this repository yet:
     specifically (it needs invented hypothetical timeline data with no real
     computed basis, unlike Future-Back — see above, and per direct
     instruction this stays unbuilt until a legitimate scenario-modeling
-    layer exists), the three remaining browseable rooms (Wealth World,
-    Simulation Room, CHEW Lab — Network Room, Unlock Room, and Future Room
-    are no longer on this list, see above), sound design, and a bespoke
-    mobile choreography beyond the existing responsive breakpoints (CHEW
-    Blind Spot, CHEW Domino, the Opportunity Radar, Future-Back, the
-    Network Room, the Unlock Room, and the Future Room are no longer on
-    this list — see above, all seven now built). None of these need a
+    layer exists — Impact Comparison, now built in the Simulation Room, is
+    the honest, non-fabricated version of this same instinct), the two
+    remaining browseable rooms (Wealth World, CHEW Lab — Network Room,
+    Unlock Room, Future Room, and Simulation Room are no longer on this
+    list, see above), sound design, and a bespoke mobile choreography
+    beyond the existing responsive breakpoints (CHEW Blind Spot, CHEW
+    Domino, the Opportunity Radar, Future-Back, the Network Room, the
+    Unlock Room, the Future Room, and the Simulation Room are no longer on
+    this list — see above, all eight now built). None of these need a
     capability this repo
     lacks to build as a
     clearly-labeled demo/sample exhibit — they're exactly the kind of

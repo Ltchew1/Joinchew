@@ -1335,6 +1335,131 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   .futureroom-anchor--future .futureroom-anchor-node { transform: rotate(45deg); }
 }
 
+/* CHEW Simulation Room: Reality (immutable, real /api/intelligence-demo
+   state) vs Simulation (mutable sandbox over the same real requirements
+   and capabilities), both derived through scenario-engine.js's pure
+   functions so this room and the Unlock Room never diverge in what
+   counts as "resolved" or "current focus." See simulation-room.html. */
+.simroom-tabs { display: none; justify-content: center; gap: 8px; margin-bottom: 18px; }
+.simroom-tab-btn {
+  padding: 9px 18px; border-radius: var(--radius); background: var(--panel); border: 1px solid var(--panel-border-soft);
+  color: var(--text-muted); font-size: 0.84rem; font-weight: 600; cursor: pointer;
+}
+.simroom-tab-btn.is-active { border-color: var(--gold-light); color: var(--text); background: rgba(201,162,39,0.1); }
+
+.simroom-chambers { display: flex; align-items: stretch; gap: 20px; }
+.simroom-chamber {
+  flex: 1 1 0; min-width: 0; padding: 26px 24px; border-radius: calc(var(--radius) * 1.4);
+  background: var(--black-soft); border: 1px solid var(--panel-border-soft);
+}
+.simroom-chamber--reality { border-color: var(--panel-border); }
+.simroom-chamber--simulation { border-color: var(--gold-light); box-shadow: 0 0 34px rgba(232,206,122,0.1); }
+
+.simroom-chamber-label {
+  display: block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.simroom-chamber--reality .simroom-chamber-label { color: var(--text-faint); }
+.simroom-chamber--simulation .simroom-chamber-label { color: var(--gold-light); }
+
+.simroom-stat-row { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; }
+.simroom-stat-row strong { font-family: var(--font-display); font-size: 1.3rem; font-style: italic; color: var(--text); margin-right: 4px; }
+.simroom-chamber--simulation .simroom-stat-row strong { color: var(--gold-light); }
+
+.simroom-node-row { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.simroom-node {
+  display: flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 999px;
+  border: 1px solid var(--panel-border); font-size: 0.78rem; color: var(--text-muted);
+  background: rgba(255,255,255,0.02); transition: border-color 0.4s ease, background 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease;
+}
+.simroom-node-dot { width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--panel-border); flex: 0 0 auto; transition: background 0.4s ease, border-color 0.4s ease; }
+.simroom-node.is-met .simroom-node-dot { background: var(--gold-light); border-color: var(--gold-light); }
+.simroom-node.is-met { color: var(--text); }
+.simroom-node.is-current { border-color: var(--gold); font-weight: 600; color: var(--text); }
+.simroom-node.is-current .simroom-node-dot { border-color: var(--gold); }
+
+.simroom-node-btn {
+  display: flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--panel-border); font-size: 0.78rem; color: var(--text-muted);
+  background: rgba(255,255,255,0.02); transition: border-color 0.4s ease, background 0.4s ease, box-shadow 0.4s ease;
+}
+.simroom-node-btn:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; }
+.simroom-node-btn .simroom-node-dot { width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--panel-border); flex: 0 0 auto; transition: background 0.4s ease, border-color 0.4s ease; }
+.simroom-node-btn.is-met { color: var(--text); border-color: var(--gold-light); background: rgba(201,162,39,0.1); }
+.simroom-node-btn.is-met .simroom-node-dot { background: var(--gold-light); border-color: var(--gold-light); }
+.simroom-node-btn.is-current { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,162,39,0.14); font-weight: 600; }
+.simroom-node-btn.is-pulsing { animation: simroom-node-pulse 0.8s ease-out 2; }
+@keyframes simroom-node-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(232,206,122,0.6); }
+  100% { box-shadow: 0 0 0 12px rgba(232,206,122,0); }
+}
+
+.simroom-focus-line, .simroom-coverage-line { font-size: 0.84rem; color: var(--text-muted); margin: 0 0 8px; }
+.simroom-focus-line strong, .simroom-coverage-line strong { color: var(--text); }
+
+.simroom-capability-toggles { margin: 18px 0; padding-top: 16px; border-top: 1px dashed var(--panel-border); }
+.simroom-capability-toggle-btn {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
+  padding: 10px 14px; border-radius: var(--radius); border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.02); color: var(--text-muted); font-size: 0.82rem; cursor: pointer; text-align: left;
+  transition: border-color 0.4s ease, background 0.4s ease;
+}
+.simroom-capability-toggle-btn.is-available { border-color: var(--gold-light); background: rgba(201,162,39,0.1); color: var(--text); }
+.simroom-capability-toggle-btn.is-pulsing { animation: simroom-node-pulse 0.8s ease-out 2; }
+.simroom-capability-toggle-state { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold-light); }
+
+.simroom-reset-btn {
+  display: block; margin: 6px auto 0; padding: 9px 18px; border-radius: var(--radius);
+  background: none; border: 1px solid var(--panel-border-soft); color: var(--text-faint); font-size: 0.8rem; cursor: pointer;
+}
+.simroom-reset-btn:hover { color: var(--text-muted); border-color: var(--gold); }
+
+.simroom-delta {
+  margin: 24px auto 0; max-width: 620px; padding: 22px 26px; border-radius: var(--radius); text-align: left;
+  background: var(--panel); border: 1px solid var(--panel-border-soft);
+}
+.simroom-delta-eyebrow { display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-light); margin-bottom: 12px; }
+.simroom-delta-row { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 10px; flex-wrap: wrap; }
+.simroom-delta-row:last-child { margin-bottom: 0; }
+.simroom-delta-before { color: var(--text-faint); }
+.simroom-delta-arrow { color: var(--gold); opacity: 0.7; }
+.simroom-delta-after { color: var(--gold-light); font-weight: 600; }
+.simroom-delta-note { display: block; font-size: 0.82rem; color: var(--text-faint); font-style: italic; margin-top: 2px; flex-basis: 100%; }
+
+.simroom-comparison {
+  margin: 30px auto 0; max-width: 700px; padding: 24px 26px; border-radius: var(--radius); text-align: left;
+  background: var(--panel); border: 1px solid var(--panel-border-soft);
+}
+.simroom-comparison h3 { margin: 0 0 6px; font-family: var(--font-display); font-style: italic; font-size: 1.1rem; color: var(--text); }
+.simroom-comparison-caveat { font-size: 0.82rem; color: var(--text-faint); margin: 0 0 16px; }
+.simroom-comparison-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.simroom-compare-chip {
+  padding: 8px 14px; border-radius: 999px; border: 1px solid var(--panel-border-soft); background: rgba(255,255,255,0.02);
+  color: var(--text-muted); font-size: 0.8rem; cursor: pointer;
+}
+.simroom-compare-chip.is-selected { border-color: var(--gold-light); color: var(--text); background: rgba(201,162,39,0.1); }
+.simroom-compare-chip:disabled { opacity: 0.35; cursor: not-allowed; }
+.simroom-comparison-result { display: flex; gap: 16px; flex-wrap: wrap; }
+.simroom-compare-card {
+  flex: 1 1 240px; padding: 16px 18px; border-radius: var(--radius); background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border-soft);
+}
+.simroom-compare-card-title { display: block; font-size: 0.88rem; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+.simroom-compare-card-line { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
+.simroom-compare-card.is-mover { border-color: var(--gold-light); }
+.simroom-compare-card.is-mover .simroom-compare-card-line--movement { color: var(--gold-light); font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+  .simroom-node-btn.is-pulsing, .simroom-capability-toggle-btn.is-pulsing { animation: none; }
+  .simroom-node, .simroom-node-btn, .simroom-capability-toggle-btn { transition: none; }
+}
+
+@media (max-width: 900px) {
+  .simroom-tabs { display: flex; }
+  .simroom-chambers { flex-direction: column; }
+  .simroom-chamber { display: none; }
+  .simroom-chamber.is-active-tab { display: block; }
+}
+
 /* ---------- Closing / legacy section ---------- */
 .legacy-close { position: relative; overflow: hidden; padding: 112px 0; }
 .legacy-close .hero-glow { opacity: 0.7; }
