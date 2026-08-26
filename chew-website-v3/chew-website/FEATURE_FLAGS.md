@@ -580,6 +580,52 @@ before shipping: the corridor `<ol>` had no `list-style: none`, so
 browser-default numbers rendered as stray "2." "3." markers floating
 outside the card edges — fixed, verified by screenshot.
 
+## The Future Room — the real distance between today and the goal (future-room.html)
+
+Reuses `/api/intelligence-demo`'s `requirementSequence`, `basedOnFacts`,
+`chosenRequirementKey`, `goalTitle`, and `capabilityOverview` — the same
+fields Domino, Future-Back, and the Unlock Room already read. TODAY is a
+fixed anchor; the real goal title renders as a destination diamond at the
+far end; each real requirement sits between them as a checkpoint —
+checkmarked and gold-lit if resolved, dim and outlined if not, and the
+real `chosenRequirementKey` rendered larger with a "Start Here" tag. A
+baseline bar fills exactly `resolvedCount / totalCount` of the way from
+TODAY toward the destination — the literal formula the directive
+specified, not a fabricated closeness estimate. Navigation (prev/next,
+jump-today, jump-future, a scrubber, arrow keys) only changes which
+checkpoint is being inspected; nothing mutates the underlying real state,
+unlike the Unlock Room's toggle sandbox.
+
+Signature moment: "Show Me What It Takes" fires a staggered light pulse
+from the destination backward through every checkpoint to TODAY, then
+lands focus on the real current-focus checkpoint (or the destination
+itself, in the honest edge case where every requirement is already
+resolved). Reduced motion skips the traveling pulse and jumps straight to
+that same landing state — same information, no animation.
+
+Caught and fixed two real bugs before shipping, both from the same root
+cause: the segment wrapper `<div>` and its inner `<button>` both carried
+`data-index`, so `querySelectorAll('[data-index]')` bound two listeners
+per segment. Click was harmlessly idempotent (both handlers targeted the
+same index), but ArrowRight/ArrowLeft used relative `focusedIndex + 1`
+logic — bubbling from button to wrapper fired both handlers per keypress,
+advancing focus by 2 instead of 1. Fixed by binding only to the genuine
+interactive control per item. Separately, the mobile layout flips the
+progress baseline from horizontal to vertical, but the fill was only ever
+driven by `.style.width` — on mobile that inline width kept trying to
+apply against a CSS rule expecting height, so the fill would never have
+rendered. Fixed by driving both axes from one `--fill-pct` custom
+property, read as `width` on desktop and `height` under the mobile media
+query. Both caught by testing keyboard navigation and mobile rendering
+directly rather than assuming the desktop-verified logic carried over.
+
+Tested both scenarios across desktop, mobile, and reduced-motion: exact
+resolved/total counts and baseline fill percentage against the live API,
+correct real-goal-title rendering, current-focus checkpoint identity and
+capability cross-reference, all navigation controls (buttons, scrubber,
+arrow keys) landing on the exact expected index, the pulse landing on the
+real current focus, zero JavaScript console errors.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
@@ -646,13 +692,14 @@ the following exist in this repository yet:
     specifically (it needs invented hypothetical timeline data with no real
     computed basis, unlike Future-Back — see above, and per direct
     instruction this stays unbuilt until a legitimate scenario-modeling
-    layer exists), the four remaining browseable rooms (Future Room,
-    Wealth World, Simulation Room, CHEW Lab — Network Room and Unlock Room
+    layer exists), the three remaining browseable rooms (Wealth World,
+    Simulation Room, CHEW Lab — Network Room, Unlock Room, and Future Room
     are no longer on this list, see above), sound design, and a bespoke
     mobile choreography beyond the existing responsive breakpoints (CHEW
     Blind Spot, CHEW Domino, the Opportunity Radar, Future-Back, the
-    Network Room, and the Unlock Room are no longer on this list — see
-    above, all six now built). None of these need a capability this repo
+    Network Room, the Unlock Room, and the Future Room are no longer on
+    this list — see above, all seven now built). None of these need a
+    capability this repo
     lacks to build as a
     clearly-labeled demo/sample exhibit — they're exactly the kind of
     thing this directive now explicitly permits. They weren't built in
