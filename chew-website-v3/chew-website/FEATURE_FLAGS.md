@@ -1716,6 +1716,204 @@ Friction Detection — CHEW Lab's Bay 05 is currently a fixed "Research"
 sketch describing a person repeatedly starting and abandoning the same
 requirement, a pattern not yet tracked anywhere real.
 
+## Friction Detection — the historical-pattern foundation (lib/frictionModel.js)
+
+Answers a fourth, genuinely distinct question from the other internal
+foundations in this repo: not "what's the current condition and how has
+it changed?" (Economic Weather), but "does the real history show the
+SAME structural blocker recurring, not just existing once?" Built
+directly on Economic Weather's own historical truth — this removed the
+exact blocker the directive named, and no new history table was needed.
+
+**Core boundary, enforced structurally, not just documented**: a
+constraint is something blocking progress *now*; a friction result is a
+*pattern* across at least two real, comparable observations. This file
+never calls one unresolved requirement "friction" on its own — every one
+of its four friction types has a hard 2-observation minimum before it
+will use the word at all, verified directly in tests.
+
+**No new schema.** `lib/frictionModel.js` reads only real rows via
+`weatherModel.listSnapshots()` — the identical real historical source of
+truth Economic Weather already established. It never queries the
+`scenarios` table and never imports `createScenario`/
+`compareCrossGoalFutures`, for the same reason `weatherModel.js` itself
+refuses to let modeled state leak into real history. Nothing is
+persisted: every friction result is a pure derived computation over
+snapshots that already exist for another honest reason, re-derived fresh
+on every call rather than cached in a `friction_items` table that could
+drift from the real history it's supposed to explain.
+
+**Four real friction types, deliberately not five**: `persistent_requirement`
+(a requirement stays unresolved across multiple real observations),
+`repeated_focus` (CHEW's real current-focus key stays the same across
+multiple real observations with no different requirement taking its
+place), `readiness_stall` (the real readiness fraction doesn't move
+across multiple real observations even though something else genuinely
+changed to trigger a new snapshot), and `recurring_requirement` (a
+requirement that resolved and then genuinely became unmet again — a real
+regression, never inferred from a single before/after pair). A fifth
+type, `persistent_opportunity_block`, was deliberately **not** built:
+the real per-snapshot `capabilityCoverage` payload only stores counts
+(linked/available), not the specific documented blocking condition the
+directive required before this type could fire honestly — building it
+from counts alone would mean guessing a cause this schema doesn't
+actually store yet. Documented here rather than shipped as a shallow
+approximation.
+
+**persistent_requirement vs. repeated_focus, proven to genuinely
+diverge, not just conceptually separate**: because CHEW's current focus
+is always the *earliest-ordered* real unmet requirement (not merely "an"
+unmet one), a later requirement can remain persistently unresolved
+without ever being the current focus, if an earlier requirement
+regresses and reclaims it. Proven directly: in the real test sequence,
+`down_payment_savings_cents` was `persistent_requirement`-active for 4
+real observations while never once qualifying for `repeated_focus`,
+because `credit_score` kept reclaiming the current-focus slot every time
+it regressed.
+
+**Minimum evidence threshold, exactly as specified**: 1 real observation
+→ no friction claimed at all; 2 real comparable observations → severity
+`persistent`; 3+ → severity `repeated` (recurring_requirement uses its
+own `recurring` severity, reserved for an actually observed regression).
+Material-observation discipline is inherited directly from Economic
+Weather's own snapshot deduplication, then defensively re-verified inside
+this file's own `materialSnapshots()` rather than trusting a caller's
+array — duplicate/no-change snapshots can never inflate an observation
+count here.
+
+**The first real proof, run against live Postgres**: starting from the
+real seed baseline (credit_score 580, unmet; the real credit-utilization
+constraint unresolved), toggling *only* that real constraint's
+`is_resolved` flag (never touching credit_score) forced two further
+real, materially distinct snapshots while credit_score stayed unresolved
+and stayed the current focus the whole time. CHEW correctly said, using
+only real stored history:
+
+> "Credit score" has remained unresolved across 3 meaningful observations (within the same observed day).
+> "Credit score" has remained CHEW's current focus across 3 meaningful observations with no different requirement taking its place (within the same observed day).
+> Readiness has remained at 1/3 (33%) across 3 meaningful observations, even though the state changed enough elsewhere to record a new one each time (within the same observed day).
+
+— three of the four real friction types, from one honest sequence, using
+only a real constraint toggle as the directive's own "another material
+state changes elsewhere" mechanism.
+
+**The stronger second proof — resolution, then a real regression**:
+raising credit_score to 650 correctly moved that same `persistent_requirement`
+result to `currentStatus: 'resolved'` ("… remained unresolved across 3
+meaningful observations …, then resolved") rather than deleting it
+silently, while `down_payment_savings_cents` (never actually resolved)
+kept growing its own real count. Dropping credit_score back to 580 then
+correctly fired `recurring_requirement` — and *only* that type, never a
+second, contradictory `persistent_requirement` for the same key at the
+same time:
+
+> "Credit score" was resolved and later became unresolved again — a real regression observed 2 separate times across 5 meaningful observations (within the same observed day). CHEW sees the pattern. CHEW does not know why it regressed.
+
+**No psychology, enforced as a real invariant, not a style guideline**:
+every friction result's `explanation` and `whatChewDoesNotKnow` fields
+were scanned in tests for procrastination/avoidance/motivation/fear/
+distraction language after every real state change in the test sequence
+— none ever appeared. Every explanation this engine produces ends by
+naming what CHEW does *not* know, not just what it does.
+
+**Missing data vs. real friction, resolved honestly, with a named
+limitation**: `requirementMetAt()` returns `null` (never `false`) for a
+requirement key absent from a snapshot's real `requirementState` — an
+unknown observation is skipped entirely when building that requirement's
+timeline, never counted toward or against a pattern. A real, separately
+named architectural gap: this schema's `evaluateRequirement()` itself
+returns `met: false` for a genuinely missing fact with no distinct
+"unknown" state (see `lib/intelligenceEngine.js`) — so a requirement with
+no fact on file at all (like `down_payment_savings_cents` in this repo's
+own seed data) is currently indistinguishable, at the boolean-`met`
+layer, from one that was checked and failed. This file cannot fix that
+without restructuring the core intelligence engine, so it's documented
+here rather than silently pretended away — and in the one real case this
+repo has, the distinction happens not to matter, since every requirement
+this repo's seed data actually evaluates is either genuinely recorded or
+genuinely absent for a real, known reason.
+
+**Waiting conditions vs. real friction, documented as a real limitation,
+not solved**: `isKnownWaitingCondition()` exists as an architectural hook
+and is tested directly, but it always returns `false` today — this
+schema stores no seasoning-period, eligibility-date, or scheduled-review
+field anywhere `transition_requirements` could be checked against. A
+future pass with real waiting-period data can wire real logic into this
+exact function without restructuring the engine; nothing here fabricates
+a distinction the schema cannot support.
+
+**User choice vs. real friction, the one signal this schema actually
+supports**: `goals.status` (`active`/`completed`/`abandoned`) is the
+only real proxy for "the subject deliberately stopped pursuing this" —
+there is no separate "paused" status. `getFrictionForGoal()` checks this
+directly and returns `skipped: true` with an explicit real reason for any
+goal that isn't `active`, rather than reporting friction for a goal the
+subject may have abandoned on purpose. Documented rather than pretending
+this schema can tell a deliberate pause apart from abandonment.
+
+**API**: `api/friction-model.js` — `GET ?goalId=1` returns
+`{ active, resolved, skipped, skippedReason, materialObservationCount }`
+— gated behind the new `friction_detection` flag (`internal`, same
+identity boundary as `scenario_modeling`/`hidden_leverage_discovery`/
+`economic_weather_foundation`), pinned to `ILLUSTRATIVE_SUBJECT_ID`.
+
+**Tests performed**: a standalone Node suite (38 assertions) — the
+1-observation/no-friction floor, dedup of an identical re-capture, the
+exact 2-observation and 3-observation directive proofs above with real
+evidence-id cross-checks, the resolution transition, the real-regression
+proof with the persistent/recurring mutual-exclusion check, the
+persistent_requirement-vs-repeated_focus divergence proof, scenario-state
+exclusion (creating a real hypothetical Scenario mid-test produced zero
+change to friction results), deterministic repeated output (two calls
+with no state change produce byte-identical results), the unknown-vs-false
+unit check, the waiting-condition no-op hook, the goal-status skip and
+resume, refusal of a nonexistent goal, and the DB-level identity-boundary
+CHECK — all passed, alongside a full fresh-process re-run of all seven
+intelligence test files together (219 total assertions: 37 scenario + 29
+conflict + 20 parallel-futures + 31 leverage + 21 dormant-capability + 43
+weather + 38 friction, zero failures). Separately verified over real HTTP
+against a freshly restarted server: confirmed the endpoint 404s by
+default, flipped both `friction_detection` and `economic_weather_foundation`
+to `preview` in the scratch database only, replayed the entire real proof
+sequence above one HTTP call at a time (toggling the real constraint,
+then credit_score) with matching results confirmed at every step,
+reverted every scratch row and both flags, confirmed the 404s returned.
+The production flags were never touched.
+
+**CHEW Lab connection**: Bay 05 moves from **Research** ("a fictional
+example… CHEW doesn't yet track") to **Experimental**, matching Hidden
+Leverage's and Economic Weather's own promotion pattern — its
+transparency panel now discloses the real engine, the real proof
+sentences, and the two named limitations (missing-data ambiguity,
+no waiting-period data) rather than claiming nothing was built. The
+bay's own visual stays a fixed illustrative sketch (three timeline points
+sharing one real blocker), not wired to the internal engine — the
+directive's own richer "everything else dims" visual treatment is
+explicitly future work, not required this pass. The CHEW Lab intro copy
+and floor-sweep status text, both stale since before this session's run
+of internal-engine bay promotions, were also corrected to stop claiming
+the remaining bays are "fictional… research sketches" when several now
+honestly disclose a real internal engine behind a fixed sketch.
+
+**What remains unavailable**: `persistent_opportunity_block` stays
+unbuilt until a snapshot can store the actual blocking condition, not
+just a count. No cross-feature wiring to Hidden Leverage ("persistent
+friction exists + hidden leverage can help address it") or to What
+Changed ("one important thing still hasn't moved") — the directive asked
+only that the architecture stay compatible, not that the connection be
+built, and every friction result's flat, JSON-serializable shape
+(`goalId`, `sourceRequirementKey`, real snapshot `evidence`) is exactly
+that: nothing here needed inventing to make a future join possible later.
+No automatic snapshot-to-CHEW-Move cross-check ("your current CHEW Move
+addresses this friction") — deferred for the same reason.
+
+**What was deliberately not inferred**: any word implying a human cause
+(procrastination, avoidance, motivation, fear, distraction) anywhere a
+friction result's own explanation appears; a "friction score" of any
+kind; a waiting-period distinction this schema cannot support; a
+`persistent_opportunity_block` type from counts alone; a second
+`state_snapshots`-shaped table just for this feature.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
@@ -1778,12 +1976,18 @@ the following exist in this repository yet:
     below — but liquidity and income data don't exist anywhere in this
     schema, so those two stay marked "n/a" rather than estimated); "What
     Changed," Hidden Leverage, and Friction Detection as real (rather than
-    fixed-illustrative) public experiences (each needs either
-    state-over-time tracking or pattern-recognition across a subject's
-    history that doesn't exist for the one seeded test subject —
-    building these even as "demo" would mean fabricating a history that
-    was never seeded, which is different from labeling a single static
-    scenario as an example). Conflict Detection as a *public* experience
+    fixed-illustrative) *public* experiences specifically. The real
+    internal capability each of these needs now exists — Hidden Leverage's
+    and Friction Detection's own sections above, gated `internal` — but
+    wiring either onto this public page still needs a real member
+    identity system to hold a real subject's own history, not a fixed
+    shared illustrative one; building a public "demo" against the shared
+    illustrative subject alone would mean fabricating a personal history
+    that was never seeded, which is different from labeling a single
+    static scenario as an example. "What Changed" itself has no internal
+    engine yet at all — see "What remains unavailable" in the Friction
+    Detection section above for why that connection specifically isn't
+    wired yet even architecturally. Conflict Detection as a *public* experience
     specifically belongs in this same bucket now, not the "just not
     built yet" one below — a real, rule-backed internal engine exists
     (see "Multi-goal Conflict Detection" above), gated `internal`

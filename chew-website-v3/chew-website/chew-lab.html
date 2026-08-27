@@ -57,8 +57,9 @@
       <div class="chewlab-intro-row" data-reveal>
         <p class="max-prose" style="margin:0; font-size:0.92rem; color:var(--text-muted);">
           Two bays below pull live from CHEW's real intelligence engine, against the same shared
-          illustrative example used across the site. Four are fixed research sketches &mdash;
-          fictional by design, and labeled that way in every one of their own status blocks.
+          illustrative example used across the site. The other four are fixed illustrative
+          sketches, not live output &mdash; but no longer fictional either: each one's own
+          transparency panel now discloses a real internal engine running behind it.
         </p>
         <button type="button" class="chewlab-sweep-btn" id="chewlab-sweep-btn">Walk The Floor &rarr;</button>
       </div>
@@ -217,29 +218,38 @@
         </article>
 
         <!-- Bay 05 — Friction Detection -->
-        <article class="chewlab-bay" data-status="research" data-bay="friction">
+        <article class="chewlab-bay" data-status="experimental" data-bay="friction">
           <span class="chewlab-bay-eyebrow">Bay 05</span>
-          <span class="chewlab-status-badge">Research</span>
+          <span class="chewlab-status-badge">Experimental</span>
           <h2 class="chewlab-bay-title">Friction Detection</h2>
           <div class="chewlab-bay-visual" aria-hidden="true">
             <svg viewBox="0 0 220 118" preserveAspectRatio="xMidYMid meet">
-              <path d="M 90,40 A 30,30 0 1 1 89,41" fill="none" stroke="var(--sample-blue)" stroke-width="1.4" stroke-dasharray="5 5"></path>
-              <path d="M89,41 l -7,-2 l 3,7 z" fill="var(--sample-blue)"></path>
-              <circle cx="90" cy="70" r="3" fill="var(--sample-blue)"></circle>
+              <line x1="34" y1="59" x2="186" y2="59" stroke="var(--panel-border-soft)" stroke-width="1.2" stroke-dasharray="3 4"></line>
+              <circle cx="34" cy="59" r="8" fill="none" stroke="var(--gold)" stroke-width="1.6"></circle>
+              <circle cx="110" cy="59" r="8" fill="none" stroke="var(--gold)" stroke-width="1.6"></circle>
+              <circle cx="186" cy="59" r="9" fill="rgba(201,162,39,0.14)" stroke="var(--gold-light)" stroke-width="1.8"></circle>
+              <text x="34" y="63" text-anchor="middle" font-size="8" fill="var(--gold-light)" font-family="var(--font-body)">A</text>
+              <text x="110" y="63" text-anchor="middle" font-size="8" fill="var(--gold-light)" font-family="var(--font-body)">B</text>
+              <text x="186" y="63" text-anchor="middle" font-size="8" fill="var(--gold-light)" font-family="var(--font-body)">C</text>
+              <text x="110" y="90" text-anchor="middle" font-size="9" fill="var(--text-faint)" font-family="var(--font-body)">same requirement, unresolved</text>
             </svg>
           </div>
           <p class="chewlab-bay-desc">
-            A fictional example of a person repeatedly starting and abandoning the same requirement &mdash; a pattern CHEW doesn't yet track.
+            The same real requirement, seen unresolved across CHEW's own observed history &mdash; not a hunch, a pattern across real, comparable observations.
           </p>
           <div class="chewlab-transparency">
             <button type="button" class="chewlab-transparency-toggle" aria-expanded="false">What's real here &rarr;</button>
             <div class="chewlab-transparency-body">
               <span class="chewlab-transparency-label">Status</span>
-              <p>Research &mdash; a fixed illustrative sketch, not a working detector.</p>
+              <p>Experimental &mdash; backed by real historical pattern detection, built directly on Economic Weather's state_snapshots. This public bay still shows a fixed illustrative sketch, not live output, gated internal-only pending a real member identity system.</p>
               <span class="chewlab-transparency-label">Uses</span>
-              <ul><li>Nothing from real data yet.</li></ul>
+              <ul>
+                <li>Internally, CHEW now derives real friction patterns purely from real <code>state_snapshots</code> &mdash; no second history table, no scenario data ever counted as a real observation. Four real pattern types: a requirement staying unresolved (<code>persistent_requirement</code>), the same requirement staying CHEW's current focus (<code>repeated_focus</code>), readiness not moving while other real state changes (<code>readiness_stall</code>), and a requirement resolving and then genuinely becoming unmet again (<code>recurring_requirement</code>) &mdash; each one requiring at least 2 real comparable observations before CHEW will use the word, and escalating language only at 3 or more.</li>
+                <li>Proven directly: for this repo's illustrative scenario, CHEW correctly said "credit_score has remained unresolved across 3 meaningful observations," then correctly marked that same friction "resolved" once the requirement genuinely resolved, then correctly detected a real regression when it became unmet again &mdash; never inflating the count from a duplicate snapshot, never claiming a trend from a single observation.</li>
+                <li>Every explanation ends by naming what CHEW does <em>not</em> know &mdash; never a guess at motivation, avoidance, or cause.</li>
+              </ul>
               <span class="chewlab-transparency-label">Does not yet use</span>
-              <ul><li>Any real action history. CHEW's schema doesn't record repeated attempts or abandonment yet, so this can't run against anyone's real state.</li></ul>
+              <ul><li>Any psychological interpretation, ever &mdash; CHEW can say a requirement stayed unresolved, never why. Also doesn't yet distinguish a genuine waiting period (a seasoning requirement, a scheduled review date) from real friction, since this schema stores no waiting-period data to check against &mdash; a real, named limitation, not a guess dressed up as a distinction. Nothing is persisted to a database table; every result here is derived fresh from real snapshots each time, and this public bay isn't wired to that internal engine yet.</li></ul>
             </div>
           </div>
         </article>
@@ -369,7 +379,7 @@
     bays.forEach(function (b) { b.classList.remove('is-sweeping'); });
 
     if (reduceMotion) {
-      sweepStatus.textContent = 'Six experiment bays: two running on real CHEW data today, four fixed research sketches.';
+      sweepStatus.textContent = 'Six experiment bays: two running live on real CHEW data today, four fixed illustrative sketches with a real engine behind each.';
       return;
     }
 
@@ -380,7 +390,7 @@
       }, i * 160));
     });
     sweepTimeouts.push(setTimeout(function () {
-      sweepStatus.textContent = 'Six experiment bays: two running on real CHEW data today, four fixed research sketches.';
+      sweepStatus.textContent = 'Six experiment bays: two running live on real CHEW data today, four fixed illustrative sketches with a real engine behind each.';
     }, bays.length * 160 + 200));
   }
 
