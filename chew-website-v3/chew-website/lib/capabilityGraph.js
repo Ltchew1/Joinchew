@@ -99,6 +99,32 @@ async function getCapabilityOverview() {
   });
 }
 
+// The canonical persisted identity for "one real opportunity" — a real
+// network_providers.id, never a title, an array index, or a fuzzy match.
+// Given a set of real capability slugs (e.g. every capability a goal's
+// requirement chain actually links to), returns the real, deduped set of
+// currently active+ready provider ids across all of them — the same
+// status = 'active' AND is_ready = TRUE condition every other real
+// availability check in this file already uses. A provider linked to
+// more than one of the given capabilities is counted once, since it's
+// the same real opportunity either way. Returns [] (not a fabricated
+// value) when the slugs are real but no provider is currently active for
+// any of them — callers distinguish that real empty state from "no
+// capability link exists at all" themselves (see lib/weatherModel.js).
+async function getActiveProviderIds(capabilitySlugs) {
+  if (!capabilitySlugs || capabilitySlugs.length === 0) return [];
+  const result = await query(
+    `SELECT DISTINCT p.id
+     FROM capability_provider_links l
+     JOIN network_providers p ON p.id = l.provider_id
+     JOIN capabilities c ON c.id = l.capability_id
+     WHERE c.slug = ANY($1::text[]) AND p.status = 'active' AND p.is_ready = TRUE
+     ORDER BY p.id ASC`,
+    [capabilitySlugs]
+  );
+  return result.rows.map((row) => row.id);
+}
+
 async function recordRoutingEvent({ capabilitySlug, providerId, applicationId, outcome, notes }) {
   const capabilityResult = await query('SELECT id FROM capabilities WHERE slug = $1', [capabilitySlug]);
   const capabilityId = capabilityResult.rows[0] ? capabilityResult.rows[0].id : null;
@@ -123,4 +149,4 @@ async function recordConsent({ applicationId, capabilitySlug, providerId, dataSh
   return result.rows[0].id;
 }
 
-module.exports = { getCapabilities, getRoutingRecommendation, getCapabilityOverview, recordRoutingEvent, recordConsent };
+module.exports = { getCapabilities, getRoutingRecommendation, getCapabilityOverview, getActiveProviderIds, recordRoutingEvent, recordConsent };

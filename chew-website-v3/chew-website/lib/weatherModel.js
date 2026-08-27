@@ -21,6 +21,12 @@
 //     buildBaselineSnapshot() already derives via scenario-engine.js's
 //     deriveCapabilityCoverage(), null (never a fabricated 0) when
 //     nothing links.
+//   - active opportunity IDENTITY (active_opportunity_ids) — the real,
+//     canonical network_providers.id set behind that same count, from
+//     lib/capabilityGraph.js's getActiveProviderIds(). Lets Weather
+//     prove a composition change (the same COUNT, but different real
+//     opportunities) instead of only ever seeing a number move. Same
+//     null-vs-empty-array discipline as the count above.
 //   - capability availability count — lib/capabilityGraph.js's real,
 //     live getCapabilityOverview(), site-wide rather than goal-scoped,
 //     which is a genuinely different real signal than the goal-scoped
@@ -51,7 +57,7 @@
 const crypto = require('crypto');
 const { query } = require('./db');
 const { buildBaselineSnapshot } = require('./scenarioModel');
-const { getCapabilityOverview } = require('./capabilityGraph');
+const { getCapabilityOverview, getActiveProviderIds } = require('./capabilityGraph');
 const { stableStringify } = require('./util');
 
 const WEATHER_MODEL_VERSION = 'weather-model-v1';
@@ -74,9 +80,12 @@ const SIGNAL_TYPES = ['readiness', 'constraint_pressure', 'opportunity_access', 
 const CHANGE_WORDS = {
   readiness: { up: 'improved', down: 'declined', flat: 'unchanged' },
   constraint_pressure: { up: 'increased', down: 'eased', flat: 'unchanged' }, // "up" = more unresolved constraints = worse
-  opportunity_access: { up: 'expanded', down: 'contracted', flat: 'unchanged' },
   capability_access: { up: 'expanded', down: 'contracted', flat: 'unchanged' },
 };
+// opportunity_access no longer uses this generic count-only vocabulary —
+// see classifyOpportunityComposition() below, which compares real
+// canonical opportunity IDs (network_providers.id), not just a count.
+const OPPORTUNITY_COMPOSITION_STATES = ['unchanged', 'expanded', 'contracted', 'composition_changed', 'mixed'];
 const TREND_WORDS = { improving: 'improving', worsening: 'worsening', stable: 'stable', mixed: 'mixed' };
 
 // Named explicitly, per-field, rather than silently absent — a caller
@@ -112,6 +121,7 @@ function rowToSnapshot(row) {
     unresolvedConstraintCount: row.unresolved_constraint_count,
     linkedCapabilityCount: row.linked_capability_count,
     activeOpportunityCount: row.active_opportunity_count,
+    activeOpportunityIds: row.active_opportunity_ids, // null = no capability link exists; [] = linked but zero active providers right now
     capabilityAvailabilityCount: row.capability_availability_count,
     capabilityTotalCount: row.capability_total_count,
     stateFingerprint: row.state_fingerprint,
@@ -137,6 +147,11 @@ function fingerprintFields(fields) {
     unresolvedConstraintCount: fields.unresolvedConstraintCount,
     linkedCapabilityCount: fields.linkedCapabilityCount,
     activeOpportunityCount: fields.activeOpportunityCount,
+    // Sorted so key order never affects the hash. Deliberately included
+    // — without this, a real composition change (same COUNT, different
+    // real opportunity ids) would be silently deduped as "identical
+    // state" and never captured as a new snapshot at all.
+    activeOpportunityIds: fields.activeOpportunityIds ? [...fields.activeOpportunityIds].sort((a, b) => a - b) : null,
     capabilityAvailabilityCount: fields.capabilityAvailabilityCount,
     capabilityTotalCount: fields.capabilityTotalCount,
   };
@@ -154,6 +169,16 @@ async function computeCurrentStateFields({ subjectId, goalId }) {
   const capabilityOverview = await getCapabilityOverview();
   const capabilityAvailabilityCount = capabilityOverview.filter((c) => c.available).length;
 
+  // Real canonical opportunity identity (network_providers.id), never a
+  // fabricated one. null when this goal's chain links no capability at
+  // all (same condition as linkedCapabilityCount/activeOpportunityCount
+  // above — no real pipeline exists to track); [] when a real link
+  // exists but zero providers are currently active — a real, legitimate
+  // empty state, not the same as "no coverage."
+  const activeOpportunityIds = baseline.capabilityCoverage
+    ? await getActiveProviderIds(baseline.capabilityCoverage.linkedSlugs)
+    : null;
+
   return {
     readinessNumerator: baseline.readiness.resolvedCount,
     readinessDenominator: baseline.readiness.total,
@@ -164,6 +189,7 @@ async function computeCurrentStateFields({ subjectId, goalId }) {
     unresolvedConstraintCount: baseline.constraintState.length,
     linkedCapabilityCount: baseline.capabilityCoverage ? baseline.capabilityCoverage.linkedCount : null,
     activeOpportunityCount: baseline.capabilityCoverage ? baseline.capabilityCoverage.availableCount : null,
+    activeOpportunityIds,
     capabilityAvailabilityCount,
     capabilityTotalCount: capabilityOverview.length,
     rawStatePayload: {
@@ -171,6 +197,7 @@ async function computeCurrentStateFields({ subjectId, goalId }) {
       capabilityCoverage: baseline.capabilityCoverage,
       constraintState: baseline.constraintState,
       goalTitle: baseline.goal.title,
+      goalCategory: baseline.goal.category,
     },
   };
 }
@@ -220,15 +247,16 @@ async function captureSnapshot({ subjectId, goalId, reason }) {
        (subject_type, subject_ref, goal_id, snapshot_reason, readiness_numerator, readiness_denominator,
         resolved_requirement_count, unresolved_requirement_count, current_focus_requirement_key,
         current_focus_action, unresolved_constraint_count, linked_capability_count, active_opportunity_count,
-        capability_availability_count, capability_total_count, state_fingerprint, raw_state_payload,
-        source_version, rule_version)
-     VALUES ('illustrative', $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+        active_opportunity_ids, capability_availability_count, capability_total_count, state_fingerprint,
+        raw_state_payload, source_version, rule_version)
+     VALUES ('illustrative', $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
      RETURNING *`,
     [
       subjectId, goalId, effectiveReason, fields.readinessNumerator, fields.readinessDenominator,
       fields.resolvedRequirementCount, fields.unresolvedRequirementCount, fields.currentFocusRequirementKey,
       fields.currentFocusAction, fields.unresolvedConstraintCount, fields.linkedCapabilityCount,
-      fields.activeOpportunityCount, fields.capabilityAvailabilityCount, fields.capabilityTotalCount,
+      fields.activeOpportunityCount, fields.activeOpportunityIds === null ? null : JSON.stringify(fields.activeOpportunityIds),
+      fields.capabilityAvailabilityCount, fields.capabilityTotalCount,
       fingerprint, JSON.stringify(fields.rawStatePayload), WEATHER_MODEL_VERSION, WEATHER_MODEL_VERSION,
     ]
   );
@@ -260,6 +288,36 @@ function classifyTrend(signalType, orderedValues) {
   if (allNonPos && anyNeg) return TREND_WORDS.worsening;
   if (rawDeltas.every((d) => d === 0)) return TREND_WORDS.stable;
   return TREND_WORDS.mixed;
+}
+
+// Real set comparison over canonical opportunity ids (network_providers
+// .id) — never inferred from a count. Five states, matching exactly
+// what a real add/remove diff between two comparable snapshots can
+// prove:
+//   unchanged           — same real ids, nothing added or removed
+//   expanded             — only additions (a real superset)
+//   contracted            — only removals (a real subset)
+//   composition_changed  — same COUNT, but a same-size swap of real ids
+//                          (the case a count-only comparison would
+//                          wrongly call "unchanged")
+//   mixed                — additions AND removals of different sizes —
+//                          doesn't cleanly fit expansion or contraction
+// Always a pairwise comparison (current vs. the immediately prior
+// comparable observation) — composition is a real add/remove diff
+// between two states, not a multi-observation trend the way numeric
+// signals like readiness are.
+function classifyOpportunityComposition(currentIds, priorIds) {
+  const currentSet = new Set(currentIds);
+  const priorSet = new Set(priorIds);
+  const added = currentIds.filter((id) => !priorSet.has(id));
+  const removed = priorIds.filter((id) => !currentSet.has(id));
+  let classification;
+  if (added.length === 0 && removed.length === 0) classification = 'unchanged';
+  else if (added.length > 0 && removed.length === 0) classification = 'expanded';
+  else if (added.length === 0 && removed.length > 0) classification = 'contracted';
+  else if (added.length === removed.length) classification = 'composition_changed';
+  else classification = 'mixed';
+  return { classification, added, removed };
 }
 
 function buildNumericSignal({ signalType, label, currentValue, priorValues, evidenceIds, explanationUnit }) {
@@ -316,21 +374,58 @@ function buildEconomicWeather(currentSnapshot, priorSnapshotsOldestFirst) {
     explanationUnit: ' unresolved',
   }));
 
-  if (currentSnapshot.activeOpportunityCount === null) {
+  // scope is real and honest — the goal this snapshot actually belongs
+  // to — never a domain buzzword ("Credit") this repo has no real
+  // pipeline for. coverage names whether this goal's own real
+  // requirement chain links a capability at all, independent of whether
+  // any provider is currently active for it.
+  const scope = {
+    goalId: currentSnapshot.goalId,
+    goalTitle: currentSnapshot.rawStatePayload ? currentSnapshot.rawStatePayload.goalTitle : null,
+    goalCategory: currentSnapshot.rawStatePayload ? currentSnapshot.rawStatePayload.goalCategory : null,
+  };
+
+  if (currentSnapshot.activeOpportunityIds === null) {
     signals.push({
       signal: 'opportunity_access', label: 'Opportunity Access', currentState: null, comparisonState: null,
-      trendClassification: 'unavailable',
+      trendClassification: 'unavailable', scope, coverage: 'unlinked',
       explanation: 'No requirement in this goal\'s real chain links to a capability, so opportunity access cannot be measured for this goal.',
       evidence: [currentSnapshot.id], availability: 'unavailable', historySufficiency: 0,
     });
   } else {
-    signals.push(buildNumericSignal({
-      signalType: 'opportunity_access', label: 'Opportunity Access',
-      currentValue: currentSnapshot.activeOpportunityCount,
-      priorValues: priorSnapshotsOldestFirst.filter((s) => s.activeOpportunityCount !== null).map((s) => s.activeOpportunityCount),
-      evidenceIds: [...priorSnapshotsOldestFirst.map((s) => s.id), currentSnapshot.id],
-      explanationUnit: ` of ${currentSnapshot.linkedCapabilityCount} linked capabilities available`,
-    }));
+    const currentIds = currentSnapshot.activeOpportunityIds;
+    const priorWithIds = priorSnapshotsOldestFirst.filter((s) => s.activeOpportunityIds !== null);
+    const linkedNote = ` of ${currentSnapshot.linkedCapabilityCount} linked capabilities' real active provider(s)`;
+
+    if (priorWithIds.length === 0) {
+      signals.push({
+        signal: 'opportunity_access', label: 'Opportunity Access',
+        currentState: currentIds.length, comparisonState: null,
+        trendClassification: 'current_state_only', scope, coverage: 'linked',
+        explanation: `Opportunity Access: ${currentIds.length}${linkedNote} — no prior comparable observation exists yet.`,
+        evidence: [currentSnapshot.id], availability: 'available', historySufficiency: 0,
+      });
+    } else {
+      const priorSnapshot = priorWithIds[priorWithIds.length - 1];
+      const priorIds = priorSnapshot.activeOpportunityIds;
+      const { classification, added, removed } = classifyOpportunityComposition(currentIds, priorIds);
+
+      const explanations = {
+        unchanged: `Opportunity Access unchanged since the last observation (${currentIds.length}${linkedNote}, the same real opportunities).`,
+        expanded: `Opportunity Access expanded since the last observation (${priorIds.length} → ${currentIds.length}${linkedNote}; ${added.length} new).`,
+        contracted: `Opportunity Access contracted since the last observation (${priorIds.length} → ${currentIds.length}${linkedNote}; ${removed.length} no longer active).`,
+        composition_changed: `Opportunity Access composition changed since the last observation — the count held at ${currentIds.length}, but the real opportunities are different (${removed.length} replaced by ${added.length} new).`,
+        mixed: `Opportunity Access changed since the last observation in a mixed way — ${added.length} new real opportunit${added.length === 1 ? 'y' : 'ies'} appeared while ${removed.length} disappeared (${priorIds.length} → ${currentIds.length}${linkedNote}).`,
+      };
+
+      signals.push({
+        signal: 'opportunity_access', label: 'Opportunity Access',
+        currentState: currentIds.length, comparisonState: priorIds.length,
+        trendClassification: classification, scope, coverage: 'linked',
+        explanation: explanations[classification],
+        evidence: [priorSnapshot.id, currentSnapshot.id], availability: 'available', historySufficiency: priorWithIds.length,
+      });
+    }
   }
 
   signals.push(buildNumericSignal({
@@ -379,6 +474,7 @@ async function getEconomicWeather({ subjectId, goalId, reason }) {
 
 module.exports = {
   WEATHER_MODEL_VERSION, SNAPSHOT_REASONS, IMPLEMENTED_SNAPSHOT_REASONS, SIGNAL_TYPES, UNAVAILABLE_SIGNALS,
+  OPPORTUNITY_COMPOSITION_STATES,
   captureSnapshot, getLatestSnapshot, listSnapshots, buildEconomicWeather, getEconomicWeather,
-  computeCurrentStateFields, computeFingerprint, // exported for direct unit testing only
+  computeCurrentStateFields, computeFingerprint, classifyOpportunityComposition, // exported for direct unit testing only
 };

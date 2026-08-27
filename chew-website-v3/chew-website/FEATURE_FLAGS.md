@@ -2083,6 +2083,136 @@ provenance columns (named in the review, not requested this pass);
 above, closing that review finding as a direct byproduct rather than a
 separate task.
 
+## Economic Weather — real opportunity identity (lib/capabilityGraph.js, lib/weatherModel.js)
+
+The next bounded slice after the recommendation-purity fix, directed at
+exactly what that fix unblocked: opportunity/history reads are now
+side-effect-free, so it became safe to make the Opportunity Access
+signal historically precise instead of count-only.
+
+**The premise was checked before anything was built, and didn't hold.**
+The directive named this "Credit Opportunity Access" and asserted
+"opportunity identity is stable for Credit." Verified directly: no
+capability related to credit exists in the real registry (all 9 real
+capabilities checked by slug and name), the home goal's `credit_score`
+requirement carries no `capability_id` at all, and `network_providers`
+remains permanently empty in production, same as every other capability
+this session has found. Reported this back before writing any code; the
+corrected directive confirmed building the mechanism generically and
+proving it honestly, never hardcoding "Credit" into the signal, and
+never fabricating a capability or provider to make the feature
+demonstrable.
+
+**Canonical opportunity identity.** `lib/capabilityGraph.js` gained
+`getActiveProviderIds(capabilitySlugs)` — the real, deduped set of
+currently active+ready `network_providers.id` values across a set of
+capability slugs, the same `status = 'active' AND is_ready = TRUE`
+condition every other real availability check in this file already
+uses. A real provider id is the canonical identity; never a title, an
+array index, or a fuzzy match.
+
+**Schema.** `state_snapshots` gained `active_opportunity_ids JSONB`
+(`ALTER TABLE ... ADD COLUMN IF NOT EXISTS`, the same idempotent pattern
+this file already established twice). Same null-vs-empty-array
+discipline as the existing `active_opportunity_count` column: `NULL`
+means this goal's real requirement chain links no capability at all (no
+pipeline to track); `[]` means a real link exists but zero providers are
+currently active (a real, legitimate zero, not the same as "no
+coverage"). `newly_unlocked_opportunity_ids` was deliberately **not**
+added as a column — this file's own existing comment already establishes
+why comparative fields aren't persisted redundantly
+(`newly_unlocked_opportunity_count` was never a column either); the
+added/removed sets are computed at `buildEconomicWeather()` comparison
+time from two real `active_opportunity_ids` arrays. Critically, the
+sorted id array was added to `fingerprintFields()` — without this, a
+real composition change (the same count, different real opportunities)
+would have been silently deduped as "identical state" and never captured
+as a new snapshot, quietly defeating the entire feature. Verified
+directly: 5 repeated reads against a genuinely unchanged real opportunity
+set created zero new snapshots.
+
+**Five real composition states, via real set comparison, never a count
+alone.** `classifyOpportunityComposition(currentIds, priorIds)`:
+`unchanged` (same real ids), `expanded` (a real superset — only
+additions), `contracted` (a real subset — only removals),
+`composition_changed` (same count, a same-size swap of real ids — **the
+sophisticated case**, proven directly: `[A] → [B]`, count held at 1 both
+times, CHEW correctly said "the count held at 1, but the real
+opportunities are different," never "unchanged"), and `mixed`
+(asymmetric add+remove — e.g. 1 removed + 2 added — that doesn't cleanly
+fit either expansion or contraction). Always a pairwise comparison
+against the immediately prior comparable observation, not a
+multi-observation trend the way the numeric signals (readiness,
+constraint pressure) are — composition is a real add/remove diff between
+two states, and the user's own five-state vocabulary has no
+"improving-over-three-observations" concept for it.
+
+**Scope, not a domain label.** The `opportunity_access` signal now
+carries real `scope` (`{goalId, goalTitle, goalCategory}` — the actual
+goal this observation belongs to, e.g. `business`) and `coverage`
+(`linked`/`unlinked` — whether this goal's own chain links a capability
+at all, independent of whether any provider is currently active).
+Nothing in the signal contract ever says "Credit," because no real
+Credit pipeline exists — confirmed by a direct test scanning the
+registry for any capability whose slug or name matches "credit" (none
+found). The one real link this repo has — `bookkeeping_current` →
+`accounting_tax`, on the business/funding goal — is what the proof below
+is actually built against.
+
+**The proof, exactly matching the corrected directive's Observation
+A–D script**, run against live Postgres:
+- **Observation A** (seed a real opportunity, capture): `activeOpportunityIds: [A]`, `trendClassification: 'current_state_only'`.
+- **Observation B** (same real provider; an unrelated real fact toggled elsewhere to force a new material snapshot without touching the opportunity set): `[A] → [A]`, `'unchanged'`.
+- **Observation C, superset** (a second real provider added): `[A] → [A,B]`, `'expanded'`.
+- **Observation C, replacement — the sophisticated case** (isolated block: the one real provider deactivated, a different real provider added): `[A] → [B]`, same count both times, `'composition_changed'`.
+- **Observation D** (the real provider deactivated, none added): `[A] → []`, `'contracted'`.
+- **Extra, beyond the script**: an asymmetric case (1 real provider removed, 2 different real providers added simultaneously): `'mixed'`, net count still genuinely moved (2→3) while composition churned in a way that isn't a clean expansion.
+
+Also verified: creating a real hypothetical Scenario mid-test produced
+zero new opportunity-history snapshots (history/scenario boundary holds
+for this signal too); the real production baseline (business goal, zero
+active providers, capability genuinely linked) is honestly `available`
+with `currentState: 0` — distinct from the home goal's honest
+`unavailable` (no link at all); every scratch provider and link was
+deleted at the end of every block, with a final check confirming
+`network_providers` is empty, exactly the 9 real capabilities still
+exist, and none of them match "credit" by slug or name.
+
+**Tests**: 31 assertions (`opportunity-identity-test.js`) — the unit-level
+5-state classifier proven directly on synthetic id sets first, then the
+full real-database proof above, the fingerprint-dedup proof, the
+scenario-leakage proof, and full teardown verification. Re-verified over
+real HTTP against a freshly restarted server: seeded a real provider,
+confirmed `expanded`; deactivated it and added a different real provider,
+confirmed `composition_changed` with the identical explanation text the
+Node-level test produced; fully reverted every scratch row and the
+feature flag; confirmed the endpoint returned to 404. All 11 intelligence
+test suites re-run together afterward: 315 total assertions
+(284 from the prior pass + 31 new), zero failures. The production
+database was never touched.
+
+**CHEW Lab connection**: Bay 03's "Uses" list gained one line disclosing
+this real proof — the bay's own two live public gauges and Experimental
+status are unchanged; this remains internal-only, same as the rest of
+the historical engine.
+
+**What remains honestly unavailable**: the home/housing goal (and every
+other goal category, including "credit" specifically) still shows
+`unavailable` for Opportunity Access, because no real capability is
+linked there. This is not a bug — it's the honest state of the real
+registry, unchanged by this pass. It becomes real the moment a real,
+business-authorized capability is linked to a real requirement in that
+chain, with zero code changes required — the mechanism is generic, not
+goal-specific.
+
+**Next architectural step, per the user's own framing**: extend stable
+opportunity identity beyond this one real link, one room at a time, as
+real capability/provider data actually exists to support it — not
+speculatively ahead of it. Once more than one room has a persisted
+opportunity pipeline, cross-room aggregation (Radar, Hidden Leverage,
+"What Changed" all reasoning from the same canonical opportunity ids)
+becomes the next real opportunity, not before.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of

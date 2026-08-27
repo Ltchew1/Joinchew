@@ -936,3 +936,33 @@ CREATE TABLE IF NOT EXISTS state_snapshots (
 );
 
 CREATE INDEX IF NOT EXISTS idx_state_snapshots_subject_goal ON state_snapshots (subject_ref, goal_id, observed_at DESC);
+
+-- ============================================================
+-- Opportunity-identity history (Economic Weather's opportunity-access signal)
+-- ============================================================
+-- active_opportunity_ids preserves the real, canonical persisted
+-- identity of each currently active opportunity — a real
+-- network_providers.id, never a title/index/fuzzy match — so a later
+-- comparison can prove composition changed (the same COUNT of
+-- opportunities, but different real ones) rather than only ever seeing
+-- a number go up, down, or stay flat. Same null-vs-empty-array
+-- discipline as active_opportunity_count/linked_capability_count above:
+-- NULL means this goal's requirement chain links no capability at all
+-- (no real pipeline exists to track — structurally unavailable); an
+-- empty array [] means a real capability link exists but zero real
+-- providers are active right now (a real, legitimate zero, not the
+-- same as "no coverage"). See lib/capabilityGraph.js's
+-- getActiveProviderIds() for the one real query this is sourced from.
+--
+-- newly_unlocked_opportunity_ids is deliberately NOT a column here, for
+-- the identical reason newly_unlocked_opportunity_count was never one
+-- (see this table's own comment above) — "newly unlocked" is a
+-- comparison between two snapshots, computed at buildEconomicWeather()
+-- time from two real active_opportunity_ids arrays, never stored
+-- redundantly.
+--
+-- Included in state_fingerprint (see lib/weatherModel.js) — without
+-- this, a real composition change with an unchanged COUNT would be
+-- silently deduped as "identical state" and never captured as a new
+-- snapshot at all, defeating the entire point of this column.
+ALTER TABLE state_snapshots ADD COLUMN IF NOT EXISTS active_opportunity_ids JSONB;
