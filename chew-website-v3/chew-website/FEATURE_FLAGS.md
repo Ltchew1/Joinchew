@@ -1530,6 +1530,192 @@ goal; a second relevance rule invented for visual richness; any
 "already engaged" signal from `routing_events`/`routing_consents`,
 since no real join path to the illustrative subject exists for them.
 
+## Economic Weather — the historical-state foundation (lib/weatherModel.js)
+
+Answers a third, genuinely distinct question from the other two internal
+intelligence foundations in this repo: not "what would change if I moved
+this fact?" (Scenario Modeling) and not "what already exists that's
+underused?" (Hidden Leverage), but "what did CHEW actually observe, and
+how has it genuinely changed since the last time it looked?" Built the
+historical truth first, exactly as directed, before touching any visual.
+
+**The audit, done before any schema was written**: every field
+`state_snapshots` stores was checked against real, already-tested code —
+readiness numerator/denominator, resolved/unresolved requirement counts,
+and current focus all come straight from `lib/scenarioModel.js`'s
+`buildBaselineSnapshot()`, reused verbatim rather than recomputed a second
+way; unresolved constraint count is the real `constraintState` array that
+same function already returns; linked/active opportunity count is the
+real `capabilityCoverage` it derives via `scenario-engine.js`, `null`
+rather than a fabricated `0` when nothing links; capability availability
+count is `lib/capabilityGraph.js`'s real, live, site-wide
+`getCapabilityOverview()`. Liquidity, income, credit trend, employment
+stability, net worth, asset growth, spending, debt, cash runway, and
+market exposure were all checked and confirmed absent from this schema —
+none are estimated from unrelated fields; all ten are named explicitly in
+`UNAVAILABLE_SIGNALS` rather than silently omitted.
+
+**Schema created**: `state_snapshots` — `subject_type`/`subject_ref` (the
+same identity-boundary pattern as `scenarios`/`leverage_items`, a second
+`CHECK (subject_type <> 'member')` actively blocking a real person's row
+at the database level, re-verified directly this pass with a raw INSERT
+that correctly errors), `goal_id`, `observed_at`, `snapshot_reason`
+(8-value fixed vocabulary), the readiness/requirement/constraint/
+capability counts above, `current_focus_requirement_key` +
+`current_focus_action`, a `state_fingerprint`, the `raw_state_payload`,
+and `source_version`/`rule_version`. Deliberately **not** the `scenarios`
+table — a snapshot is what CHEW observed; a scenario is what CHEW is
+asked to imagine. `newly_unlocked_opportunity_count` was deliberately left
+out as a column — it's inherently comparative, so it's computed at
+`buildEconomicWeather()` time from two real rows instead of stored
+redundantly on one.
+
+**Deduplication, by real fingerprint, not by a DB constraint**: a
+`state_fingerprint` is a SHA-256 hash over an explicit allowlist of the
+ten fields that make up meaningful state — deliberately excluding
+`observed_at`, `snapshot_reason`, `created_at`, and the raw payload
+(volatile metadata, not state). `captureSnapshot()` compares the real
+current state's fingerprint against the most recent real row for that
+subject/goal; an identical fingerprint persists nothing and returns the
+existing row (`wasNew: false`) instead of a duplicate. This is a
+no-consecutive-duplicates rule, not global uniqueness on purpose — the
+same real state legitimately recurring later (e.g. after a reverted test
+fact) still gets its own row when something material changes again. A
+shared `stableStringify()` (sorting object keys before hashing, so a
+jsonb-round-tripped row compares equal to a freshly built JS object — the
+exact bug class found in Hidden Leverage's evidence dedup) was extracted
+into `lib/util.js` so both features reuse one implementation.
+
+**The first real before/after proof, run against live Postgres**: for
+this repo's one illustrative home-purchase scenario, starting from
+readiness 1/3 with 2 unresolved requirements and current focus
+`credit_score` — raising the real `credit_score` fact to satisfy its
+requirement, and separately, honestly, resolving the real
+credit-utilization constraint tied to that same underlying fact (not
+conflating the schema's genuinely separate "requirement" and "constraint"
+concepts just to match the directive's example sentence) — CHEW correctly
+said, using only real stored state:
+
+> "Readiness improved since the last observation (33% → 67%)."
+> "Constraint Pressure eased since the last observation (1 unresolved → 0 unresolved)."
+> "Priority shifted from "credit_score" to "down_payment_savings_cents"."
+
+— while simultaneously listing all ten unavailable signals (Liquidity,
+Income Stability, …) as `unavailable`, each with its own honest reason,
+never a guessed trend.
+
+**Five real signals, never a collapsed score**: Readiness, Constraint
+Pressure, Opportunity Access (`unavailable` rather than a fabricated
+number when a goal's chain links to no capability at all — proven for
+both the home goal, which has none, and the business goal, which links to
+`accounting_tax`), Priority/Focus (categorical — `unchanged`/`shifted`,
+never a numeric trend), and Capability Access (the real site-wide
+provider-availability count, a genuinely different signal than the
+goal-scoped Opportunity Access above — same "opportunity vs. capability"
+distinction Dormant Capability already established). No "CHEW Score" of
+any kind exists anywhere in this file.
+
+**Trend discipline, enforced by code structure, not convention**: 0 prior
+comparable snapshots → `current_state_only`, no comparison stated at all;
+1 prior snapshot → `change_since_last_observation`, a plain before/after
+delta, explicitly never called a trend; 2+ prior snapshots →
+`improving`/`worsening`/`stable`/`mixed`, classified from the real full
+ordered sequence of consecutive deltas (constraint pressure's deltas
+inverted first, since fewer unresolved is the improvement direction) —
+never a fabricated momentum score from a single comparison. Directly
+tested: a dedicated 3-point up-then-down sequence correctly classifies as
+`mixed`, not a falsely confident "improving" or "worsening."
+
+**History vs. Scenario, kept structurally separate, not just by
+intention**: `lib/weatherModel.js` imports only `buildBaselineSnapshot()`
+from `scenarioModel.js` — a pure real-facts read — and never imports
+`createScenario`/`createCrossGoalScenario`/`compareCrossGoalFutures`, and
+never queries the `scenarios` table at all. Directly tested: creating a
+real hypothetical hourly-rate scenario mid-test produced zero new
+`state_snapshots` rows, and the latest real snapshot still reflected the
+unmet real fact, not the scenario's hypothetical resolved one. "A
+simulated improvement must not appear as actual progress," verified, not
+just documented.
+
+**Staleness discipline**: `getEconomicWeather()` always calls
+`captureSnapshot()` first — real current state is captured (or deduped
+against) before Weather is ever built, so a caller can never see Weather
+computed from a snapshot that's already older than what CHEW can prove
+right now. Directly tested: calling it with no prior manual snapshot
+still returns Weather built from the freshest real state.
+
+**API**: `api/weather-model.js` — `GET ?action=current` (capture/dedupe +
+full Weather), `?action=snapshots` (real chronological history),
+`?action=latest` (most recent snapshot, no new capture) — gated behind
+the new `economic_weather_foundation` flag (`internal`, same identity
+boundary as `scenario_modeling`/`hidden_leverage_discovery`), pinned to
+`ILLUSTRATIVE_SUBJECT_ID`, never accepting a caller-supplied subject.
+
+**Tests performed**: a standalone Node suite (43 assertions) — first
+snapshot forced to `initial_baseline`, identical-state dedup, fingerprint
+stability, the exact directive proof sentences above, insufficient-history
+(no fake trend language with one snapshot), a dedicated readiness-decline
+sequence, the isolated 3-point mixed-trend sequence, opportunity access
+`unavailable` for the home goal vs. real expand/contract for the business
+goal (seed-provider-and-revert, same proof pattern as Dormant Capability),
+all ten unavailable signals present with real reasons, the
+history-vs-scenario separation proof, the staleness proof, refusal of a
+legal-but-unimplemented snapshot reason (`barrier_resolved`) and of an
+entirely invalid one, and the DB-level identity-boundary CHECK — all
+passed, alongside a full fresh-process re-run of all six intelligence test
+files together (181 total assertions: 37 scenario + 29 conflict + 20
+parallel-futures + 31 leverage + 21 dormant-capability + 43 weather, zero
+failures) confirming no cross-feature regression. Separately verified over
+real HTTP against a freshly restarted server (the module-cache lesson
+from Hidden Leverage, re-applied deliberately again): confirmed the
+endpoint 404s by default in the scratch database, flipped the flag to
+`preview` there only, confirmed `action=current` returned real
+initial-baseline signals, applied the same real fact + constraint change
+over HTTP and confirmed the identical directive-proof sentences came back,
+reverted the test rows, flipped the flag back, confirmed the 404 returned.
+The production flag was never touched.
+
+**One real test-authoring bug found and fixed — not a product bug**: two
+early assertions expected simple 2-point "declined"/"contracted" language
+at a point in the test sequence where 3+ real snapshots already existed,
+so `classifyTrend()` correctly returned `mixed` (the honest full-sequence
+classification) instead. Fixed by restructuring the test file with
+explicit `DELETE FROM state_snapshots WHERE goal_id = $1` resets, isolating
+each phase so its precondition actually matched what it was trying to
+prove. `lib/weatherModel.js` itself needed no change.
+
+**CHEW Lab connection**: the Economic Weather bay's two live gauges
+(Readiness, relabeled Constraint Pressure) are unchanged — still real,
+still wired to the public `intelligence-demo` endpoint. Its transparency
+copy now discloses the real internal historical engine, quotes the exact
+before/after proof, and names all ten still-unavailable signals — the bay
+itself stays a fixed public sketch, not wired to the internal engine,
+gated internal-only pending real member identity, same as every other
+internal foundation in this file.
+
+**What remains unavailable**: all ten named signals (Liquidity, Income
+Stability, Net Worth Trend, Asset Growth, Spending Pressure, Debt Trend,
+Employment Stability, Cash Runway, Credit Trend, Market Exposure) stay
+honestly absent until this schema actually stores that data — never
+estimated in the meantime. Snapshot capture is not yet triggered
+automatically by real portal events (`barrier_resolved`,
+`recommendation_changed`, `opportunity_unlocked` are legal schema values
+with no real trigger wired yet — deliberately refused if requested rather
+than fabricated); that wiring belongs with a real Global Portal State
+Layer, which doesn't exist yet.
+
+**What was deliberately not inferred**: a "momentum" or "trajectory" word
+anywhere a real trend classification wasn't warranted; any weather
+metaphor implying emotional or financial judgment (storm/sunny/dangerous);
+a second, richer atmospheric visual for CHEW Lab, which the directive
+itself named as future work, not required this pass; any value for a
+signal this schema has no data for.
+
+**Next highest-leverage extension, per the user's own stated order**:
+Friction Detection — CHEW Lab's Bay 05 is currently a fixed "Research"
+sketch describing a person repeatedly starting and abandoning the same
+requirement, a pattern not yet tracked anywhere real.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
@@ -1584,11 +1770,14 @@ the following exist in this repository yet:
     the public site has no identity system to hold (the Life Map's
     territory-selection interactivity itself is now built — see above —
     but it illuminates curated, editorial relationships, not anything
-    wired to a subject's real data); the two Momentum/Liquidity gauges
-    inside CHEW Lab's Economic Weather bay specifically (Readiness and
-    Risk are now real — see above — but a genuine trend needs a
-    history-over-time table that doesn't exist yet); "What Changed,"
-    Hidden Leverage, and Friction Detection as real (rather than
+    wired to a subject's real data); the Liquidity/Income Stability
+    gauges inside CHEW Lab's Economic Weather bay specifically (Readiness
+    and Constraint Pressure are real and live on this public bay — see
+    above — and a real history-over-time engine now exists internally
+    too, with genuine trend classification — see "Economic Weather"
+    below — but liquidity and income data don't exist anywhere in this
+    schema, so those two stay marked "n/a" rather than estimated); "What
+    Changed," Hidden Leverage, and Friction Detection as real (rather than
     fixed-illustrative) public experiences (each needs either
     state-over-time tracking or pattern-recognition across a subject's
     history that doesn't exist for the one seeded test subject —

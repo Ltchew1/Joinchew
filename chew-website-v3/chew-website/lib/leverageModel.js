@@ -30,6 +30,7 @@ const { query } = require('./db');
 const { evaluateRequirement, getRequirementSequence } = require('./intelligenceEngine');
 const { listConflictRulesForGoal } = require('./scenarioModel');
 const { getCapabilityOverview } = require('./capabilityGraph');
+const { stableStringify } = require('./util');
 
 const LEVERAGE_MODEL_VERSION = 'leverage-model-v1';
 
@@ -51,22 +52,6 @@ const EXPECTED_EFFECT_TYPES = ['supports_multiple_goals', 'reduces_duplicate_eff
 // inherited directly from that rule's own certainty — but the value
 // exists for when an editorial-mapping-backed detector is built later.
 const UNCERTAINTY_CLASSES = ['known', 'deterministic', 'assumption_dependent', 'editorial', 'unknown'];
-
-// Postgres's jsonb type does not preserve object key insertion order —
-// it canonicalizes on write, so a value read back from `evidence`
-// jsonb can have keys in a different order than the JS object literal
-// that was originally stored, even when every field value is identical.
-// A plain JSON.stringify comparison would treat that as a mismatch and
-// spuriously mark a perfectly current item "stale" on its very next
-// verification. Sorting keys recursively before comparing removes that
-// false signal without weakening the real drift check.
-function stableStringify(value) {
-  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
-  if (value && typeof value === 'object') {
-    return `{${Object.keys(value).sort().map((k) => `${JSON.stringify(k)}:${stableStringify(value[k])}`).join(',')}}`;
-  }
-  return JSON.stringify(value);
-}
 
 function rowToLeverageItem(row) {
   return {

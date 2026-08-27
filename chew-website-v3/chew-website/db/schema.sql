@@ -855,3 +855,63 @@ CREATE INDEX IF NOT EXISTS idx_capability_relevance_rules_source ON capability_r
 CREATE INDEX IF NOT EXISTS idx_capability_relevance_rules_capability ON capability_relevance_rules (capability_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uniq_capability_relevance_rules
   ON capability_relevance_rules (source_type, source_ref, capability_id, relationship_type);
+
+-- ============================================================
+-- Economic Weather — historical-state foundation
+-- ============================================================
+-- A state_snapshots row preserves ONLY what lib/weatherModel.js can
+-- actually calculate from real, already-tested reads (the same fields
+-- lib/scenarioModel.js's buildBaselineSnapshot() already computes, plus
+-- one real site-wide capability count) — never income, liquidity,
+-- credit trend, employment stability, or asset trajectory, because none
+-- of those exist anywhere in this schema. See lib/weatherModel.js's own
+-- header for the full audit this table's column list is based on.
+--
+-- Deliberately NOT the same table as `scenarios`: a snapshot preserves
+-- what CHEW actually observed, never a hypothetical modeled effect — see
+-- lib/weatherModel.js for the explicit rule that snapshot capture never
+-- reads from the scenarios table.
+--
+-- newly_unlocked_opportunity_count is deliberately NOT a column here —
+-- "newly unlocked" is inherently a comparison between two snapshots, not
+-- a fact true at a single point in time, so it is computed at
+-- buildEconomicWeather() comparison time instead of stored redundantly.
+--
+-- Deduplication is enforced by lib/weatherModel.js's own logic (skip
+-- persisting when the newly-computed fingerprint matches the most
+-- recent snapshot for this subject+goal), not by a database UNIQUE
+-- constraint on state_fingerprint — a fingerprint MAY legitimately repeat
+-- much later if real state cycles back to a value it held before, and a
+-- global uniqueness constraint would wrongly block that real, later
+-- snapshot. The identity boundary below still holds regardless.
+CREATE TABLE IF NOT EXISTS state_snapshots (
+  id                             SERIAL PRIMARY KEY,
+  subject_type                   TEXT NOT NULL CHECK (subject_type IN ('illustrative', 'member')),
+  subject_ref                    INTEGER NOT NULL REFERENCES intel_subjects (id),
+  goal_id                        INTEGER NOT NULL REFERENCES goals (id),
+  observed_at                    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  snapshot_reason                TEXT NOT NULL CHECK (snapshot_reason IN
+                                    ('initial_baseline', 'requirement_changed', 'barrier_resolved',
+                                     'recommendation_changed', 'opportunity_unlocked',
+                                     'capability_state_changed', 'scenario_recalculated',
+                                     'manual_internal_snapshot')),
+  readiness_numerator            INTEGER NOT NULL,
+  readiness_denominator          INTEGER NOT NULL,
+  resolved_requirement_count     INTEGER NOT NULL,
+  unresolved_requirement_count   INTEGER NOT NULL,
+  current_focus_requirement_key  TEXT,  -- NULL is a real, legitimate state: every requirement is met
+  current_focus_action           TEXT,
+  unresolved_constraint_count    INTEGER NOT NULL,  -- the real "active barrier" count
+  linked_capability_count        INTEGER,  -- NULL when no requirement in this goal's chain links a capability at all
+  active_opportunity_count       INTEGER,  -- NULL under the same condition as linked_capability_count — never a fabricated 0
+  capability_availability_count  INTEGER NOT NULL,  -- real, site-wide: capabilities with >=1 active/ready provider right now
+  capability_total_count         INTEGER NOT NULL,  -- real, site-wide: total capabilities in the registry
+  state_fingerprint              TEXT NOT NULL,  -- sha256 over the fields above only — never observed_at or snapshot_reason
+  raw_state_payload              JSONB NOT NULL,  -- full requirementState + capabilityCoverage detail, for inspection
+  source_version                 TEXT NOT NULL,
+  rule_version                   TEXT NOT NULL,
+  created_at                     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (subject_type <> 'member')
+);
+
+CREATE INDEX IF NOT EXISTS idx_state_snapshots_subject_goal ON state_snapshots (subject_ref, goal_id, observed_at DESC);

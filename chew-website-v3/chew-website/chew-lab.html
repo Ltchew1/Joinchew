@@ -145,12 +145,12 @@
               <div class="chewlab-gauge" data-gauge="risk">
                 <div class="chewlab-gauge-bar"><div class="chewlab-gauge-bar-fill"></div></div>
                 <span class="chewlab-gauge-value">&mdash;</span>
-                <span class="chewlab-gauge-label">Risk</span>
+                <span class="chewlab-gauge-label">Constraint Pressure</span>
               </div>
-              <div class="chewlab-gauge is-unavailable" data-gauge="momentum">
+              <div class="chewlab-gauge is-unavailable" data-gauge="income-stability">
                 <div class="chewlab-gauge-bar"><div class="chewlab-gauge-bar-fill"></div></div>
                 <span class="chewlab-gauge-value">n/a</span>
-                <span class="chewlab-gauge-label">Momentum</span>
+                <span class="chewlab-gauge-label">Income Stability</span>
               </div>
               <div class="chewlab-gauge is-unavailable" data-gauge="liquidity">
                 <div class="chewlab-gauge-bar"><div class="chewlab-gauge-bar-fill"></div></div>
@@ -160,20 +160,21 @@
             </div>
           </div>
           <p class="chewlab-bay-desc" id="chewlab-weather-desc">
-            A real readiness reading and a real list of unresolved constraints &mdash; plus two signals CHEW can't compute yet, marked honestly instead of guessed.
+            A real readiness reading and a real count of unresolved constraints for this scenario &mdash; plus the signals CHEW can't compute yet, marked honestly instead of guessed.
           </p>
           <div class="chewlab-transparency">
             <button type="button" class="chewlab-transparency-toggle" aria-expanded="false">What's real here &rarr;</button>
             <div class="chewlab-transparency-body">
               <span class="chewlab-transparency-label">Status</span>
-              <p>Experimental &mdash; two of four signals are computed live from real data; two are deliberately left blank.</p>
+              <p>Experimental &mdash; historical-state foundation active. Two of four gauges above are computed live from real data, the same as before; the deeper historical engine described below exists internally but isn't wired to this public bay yet, gated internal-only pending a real member identity system.</p>
               <span class="chewlab-transparency-label">Uses</span>
               <ul>
-                <li>Readiness: the real resolved/unresolved requirement fraction for this scenario &mdash; the same math behind Future-Back.</li>
-                <li>Risk: CHEW's real unresolved <code>constraints</code> records on file for this scenario.</li>
+                <li>Readiness and Constraint Pressure (labeled "Risk" here previously): the real resolved/unresolved requirement fraction and the real unresolved <code>constraints</code> count on file for this scenario &mdash; unchanged from before.</li>
+                <li>Internally, CHEW now also stores real point-in-time <code>state_snapshots</code> of that same state, deduplicated by a real fingerprint so nothing gets recorded twice for no reason, and computes five real signals from them &mdash; Readiness, Constraint Pressure, Opportunity Access, Priority / Focus, and Capability Access. Each one honestly reports its own history depth: a single current reading with no comparison, a plain before/after change with one prior observation, or a real trend once two or more comparable snapshots exist. Never a guessed momentum score.</li>
+                <li>Proven directly: after a real requirement fact and a real constraint were resolved for this repo's illustrative scenario, CHEW correctly said "Readiness improved since the last observation (33% &rarr; 67%)," "Constraint Pressure eased since the last observation (1 unresolved &rarr; 0 unresolved)," and "Priority shifted from &ldquo;credit_score&rdquo; to &ldquo;down_payment_savings_cents.&rdquo;"</li>
               </ul>
               <span class="chewlab-transparency-label">Does not yet use</span>
-              <ul><li>Any history of change over time. CHEW's schema doesn't store past states yet, so it can't honestly compute momentum or a trend &mdash; those two stay marked "n/a" until that exists, rather than being faked.</li></ul>
+              <ul><li>Liquidity, income stability, net worth, asset growth, spending, debt, employment, cash runway, credit trend, or market exposure &mdash; none of that data exists anywhere in this schema yet, so none of it is estimated. This public bay also isn't wired to the internal historical engine yet, and snapshot-taking isn't yet triggered automatically by real portal events (a barrier resolving, an opportunity unlocking) &mdash; only on request, for now.</li></ul>
             </div>
           </div>
         </article>
@@ -349,8 +350,8 @@
       setGauge('risk', riskPct, String(constraints.length));
 
       weatherDescEl.textContent = constraints.length
-        ? 'Readiness is real at ' + readinessPct + '%, with ' + constraints.length + ' real unresolved constraint(s) on file for this scenario. Momentum and Liquidity stay off — CHEW has no history to compute them from yet.'
-        : 'Readiness is real at ' + readinessPct + '%, with no unresolved constraints on file for this scenario. Momentum and Liquidity stay off — CHEW has no history to compute them from yet.';
+        ? 'Readiness is real at ' + readinessPct + '%, with ' + constraints.length + ' real unresolved constraint(s) on file for this scenario. Income stability and liquidity stay off — CHEW has no real data for either yet.'
+        : 'Readiness is real at ' + readinessPct + '%, with no unresolved constraints on file for this scenario. Income stability and liquidity stay off — CHEW has no real data for either yet.';
     })
     .catch(function () {
       futurebackDescEl.textContent = 'Real example data is temporarily unavailable — open the full Future Room directly.';
