@@ -10,13 +10,22 @@
 // — not reachable unless flipped to at least 'preview'. No real
 // subject/user identity system exists yet (ARCHITECTURE.md Gap 1).
 //
+// POST uses recordRecommendation() (not computeRecommendation()) —
+// completing a real action is exactly the "explicit command that
+// legitimately changed real state" ARCHITECTURE.md's recommendation-
+// purity doctrine carves out as the one legitimate time to persist new
+// recommendation history. It's still deduped by real state fingerprint,
+// same as every other caller — if completing this action happens not to
+// change the real recommendation (rare, but possible), no duplicate row
+// is written.
+//
 // GET  /api/intelligence-actions?subjectId=1[&status=pending]
 // POST /api/intelligence-actions { subjectId, actionId, factValue? }
 //   factValue is required to complete an action linked to a
 //   gte/lte/eq requirement (CHEW will not guess it); omit it for a
 //   boolean_true requirement, where completion alone is the fact.
 
-const { completeAction, listActions, computeRecommendation } = require('../lib/intelligenceEngine');
+const { completeAction, listActions, recordRecommendation } = require('../lib/intelligenceEngine');
 const { isFeatureActive } = require('../lib/featureFlags');
 
 module.exports = async (req, res) => {
@@ -51,8 +60,8 @@ module.exports = async (req, res) => {
     }
 
     const completion = await completeAction({ actionId: actionIdNum, subjectId: subjectIdNum, factValue });
-    const recommendation = await computeRecommendation({ subjectId: subjectIdNum, goalId: completion.goalId });
-    return res.status(200).json({ completion, recommendation });
+    const { recommendation, action, wasNew } = await recordRecommendation({ subjectId: subjectIdNum, goalId: completion.goalId });
+    return res.status(200).json({ completion, recommendation, action, wasNewRecommendation: wasNew });
   } catch (err) {
     if (err.message === 'Action not found for this subject.' || err.message === 'Goal not found for this subject.') {
       return res.status(404).json({ error: err.message });

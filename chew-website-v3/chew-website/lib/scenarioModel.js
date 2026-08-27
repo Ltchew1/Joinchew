@@ -32,7 +32,8 @@
 // table itself is written to, and only by the functions in this file.
 
 const { query } = require('./db');
-const { evaluateRequirement, getRequirementSequence, RULE_VERSION } = require('./intelligenceEngine');
+const { evaluateRequirement, getRequirementSequence, getFactsMap, RULE_VERSION } = require('./intelligenceEngine');
+const { SCENARIO_UNCERTAINTY_CLASSES, flipToStaleOnce } = require('./util');
 const { getRoutingRecommendation, getCapabilityOverview } = require('./capabilityGraph');
 const ChewScenarioEngine = require('../scenario-engine');
 
@@ -41,7 +42,10 @@ const MODEL_VERSION = 'scenario-model-v1';
 const SUBJECT_TYPES = ['illustrative', 'member']; // 'member' is identity-ready but DB-blocked — see db/schema.sql
 const TIME_HORIZONS = ['immediate', '30_days', '90_days', '6_months', '12_months', 'custom'];
 const REVERSIBILITY_STATES = ['easily_reversible', 'moderately_reversible', 'difficult_to_reverse', 'irreversible', 'unknown'];
-const UNCERTAINTY_CLASSES = ['known', 'deterministic', 'assumption_dependent', 'estimated', 'unknown'];
+// One authoritative JS definition now lives in lib/util.js — see
+// ARCHITECTURE_REVIEW.md §3b. Kept under this file's existing exported
+// name so nothing downstream needed to change.
+const UNCERTAINTY_CLASSES = SCENARIO_UNCERTAINTY_CLASSES;
 const SCENARIO_STATUSES = ['current', 'stale'];
 const MOVE_TYPES = ['resolve_requirement', 'leave_unresolved', 'cross_goal_fact_change'];
 const CONFLICT_TYPES = ['shared_fact', 'shared_resource', 'shared_time'];
@@ -64,18 +68,13 @@ function assertHorizon(timeHorizon) {
   }
 }
 
-async function getRealFactsMap(subjectId) {
-  const factsResult = await query(
-    `SELECT DISTINCT ON (fact_key) fact_key, fact_value, fact_type, source_note, recorded_at
-     FROM current_state_facts
-     WHERE subject_id = $1
-     ORDER BY fact_key, recorded_at DESC`,
-    [subjectId]
-  );
-  const factsByKey = {};
-  factsResult.rows.forEach((row) => { factsByKey[row.fact_key] = row; });
-  return factsByKey;
-}
+// The canonical single facts-by-key query now lives in
+// lib/intelligenceEngine.js's getFactsMap() — this used to be a second,
+// byte-identical copy of that same SQL (see ARCHITECTURE_REVIEW.md
+// §3b's sibling finding on duplicated reads). Aliased under this file's
+// existing internal name so none of this file's own call sites needed
+// to change.
+const getRealFactsMap = getFactsMap;
 
 // Pure: requirementSequence + real facts (+ optional in-memory
 // overrides, used only to model a hypothetical move) -> { key: boolean }.
@@ -552,11 +551,18 @@ async function checkStaleness(row) {
     : singleGoalBaselineDrifted(baseline, currentFacts);
   if (!driftFound) return rowToScenario(row);
 
-  const updateResult = await query(
-    `UPDATE scenarios SET scenario_status = 'stale', updated_at = now() WHERE id = $1 RETURNING *`,
-    [row.id]
-  );
-  return rowToScenario(updateResult.rows[0]);
+  let updated = row;
+  await flipToStaleOnce({
+    alreadyStale: false, // already checked at the top of this function
+    markStale: async () => {
+      const updateResult = await query(
+        `UPDATE scenarios SET scenario_status = 'stale', updated_at = now() WHERE id = $1 RETURNING *`,
+        [row.id]
+      );
+      updated = updateResult.rows[0];
+    },
+  });
+  return rowToScenario(updated);
 }
 
 // Parallel Futures MVP: 2-3 deterministic scenarios sharing one

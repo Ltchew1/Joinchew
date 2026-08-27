@@ -26,6 +26,16 @@
 // endpoint must never mutate the shared illustrative subject's state,
 // or it would silently corrupt this same demo for every future visitor.
 //
+// This claim used to be only partially true: computeRecommendation()
+// (below) wrote a new `recommendations` row on every single call,
+// including from this very endpoint — real, measured state pollution
+// on every page load, found in ARCHITECTURE_REVIEW.md and fixed in
+// lib/intelligenceEngine.js (see its "READING MUST NOT CHANGE
+// INTELLIGENCE" header doctrine, also recorded in ARCHITECTURE.md).
+// computeRecommendation() is now genuinely pure — this endpoint can be
+// hit any number of times with zero database writes, verified directly
+// by a 100-read invariant test.
+//
 // Also returns capabilityOverview: every real capability from the
 // registry with a LIVE count of active/ready providers (see
 // lib/capabilityGraph.js's getCapabilityOverview) — used by the public

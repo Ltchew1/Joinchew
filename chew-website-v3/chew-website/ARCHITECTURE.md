@@ -622,6 +622,64 @@ income when nothing is currently blocking on it. This is the last piece
 needed before Gap 1 (real subject identity) becomes the actual limiting
 factor rather than an API gap.
 
+## 21. Recommendation purity — a permanent doctrine
+
+Added after `ARCHITECTURE_REVIEW.md` found that `lib/intelligenceEngine.js`'s
+`computeRecommendation()` wrote a new `recommendations` row on **every**
+call — including from the public, unauthenticated
+`api/intelligence-demo.js` endpoint hit by every homepage/room page
+load. Measured directly: two calls took the row count from 5 to 7, zero
+dedup at any layer. Fixed by splitting one function into two:
+
+- **`computeRecommendation()` — PURE.** Reads real state, derives the
+  current recommendation, writes nothing. Safe to call from any GET,
+  any page render, any dashboard refresh, unlimited times, with zero
+  side effects.
+- **`recordRecommendation()` — the one function in this file that
+  writes to `recommendations` or `actions`.** Persists a new history row
+  only when the real recommendation state has actually changed since
+  the last one recorded for this subject+goal — deduplicated by a real
+  state fingerprint over the fields that define WHAT is recommended and
+  why (never volatile fields like timestamps), the identical discipline
+  `lib/weatherModel.js`'s `state_snapshots` already use. Called only
+  from an explicit command that legitimately changed real state (today:
+  `api/intelligence-actions.js`'s POST, after `completeAction()`; and
+  `api/intelligence-recommendation.js`'s own POST, the one explicit way
+  to establish a goal's first recorded recommendation + first pending
+  action, now that no GET does this as a side effect anymore).
+
+This is now a **permanent architectural rule for this codebase, not a
+one-off bug fix**:
+
+> **Reading CHEW intelligence must not change CHEW intelligence.** A
+> page render, API GET, dashboard refresh, or explanation request must
+> never mutate a subject's economic history unless a real underlying
+> state transition actually occurred. If a function needs to both
+> compute a result and decide whether that result is worth recording as
+> history, those are two different concerns and belong in two different
+> functions — never one function that writes merely because it was
+> called.
+
+Every future engine in this stack should follow the same split:
+a pure `computeX()` any caller can call freely, and — only where real
+history genuinely needs to persist — a separate `recordX()` that
+dedupes by a real fingerprint before writing. `lib/weatherModel.js`'s
+`captureSnapshot()`/`getEconomicWeather()` split and
+`lib/frictionModel.js`'s fully-derived, never-persisted design already
+follow this shape; `lib/intelligenceEngine.js` was the one place in this
+stack that didn't, until this fix.
+
+**Verified, not just designed**: a 100-identical-read invariant test
+(`world-state-invariant-test.js`, scratch-only) confirms 100 calls to
+`computeRecommendation()` across both real seeded goals produce zero new
+`recommendations` rows; a separate purity/dedup suite
+(`recommendation-purity-test.js`) confirms `recordRecommendation()`
+correctly dedupes ten repeated calls with no real state change, then
+correctly creates a genuine new row the instant a real fact changes.
+Both re-run fresh against live Postgres and over real HTTP against a
+freshly restarted server (see `FEATURE_FLAGS.md`'s "Recommendation
+purity + canonical derivation" section for the full report).
+
 ## Testing performed
 
 No automated test suite or build step exists in this repo. Verified

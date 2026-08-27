@@ -1914,6 +1914,175 @@ kind; a waiting-period distinction this schema cannot support; a
 `persistent_opportunity_block` type from counts alone; a second
 `state_snapshots`-shaped table just for this feature.
 
+## Recommendation purity + canonical derivation (lib/intelligenceEngine.js)
+
+Not a new feature — a correctness fix to the oldest engine in this
+stack, directed by the user after reviewing `ARCHITECTURE_REVIEW.md`.
+That review's single most concrete finding: `computeRecommendation()`
+inserted a new `recommendations` row on **every** call, including from
+the public, unauthenticated `api/intelligence-demo.js` endpoint hit by
+every homepage/room page load — measured directly (5 rows → 7 from 2
+calls). Fixed exactly in the order the user specified: canonical
+derivation first, purity second, intentional persistence third,
+deduplication fourth, then the two smaller findings (certainty
+vocabulary, staleness).
+
+**1. Canonical baseline derivation.** `lib/intelligenceEngine.js` gained
+`deriveGoalState({subjectId, goalId})` — a pure function that computes
+requirement state, readiness, current focus, and related capability
+using `ChewScenarioEngine.deriveState()` (`scenario-engine.js`)
+directly, instead of `computeRecommendation()`'s own separate inline
+loop. This is the same shared primitive `lib/scenarioModel.js`'s
+`buildBaselineSnapshot()` already calls — both converge on one function
+rather than one importing the other, which would create a circular
+dependency (`scenarioModel.js` already imports FROM
+`intelligenceEngine.js`; the reverse was never attempted). Two more
+exact duplicates were found and removed in the same pass:
+`getRequirementSequence(goalId)` (already existed, but
+`computeRecommendation()` had its own separate, differently-joined query
+for the identical data — now consolidated onto one call, extended to
+also return each requirement's real `id`, needed for `actions`) and the
+real-facts-by-key query (byte-identical between `computeRecommendation()`'s
+inline version and `scenarioModel.js`'s private `getRealFactsMap()` — now
+one exported `getFactsMap()`, with `scenarioModel.js`'s own name aliased
+to it so none of that file's five call sites needed to change). The two
+undocumented client-side reimplementations in `future-room.html` and
+`chew-lab.html` were **not** touched this pass — both already trust the
+server-computed `met` flags rather than re-deriving them, the lower-risk
+half of the duplication (see `ARCHITECTURE_REVIEW.md` §3a); consolidating
+those is a smaller, separate follow-up, not required to fix the
+correctness bug this pass targeted.
+
+**2 & 3. Recommendation purity + intentional persistence.** One function
+became two:
+- `computeRecommendation()` — **PURE.** Calls `deriveGoalState()`,
+  shapes the result into the exact same public contract every caller
+  already depended on (verified: no HTML page reads `.id`/`.computedAt`/
+  `.action` from a `recommendation` object — only `basedOnFacts`,
+  `chosenRequirementKey`, `basedOnConstraints`, so removing those fields
+  from the pure return broke nothing). Writes nothing, ever.
+- `recordRecommendation()` — the **only** function in this file that
+  writes to `recommendations` or `actions`. Computes via the same
+  derivation, then persists a new row only when warranted (see
+  dedup below).
+
+This is now locked as a permanent doctrine, not a one-off fix — see
+`ARCHITECTURE.md`'s new §21, "Recommendation purity": *reading CHEW
+intelligence must not change CHEW intelligence*. Every future engine in
+this stack should follow the same pure-compute / dedup-and-record split.
+
+A real functional gap surfaced by making every GET pure, caught before
+it shipped: previously, ANY read (including a bare GET) created the
+first pending `actions` row for a goal as a side effect — with GET now
+pure everywhere, nothing did anymore, and `api/intelligence-actions.js`'s
+POST requires an *existing* action to complete one. Fixed by giving
+`api/intelligence-recommendation.js` a genuine second method:
+GET stays pure; **POST** calls `recordRecommendation()` directly — the
+one explicit, named way to establish (or refresh) a goal's first real
+recorded recommendation and its first pending action, matching the same
+"explicit command warrants history" carve-out `intelligence-actions.js`'s
+own POST already uses after `completeAction()`.
+
+**4. Deduplication.** `recommendations` gained two new columns
+(`state_fingerprint`, `rule_version` — `ALTER TABLE ... ADD COLUMN IF
+NOT EXISTS`, the same idempotent pattern this file already used twice
+for `transition_requirements.capability_id`/`recommendations
+.related_capability`). `recordRecommendation()` computes a SHA-256
+fingerprint over exactly the fields that define WHAT is recommended and
+why (`chosenRequirementKey`, `recommendedAction`, `missingFactKeys`,
+constraint ids, `relatedCapability.available` + provider count) —
+deliberately excluding anything volatile — and compares it against the
+most recent persisted row for that subject+goal, reusing
+`lib/util.js`'s existing `stableStringify()` + the identical dedup shape
+`lib/weatherModel.js`'s `state_snapshots` already use, rather than
+inventing a third fingerprinting scheme. A fingerprint match returns the
+existing row (`wasNew: false`, `actions` untouched); a genuine
+difference inserts a real new row and only then creates/reuses the
+`actions` row.
+
+**5. Certainty vocabulary consolidation.** The same five-value
+uncertainty vocabulary was hand-typed in four separate SQL `CHECK`
+constraints and two separate JS array literals (`ARCHITECTURE_REVIEW.md`
+§3b). `lib/util.js` now holds one authoritative `CERTAINTY_VALUES` map
+(six named string constants — `known`/`deterministic`/
+`assumption_dependent`/`estimated`/`editorial`/`unknown`) plus the two
+real compositions of it this schema actually uses:
+`SCENARIO_UNCERTAINTY_CLASSES` (scenarios/goal_conflict_rules/
+capability_relevance_rules — 5 values, includes `estimated`) and
+`LEVERAGE_UNCERTAINTY_CLASSES` (leverage_items — a genuinely different
+5-value set, includes `editorial` instead). `scenarioModel.js`,
+`leverageModel.js`, and `frictionModel.js` all now import from this one
+source instead of hand-typing their own copies — `frictionModel.js`'s
+previous raw string literal (`const CERTAINTY = 'deterministic'`) is now
+`CERTAINTY_VALUES.DETERMINISTIC`. The SQL `CHECK` constraints themselves
+were **not** regenerated from JS — this repo has no build step to do
+that safely — so per the user's own explicit fallback ("at minimum an
+explicit invariant test"), a standalone test inserts every JS-canonical
+value into all three real tables (each in a rolled-back transaction,
+nothing left behind) and confirms the DB accepts every one and rejects
+both a nonsense value and the *other* vocabulary's own value on each
+table (e.g. `goal_conflict_rules.certainty` correctly rejects
+`'editorial'`; `leverage_items.uncertainty_classification` correctly
+rejects `'estimated'`).
+
+**6. Shared staleness semantics.** `lib/util.js` gained
+`flipToStaleOnce({alreadyStale, markStale})` — a four-line guard
+factoring only the "if already stale, stop; otherwise flip exactly once"
+shape shared by `scenarioModel.js`'s `checkStaleness()` and
+`leverageModel.js`'s two near-identical inline sweep blocks (one of
+which literally commented "mirroring `discoverMultiGoalFactLeverage`'s
+own"). Deliberately does **not** decide what "no longer fresh" means for
+any table — scenarios compare a preserved baseline against real current
+state; leverage_items compare either evidence equality or membership in
+a freshly-discovered set — those genuinely different definitions stay
+with their own callers, never merged into one framework, matching the
+user's own "not an overgeneric framework" instruction. `leverageModel.js`'s
+two sweep blocks were also consolidated into one shared
+`sweepStaleLeverageItems({subjectId, sourceType, leverageCategory,
+currentSourceRefs})`, called from both `discoverMultiGoalFactLeverage()`
+and `discoverDormantCapabilityLeverage()`. Every literal `UPDATE`
+statement stays at its own call site — this never builds SQL
+dynamically.
+
+**Tests.** Two new suites: `recommendation-purity-test.js` (38
+assertions — pure-read correctness for both real goals, **100 identical
+reads producing zero new `recommendations`/`actions` rows**, first
+`recordRecommendation()` call creates real history with a real
+fingerprint and `rule_version`, ten repeated calls with no real change
+all dedupe to the identical row id, a genuine fact change produces a
+genuine new row with a genuinely different fingerprint, full revert) and
+`certainty-vocabulary-test.js` (20 assertions — the DB/JS alignment
+proof above). `world-state-invariant-test.js` (from the architecture
+review) was updated in place: its own "2 reads → 2 new rows" assertion,
+which had proven the bug, was flipped to prove the fix (2 reads → 0 new
+rows) and extended with the user's own named invariant — **100 identical
+intelligence reads across both real goals produce zero new domain-history
+records** — 10 assertions, all passing. All ten scratch test files
+(scenario, conflict, parallel-futures, leverage, dormant-capability,
+weather, friction, recommendation-purity, certainty-vocabulary,
+world-state-invariant) re-run together fresh: 284 total assertions, zero
+failures. Verified over real HTTP against a freshly restarted server:
+10 real hits to the public `/api/intelligence-demo` produced zero new
+`recommendations`/`actions` rows (the exact bug, reproduced and
+confirmed fixed over the wire); `POST /api/intelligence-recommendation`
+correctly created the first real recommendation + action; completing
+that real action via `POST /api/intelligence-actions` correctly advanced
+to the next requirement, correctly reported `wasNewRecommendation: true`
+for the genuine transition; all scratch rows and facts fully reverted to
+the real seed baseline afterward; both feature flags (`intelligence_engine`,
+`intelligence_demo`) confirmed at their real production defaults when
+done. The production database was never touched.
+
+**What this pass deliberately did not touch**: the two client-side HTML
+reimplementations of readiness/chosen-focus selection
+(`future-room.html`, `chew-lab.html`) — lower-risk than the fixed
+server-side duplication since both already trust server-computed `met`
+flags; `goal_conflict_rules`' missing `authored_by`/`effective_date`
+provenance columns (named in the review, not requested this pass);
+`recommendations.rule_version` was added as part of the fingerprint work
+above, closing that review finding as a direct byproduct rather than a
+separate task.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of

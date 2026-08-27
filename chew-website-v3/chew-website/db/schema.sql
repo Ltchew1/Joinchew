@@ -571,6 +571,27 @@ CREATE INDEX IF NOT EXISTS idx_recommendations_goal ON recommendations (goal_id)
 ALTER TABLE transition_requirements ADD COLUMN IF NOT EXISTS capability_id INTEGER REFERENCES capabilities (id);
 ALTER TABLE recommendations ADD COLUMN IF NOT EXISTS related_capability JSONB;
 
+-- ============================================================
+-- Recommendation purity + intentional persistence
+-- ============================================================
+-- ARCHITECTURE_REVIEW.md found that intelligenceEngine.js's
+-- computeRecommendation() used to write a new `recommendations` row on
+-- EVERY call, including from the public, unauthenticated
+-- api/intelligence-demo.js endpoint — measured, real state pollution on
+-- every page load (5 rows -> 7 from just 2 calls in that review's own
+-- test run). Fixed by splitting "compute" (pure, no writes) from
+-- "record" (the one place that persists — recordRecommendation()) and
+-- deduplicating writes by a real state fingerprint over the fields that
+-- define WHAT is recommended and why — the same discipline
+-- lib/weatherModel.js's state_snapshots already use, reusing the same
+-- stableStringify()+sha256 approach rather than inventing a third one.
+-- NULL on rows written before this pass is expected and safe:
+-- recordRecommendation() only ever dedupes against the MOST RECENT row
+-- for a subject+goal, so a NULL-fingerprint legacy row simply never
+-- matches, and the very next real write carries a real fingerprint.
+ALTER TABLE recommendations ADD COLUMN IF NOT EXISTS state_fingerprint TEXT;
+ALTER TABLE recommendations ADD COLUMN IF NOT EXISTS rule_version TEXT;
+
 -- Names WHICH requirement_key was chosen, so a caller (e.g. a public UI
 -- animating "many candidates -> one CHEW Move") can reliably highlight
 -- the right one instead of guessing by matching recommended_action text

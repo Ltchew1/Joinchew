@@ -1,5 +1,13 @@
 # CHEW Intelligence Architecture Review
 
+> **Status update:** the recommendation-purity finding below (§17, §19
+> failure mode #1, §20's chosen next move) has been fixed. See
+> `FEATURE_FLAGS.md`'s "Recommendation purity + canonical derivation"
+> section and `ARCHITECTURE.md`'s new §21 for the full report — this
+> review is left otherwise unedited as an honest record of what was
+> found and why it mattered, not retroactively rewritten now that it's
+> resolved.
+
 **Scope:** the intelligence stack described in `ARCHITECTURE.md` and extended
 across this session — State, Goals, Requirements, Constraints, Opportunities,
 Capability Network, Unlock logic, Scenario Modeling, Cross-Goal Conflict,

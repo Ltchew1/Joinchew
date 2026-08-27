@@ -30,7 +30,7 @@ const { query } = require('./db');
 const { evaluateRequirement, getRequirementSequence } = require('./intelligenceEngine');
 const { listConflictRulesForGoal } = require('./scenarioModel');
 const { getCapabilityOverview } = require('./capabilityGraph');
-const { stableStringify } = require('./util');
+const { stableStringify, LEVERAGE_UNCERTAINTY_CLASSES, flipToStaleOnce } = require('./util');
 
 const LEVERAGE_MODEL_VERSION = 'leverage-model-v1';
 
@@ -51,7 +51,10 @@ const EXPECTED_EFFECT_TYPES = ['supports_multiple_goals', 'reduces_duplicate_eff
 // goal_conflict_rules row, so it's classified 'assumption_dependent',
 // inherited directly from that rule's own certainty — but the value
 // exists for when an editorial-mapping-backed detector is built later.
-const UNCERTAINTY_CLASSES = ['known', 'deterministic', 'assumption_dependent', 'editorial', 'unknown'];
+// One authoritative JS definition now lives in lib/util.js — see
+// ARCHITECTURE_REVIEW.md §3b. Kept under this file's existing exported
+// name so nothing downstream needed to change.
+const UNCERTAINTY_CLASSES = LEVERAGE_UNCERTAINTY_CLASSES;
 
 function rowToLeverageItem(row) {
   return {
@@ -113,12 +116,18 @@ async function findOrCreateLeverageItem(fields) {
       );
       return rowToLeverageItem(touched.rows[0]);
     }
-    if (existing.activation_status === 'stale') return rowToLeverageItem(existing);
-    const staled = await query(
-      `UPDATE leverage_items SET activation_status = 'stale', updated_at = now() WHERE id = $1 RETURNING *`,
-      [existing.id]
-    );
-    return rowToLeverageItem(staled.rows[0]);
+    let updated = existing;
+    await flipToStaleOnce({
+      alreadyStale: existing.activation_status === 'stale',
+      markStale: async () => {
+        const staled = await query(
+          `UPDATE leverage_items SET activation_status = 'stale', updated_at = now() WHERE id = $1 RETURNING *`,
+          [existing.id]
+        );
+        updated = staled.rows[0];
+      },
+    });
+    return rowToLeverageItem(updated);
   }
 
   const insertResult = await query(
@@ -138,6 +147,34 @@ async function findOrCreateLeverageItem(fields) {
     ]
   );
   return rowToLeverageItem(insertResult.rows[0]);
+}
+
+// Shared by discoverMultiGoalFactLeverage() and
+// discoverDormantCapabilityLeverage() — these two used to carry
+// near-identical inline copies of this exact loop (see
+// ARCHITECTURE_REVIEW.md §3c). A previously-found item whose source_ref
+// is no longer in THIS run's fresh result set (the fact stopped
+// satisfying its requirement, the capability lost its provider, the
+// rule was deactivated, whatever the caller's own discovery just
+// re-verified) is never silently left looking current.
+// already_activated is a leverage-item-specific extra guard beyond mere
+// staleness — a subject who already acted on this item shouldn't have
+// it retroactively relabeled just because the underlying evidence later
+// stopped holding.
+async function sweepStaleLeverageItems({ subjectId, sourceType, leverageCategory, currentSourceRefs }) {
+  const existingResult = await query(
+    `SELECT id, source_ref, activation_status FROM leverage_items WHERE subject_ref = $1 AND source_type = $2 AND leverage_category = $3`,
+    [subjectId, sourceType, leverageCategory]
+  );
+  for (const row of existingResult.rows) {
+    if (currentSourceRefs.has(row.source_ref)) continue;
+    if (row.activation_status === 'already_activated') continue;
+    // eslint-disable-next-line no-await-in-loop -- small, bounded set of previously-discovered items for one subject.
+    await flipToStaleOnce({
+      alreadyStale: row.activation_status === 'stale',
+      markStale: () => query(`UPDATE leverage_items SET activation_status = 'stale', updated_at = now() WHERE id = $1`, [row.id]),
+    });
+  }
 }
 
 async function getFactsWithIds(subjectId) {
@@ -296,17 +333,10 @@ async function discoverMultiGoalFactLeverage(subjectId) {
   // recompute" discipline as everywhere else in this file — the
   // orphaned item's description/evidence is never rewritten, only its
   // activation_status.
-  const currentFactSourceRefs = new Set(items.filter((i) => i.sourceType === 'fact').map((i) => i.sourceRef));
-  const existingFactItemsResult = await query(
-    `SELECT id, source_ref, activation_status FROM leverage_items WHERE subject_ref = $1 AND source_type = 'fact' AND leverage_category = 'multi_goal_fact'`,
-    [subjectId]
-  );
-  for (const row of existingFactItemsResult.rows) {
-    if (currentFactSourceRefs.has(row.source_ref)) continue;
-    if (row.activation_status === 'stale' || row.activation_status === 'already_activated') continue;
-    // eslint-disable-next-line no-await-in-loop -- small, bounded set of previously-discovered items for one subject.
-    await query(`UPDATE leverage_items SET activation_status = 'stale', updated_at = now() WHERE id = $1`, [row.id]);
-  }
+  await sweepStaleLeverageItems({
+    subjectId, sourceType: 'fact', leverageCategory: 'multi_goal_fact',
+    currentSourceRefs: new Set(items.filter((i) => i.sourceType === 'fact').map((i) => i.sourceRef)),
+  });
 
   return items;
 }
@@ -428,21 +458,14 @@ async function discoverDormantCapabilityLeverage(subjectId) {
     items.push(item);
   }
 
-  // Staleness sweep, mirroring discoverMultiGoalFactLeverage's own: a
-  // previously-found dormant item whose capability lost its provider,
-  // became engaged, or whose rule was deactivated is never silently
-  // left looking current.
-  const currentCapabilitySourceRefs = new Set(items.map((i) => i.sourceRef));
-  const existingCapabilityItemsResult = await query(
-    `SELECT id, source_ref, activation_status FROM leverage_items WHERE subject_ref = $1 AND source_type = 'capability' AND leverage_category = 'dormant_capability'`,
-    [subjectId]
-  );
-  for (const row of existingCapabilityItemsResult.rows) {
-    if (currentCapabilitySourceRefs.has(row.source_ref)) continue;
-    if (row.activation_status === 'stale' || row.activation_status === 'already_activated') continue;
-    // eslint-disable-next-line no-await-in-loop -- small, bounded set of previously-discovered items for one subject.
-    await query(`UPDATE leverage_items SET activation_status = 'stale', updated_at = now() WHERE id = $1`, [row.id]);
-  }
+  // Staleness sweep, sharing sweepStaleLeverageItems() with
+  // discoverMultiGoalFactLeverage() above: a previously-found dormant
+  // item whose capability lost its provider, became engaged, or whose
+  // rule was deactivated is never silently left looking current.
+  await sweepStaleLeverageItems({
+    subjectId, sourceType: 'capability', leverageCategory: 'dormant_capability',
+    currentSourceRefs: new Set(items.map((i) => i.sourceRef)),
+  });
 
   return items;
 }

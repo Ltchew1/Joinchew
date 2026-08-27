@@ -29,9 +29,44 @@
 // boolean_true requirements — see db/schema.sql's "Action / Task
 // tracking" comment for why a threshold requirement's action completion
 // must NOT be treated as evidence of the new value.
+//
+// READING MUST NOT CHANGE INTELLIGENCE (see ARCHITECTURE.md's
+// "Recommendation purity" doctrine, added after ARCHITECTURE_REVIEW.md
+// found that this file used to write a new `recommendations` row on
+// EVERY call, including from the public, unauthenticated
+// api/intelligence-demo.js endpoint — real, measured state pollution).
+// This file now draws a hard line between two different things that
+// used to be one function:
+//   computeRecommendation()  — PURE. Reads real state, derives the
+//     current recommendation, writes nothing. Safe to call on every
+//     page render / GET / dashboard refresh, unlimited times, with zero
+//     side effects.
+//   recordRecommendation()   — the ONE place that persists a
+//     `recommendations` row (and creates/reuses its `actions` row) —
+//     and only when the real recommendation state actually changed
+//     since the last one persisted for this subject+goal (deduped by a
+//     real state fingerprint, the same discipline weatherModel.js's
+//     state_snapshots already use). Call this only from an explicit
+//     command that legitimately changed real state (e.g.
+//     api/intelligence-actions.js, after completeAction()) — never from
+//     a read-only endpoint.
+//
+// deriveGoalState() below is also the single shared implementation of
+// "given real facts + a real requirement chain, what's met, what's the
+// readiness, what's the current focus" — the same rule
+// scenario-engine.js's deriveState() already computes, reused here
+// directly instead of this file maintaining its own second copy (see
+// ARCHITECTURE_REVIEW.md §3a). lib/scenarioModel.js's
+// buildBaselineSnapshot() calls the same scenario-engine.js function
+// independently — both converge on one shared primitive rather than one
+// importing the other, which would create a circular dependency
+// (scenarioModel.js already imports FROM this file).
 
 const { query } = require('./db');
 const { getRoutingRecommendation } = require('./capabilityGraph');
+const ChewScenarioEngine = require('../scenario-engine');
+const { stableStringify } = require('./util');
+const crypto = require('crypto');
 
 // Tags the "first unmet transition_requirements row by sequence_order"
 // rule itself, not the code that happens to implement it — bump this
@@ -46,7 +81,7 @@ const RULE_VERSION = 'requirement-sequence-v1';
 // not two copies that could quietly drift apart.
 async function getRequirementSequence(goalId) {
   const sequenceResult = await query(
-    `SELECT tr.requirement_key, tr.label, tr.sequence_order, tr.action_if_unmet,
+    `SELECT tr.id, tr.requirement_key, tr.label, tr.sequence_order, tr.action_if_unmet,
             tr.comparison, tr.required_value, tr.unit,
             c.slug AS capability_slug, c.name AS capability_name
      FROM transition_requirements tr
@@ -57,6 +92,7 @@ async function getRequirementSequence(goalId) {
     [goalId]
   );
   return sequenceResult.rows.map((row) => ({
+    id: row.id,
     key: row.requirement_key,
     label: row.label,
     sequenceOrder: row.sequence_order,
@@ -67,6 +103,22 @@ async function getRequirementSequence(goalId) {
     capabilitySlug: row.capability_slug,
     capabilityName: row.capability_name,
   }));
+}
+
+// The real current facts for one subject, keyed by fact_key — the
+// canonical single query, reused by lib/scenarioModel.js instead of
+// that file keeping its own byte-identical private copy.
+async function getFactsMap(subjectId) {
+  const factsResult = await query(
+    `SELECT DISTINCT ON (fact_key) fact_key, fact_value, fact_type, source_note, recorded_at
+     FROM current_state_facts
+     WHERE subject_id = $1
+     ORDER BY fact_key, recorded_at DESC`,
+    [subjectId]
+  );
+  const factsByKey = {};
+  factsResult.rows.forEach((row) => { factsByKey[row.fact_key] = row; });
+  return factsByKey;
 }
 
 function evaluateRequirement(comparison, factValue, requiredValue) {
@@ -88,207 +140,256 @@ function evaluateRequirement(comparison, factValue, requiredValue) {
   }
 }
 
-async function computeRecommendation({ subjectId, goalId }) {
-  const goalResult = await query(
-    'SELECT * FROM goals WHERE id = $1 AND subject_id = $2',
-    [goalId, subjectId]
-  );
+// Pure derivation: real goal + real facts + real requirement chain ->
+// requirement state, readiness, current focus, related capability,
+// unresolved constraints. NEVER writes to the database. This is the
+// single implementation lib/scenarioModel.js's buildBaselineSnapshot()
+// also converges on, via the same scenario-engine.js primitive —
+// see this file's header comment for why neither module imports the
+// other's assembly function directly.
+async function deriveGoalState({ subjectId, goalId }) {
+  const goalResult = await query('SELECT * FROM goals WHERE id = $1 AND subject_id = $2', [goalId, subjectId]);
   const goal = goalResult.rows[0];
   if (!goal) {
     throw new Error('Goal not found for this subject.');
   }
 
-  if (!goal.transition_id) {
-    return {
-      subjectId,
-      goalId,
-      recommendedAction: null,
-      rationale: 'This goal has no transition matched to it yet, so CHEW has no rules to reason from.',
-      basedOnFacts: {},
-      basedOnConstraints: [],
-      missingInformation: { reason: 'no_transition_matched' },
-      relatedCapability: null,
-      chosenRequirementKey: null,
-      computedAt: null,
-    };
-  }
+  const empty = {
+    goal, requirementSequence: [], factsByKey: {},
+    state: { total: 0, resolvedCount: 0, chosenKey: null, perRequirement: [] },
+    chosenReq: null, relatedCapability: null, missingFactKeys: [], constraints: [],
+  };
 
-  const requirementsResult = await query(
-    `SELECT tr.*, c.slug AS capability_slug
-     FROM transition_requirements tr
-     LEFT JOIN capabilities c ON c.id = tr.capability_id
-     WHERE tr.transition_id = $1
-     ORDER BY tr.sequence_order ASC`,
-    [goal.transition_id]
-  );
-  const requirements = requirementsResult.rows;
+  if (!goal.transition_id) return { ...empty, hasTransition: false };
 
-  if (requirements.length === 0) {
-    return {
-      subjectId,
-      goalId,
-      recommendedAction: null,
-      rationale: 'No requirements are defined yet for this transition, so CHEW has nothing to evaluate against.',
-      basedOnFacts: {},
-      basedOnConstraints: [],
-      missingInformation: { reason: 'no_requirements_defined' },
-      relatedCapability: null,
-      chosenRequirementKey: null,
-      computedAt: null,
-    };
-  }
+  const requirementSequence = await getRequirementSequence(goalId);
+  if (requirementSequence.length === 0) return { ...empty, hasTransition: true };
 
-  const factsResult = await query(
-    `SELECT DISTINCT ON (fact_key) fact_key, fact_value, fact_type, source_note, recorded_at
-     FROM current_state_facts
-     WHERE subject_id = $1
-     ORDER BY fact_key, recorded_at DESC`,
-    [subjectId]
-  );
-  const factsByKey = {};
-  factsResult.rows.forEach((row) => { factsByKey[row.fact_key] = row; });
+  const factsByKey = await getFactsMap(subjectId);
+  const missingFactKeys = requirementSequence.filter((r) => !(r.key in factsByKey)).map((r) => r.key);
+
+  const resolvedMap = {};
+  requirementSequence.forEach((r) => {
+    const fact = factsByKey[r.key];
+    resolvedMap[r.key] = evaluateRequirement(r.comparison, fact ? fact.fact_value : null, r.requiredValue);
+  });
+  const state = ChewScenarioEngine.deriveState(requirementSequence, resolvedMap);
 
   const constraintsResult = await query(
-    `SELECT * FROM constraints
-     WHERE subject_id = $1 AND is_resolved = FALSE
-       AND (goal_id = $2 OR blocks_transition_id = $3)`,
+    `SELECT id, constraint_type, description FROM constraints
+     WHERE subject_id = $1 AND is_resolved = FALSE AND (goal_id = $2 OR blocks_transition_id = $3)`,
     [subjectId, goalId, goal.transition_id]
   );
-  const relevantConstraints = constraintsResult.rows;
 
-  const missingKeys = requirements
-    .filter((r) => !(r.requirement_key in factsByKey))
-    .map((r) => r.requirement_key);
-
-  let chosenRequirement = null;
-  const evaluatedFacts = {};
-  for (const req of requirements) {
-    const fact = factsByKey[req.requirement_key];
-    const factValue = fact ? fact.fact_value : null;
-    evaluatedFacts[req.requirement_key] = {
-      value: factValue,
-      factType: fact ? fact.fact_type : null,
-      required: req.required_value,
-      unit: req.unit,
-      comparison: req.comparison,
-      met: evaluateRequirement(req.comparison, factValue, req.required_value),
-    };
-    if (!chosenRequirement && !evaluateRequirement(req.comparison, factValue, req.required_value)) {
-      chosenRequirement = req;
-    }
+  const chosenReq = requirementSequence.find((r) => r.key === state.chosenKey) || null;
+  // Opportunity Engine wiring: the chosen requirement may name a real
+  // capability. If so, ask the already-built, already-tested capability
+  // registry what it actually knows — never invent an answer here.
+  let relatedCapability = null;
+  if (chosenReq && chosenReq.capabilitySlug) {
+    relatedCapability = await getRoutingRecommendation({ capabilitySlug: chosenReq.capabilitySlug });
   }
 
-  const basedOnConstraints = relevantConstraints.map((c) => ({
-    id: c.id,
-    type: c.constraint_type,
-    description: c.description,
-  }));
+  return {
+    goal, hasTransition: true, requirementSequence, factsByKey, state,
+    chosenReq, relatedCapability, missingFactKeys, constraints: constraintsResult.rows,
+  };
+}
 
-  let result;
-  if (!chosenRequirement) {
-    result = {
-      subjectId,
-      goalId,
-      recommendedAction: null,
-      rationale: `Every known requirement for "${goal.title}" is currently met based on the facts on file. CHEW has no further rules-based next step to recommend for this transition.`,
-      basedOnFacts: evaluatedFacts,
-      basedOnConstraints,
-      missingInformation: { missingFactKeys: missingKeys },
-      relatedCapability: null,
-      chosenRequirementKey: null,
+// Pure: shapes already-derived state into the public recommendation
+// contract every caller (api/intelligence-demo.js, the HTML rooms,
+// api/intelligence-recommendation.js) already depends on — field names
+// and rationale text unchanged from before this refactor.
+function shapeRecommendation(derived, { subjectId, goalId }) {
+  const { goal } = derived;
+
+  if (!derived.hasTransition) {
+    return {
+      subjectId, goalId, recommendedAction: null,
+      rationale: 'This goal has no transition matched to it yet, so CHEW has no rules to reason from.',
+      basedOnFacts: {}, basedOnConstraints: [],
+      missingInformation: { reason: 'no_transition_matched' },
+      relatedCapability: null, chosenRequirementKey: null,
     };
-  } else {
-    const evalEntry = evaluatedFacts[chosenRequirement.requirement_key];
-    const currentDescription = evalEntry.value === null
-      ? 'not yet provided'
-      : `${evalEntry.value}${chosenRequirement.unit ? ' ' + chosenRequirement.unit : ''}`;
-    const constraintNote = relevantConstraints.length
-      ? ` CHEW also has ${relevantConstraints.length} unresolved constraint(s) on file for this transition.`
-      : '';
+  }
+  if (derived.requirementSequence.length === 0) {
+    return {
+      subjectId, goalId, recommendedAction: null,
+      rationale: 'No requirements are defined yet for this transition, so CHEW has nothing to evaluate against.',
+      basedOnFacts: {}, basedOnConstraints: [],
+      missingInformation: { reason: 'no_requirements_defined' },
+      relatedCapability: null, chosenRequirementKey: null,
+    };
+  }
 
-    // Opportunity Engine wiring: the chosen requirement may name a real
-    // capability. If so, ask the already-built, already-tested
-    // capability registry what it actually knows — never invent an
-    // answer here. Today this will almost always report
-    // available: false with zero providers, honestly, because
-    // network_providers is still empty.
-    let relatedCapability = null;
-    if (chosenRequirement.capability_slug) {
-      relatedCapability = await getRoutingRecommendation({ capabilitySlug: chosenRequirement.capability_slug });
-    }
-    const capabilityNote = relatedCapability
-      ? (relatedCapability.available
-          ? ` CHEW found ${relatedCapability.providers.length} active provider(s) for the "${relatedCapability.capability.name}" capability this requirement maps to.`
-          : ` This requirement maps to the "${relatedCapability.capability.name}" capability, but no active provider is available for it yet.`)
-      : '';
+  const evaluatedFacts = {};
+  derived.requirementSequence.forEach((r) => {
+    const perReq = derived.state.perRequirement.find((p) => p.key === r.key);
+    const fact = derived.factsByKey[r.key];
+    evaluatedFacts[r.key] = {
+      value: fact ? fact.fact_value : null,
+      factType: fact ? fact.fact_type : null,
+      required: r.requiredValue,
+      unit: r.unit,
+      comparison: r.comparison,
+      met: perReq ? perReq.met : false,
+    };
+  });
+  const basedOnConstraints = derived.constraints.map((c) => ({ id: c.id, type: c.constraint_type, description: c.description }));
+  const { chosenReq, relatedCapability } = derived;
 
-    result = {
-      subjectId,
-      goalId,
-      recommendedAction: chosenRequirement.action_if_unmet,
-      rationale: `"${chosenRequirement.label}" is the highest-priority unmet requirement for "${goal.title}" `
-        + `(sequence ${chosenRequirement.sequence_order}). Current: ${currentDescription}. `
-        + `Required: ${chosenRequirement.required_value}${chosenRequirement.unit ? ' ' + chosenRequirement.unit : ''} `
-        + `(${chosenRequirement.comparison}).${constraintNote}${capabilityNote}`,
-      basedOnFacts: evaluatedFacts,
-      basedOnConstraints,
-      missingInformation: { missingFactKeys: missingKeys },
-      relatedCapability,
-      chosenRequirementKey: chosenRequirement.requirement_key,
+  if (!chosenReq) {
+    return {
+      subjectId, goalId, recommendedAction: null,
+      rationale: `Every known requirement for "${goal.title}" is currently met based on the facts on file. CHEW has no further rules-based next step to recommend for this transition.`,
+      basedOnFacts: evaluatedFacts, basedOnConstraints,
+      missingInformation: { missingFactKeys: derived.missingFactKeys },
+      relatedCapability: null, chosenRequirementKey: null,
+    };
+  }
+
+  const evalEntry = evaluatedFacts[chosenReq.key];
+  const currentDescription = evalEntry.value === null ? 'not yet provided' : `${evalEntry.value}${chosenReq.unit ? ' ' + chosenReq.unit : ''}`;
+  const constraintNote = derived.constraints.length
+    ? ` CHEW also has ${derived.constraints.length} unresolved constraint(s) on file for this transition.`
+    : '';
+  const capabilityNote = relatedCapability
+    ? (relatedCapability.available
+        ? ` CHEW found ${relatedCapability.providers.length} active provider(s) for the "${relatedCapability.capability.name}" capability this requirement maps to.`
+        : ` This requirement maps to the "${relatedCapability.capability.name}" capability, but no active provider is available for it yet.`)
+    : '';
+
+  return {
+    subjectId, goalId,
+    recommendedAction: chosenReq.actionIfUnmet,
+    rationale: `"${chosenReq.label}" is the highest-priority unmet requirement for "${goal.title}" `
+      + `(sequence ${chosenReq.sequenceOrder}). Current: ${currentDescription}. `
+      + `Required: ${chosenReq.requiredValue}${chosenReq.unit ? ' ' + chosenReq.unit : ''} `
+      + `(${chosenReq.comparison}).${constraintNote}${capabilityNote}`,
+    basedOnFacts: evaluatedFacts, basedOnConstraints,
+    missingInformation: { missingFactKeys: derived.missingFactKeys },
+    relatedCapability, chosenRequirementKey: chosenReq.key,
+  };
+}
+
+// PURE. Reads real state, derives the current recommendation, writes
+// NOTHING — safe to call from any GET/read path, any number of times,
+// including the public api/intelligence-demo.js endpoint. See this
+// file's header "READING MUST NOT CHANGE INTELLIGENCE" doctrine.
+async function computeRecommendation({ subjectId, goalId }) {
+  const derived = await deriveGoalState({ subjectId, goalId });
+  return shapeRecommendation(derived, { subjectId, goalId });
+}
+
+// The exact fields that define WHAT is being recommended and why —
+// deliberately excludes anything volatile (timestamps, row ids).
+// Mirrors lib/weatherModel.js's state_snapshots fingerprinting exactly,
+// reusing the same stableStringify() + sha256 approach rather than
+// inventing a third one.
+function recommendationFingerprintFields(recommendation) {
+  return {
+    chosenRequirementKey: recommendation.chosenRequirementKey,
+    recommendedAction: recommendation.recommendedAction,
+    missingFactKeys: (recommendation.missingInformation && recommendation.missingInformation.missingFactKeys) || null,
+    missingReason: (recommendation.missingInformation && recommendation.missingInformation.reason) || null,
+    constraintIds: recommendation.basedOnConstraints.map((c) => c.id).sort((a, b) => a - b),
+    relatedCapabilityAvailable: recommendation.relatedCapability ? recommendation.relatedCapability.available : null,
+    relatedCapabilityProviderCount: recommendation.relatedCapability ? recommendation.relatedCapability.providers.length : null,
+  };
+}
+
+function computeRecommendationFingerprint(recommendation) {
+  return crypto.createHash('sha256').update(stableStringify(recommendationFingerprintFields(recommendation))).digest('hex');
+}
+
+async function getLatestRecommendation({ subjectId, goalId }) {
+  const result = await query(
+    `SELECT * FROM recommendations WHERE subject_id = $1 AND goal_id = $2 ORDER BY computed_at DESC LIMIT 1`,
+    [subjectId, goalId]
+  );
+  return result.rows[0] || null;
+}
+
+async function findPendingAction({ subjectId, transitionRequirementId }) {
+  const result = await query(
+    `SELECT id, description, status FROM actions WHERE subject_id = $1 AND transition_requirement_id = $2 AND status = 'pending'`,
+    [subjectId, transitionRequirementId]
+  );
+  return result.rows[0] || null;
+}
+
+// THE ONE FUNCTION IN THIS FILE THAT WRITES TO `recommendations` OR
+// `actions`. Computes the current recommendation (pure, via
+// computeRecommendation()'s own logic) and persists a new history row
+// ONLY when the real recommendation state has actually changed since
+// the last one recorded for this subject+goal — deduped by a real
+// fingerprint, never a blind insert. Call this from an explicit command
+// that legitimately changed real state (e.g. api/intelligence-actions.js,
+// after completeAction()) — never from a read-only endpoint. See this
+// file's header doctrine and ARCHITECTURE.md's "Recommendation purity"
+// section for why this split exists.
+async function recordRecommendation({ subjectId, goalId }) {
+  const derived = await deriveGoalState({ subjectId, goalId });
+  const recommendation = shapeRecommendation(derived, { subjectId, goalId });
+  const fingerprint = computeRecommendationFingerprint(recommendation);
+  const chosenReq = derived.chosenReq;
+
+  const latest = await getLatestRecommendation({ subjectId, goalId });
+  if (latest && latest.state_fingerprint === fingerprint) {
+    const action = chosenReq ? await findPendingAction({ subjectId, transitionRequirementId: chosenReq.id }) : null;
+    return {
+      recommendation: {
+        ...recommendation, id: latest.id, computedAt: latest.computed_at,
+        ruleVersion: latest.rule_version, stateFingerprint: latest.state_fingerprint,
+      },
+      action, wasNew: false,
     };
   }
 
   const insertResult = await query(
-    `INSERT INTO recommendations (subject_id, goal_id, recommended_action, rationale, based_on_facts, based_on_constraints, missing_information, related_capability, chosen_requirement_key)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-     RETURNING id, computed_at`,
+    `INSERT INTO recommendations
+       (subject_id, goal_id, recommended_action, rationale, based_on_facts, based_on_constraints,
+        missing_information, related_capability, chosen_requirement_key, state_fingerprint, rule_version)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+     RETURNING id, computed_at, rule_version, state_fingerprint`,
     [
-      subjectId,
-      goalId,
-      result.recommendedAction,
-      result.rationale,
-      JSON.stringify(result.basedOnFacts),
-      JSON.stringify(result.basedOnConstraints),
-      JSON.stringify(result.missingInformation),
-      result.relatedCapability ? JSON.stringify(result.relatedCapability) : null,
-      result.chosenRequirementKey,
+      subjectId, goalId, recommendation.recommendedAction, recommendation.rationale,
+      JSON.stringify(recommendation.basedOnFacts), JSON.stringify(recommendation.basedOnConstraints),
+      JSON.stringify(recommendation.missingInformation),
+      recommendation.relatedCapability ? JSON.stringify(recommendation.relatedCapability) : null,
+      recommendation.chosenRequirementKey, fingerprint, RULE_VERSION,
     ]
   );
-
-  result.id = insertResult.rows[0].id;
-  result.computedAt = insertResult.rows[0].computed_at;
+  const persisted = insertResult.rows[0];
 
   // Create or reuse a pending action for the chosen requirement, so
   // there's something a subject can actually mark complete — decision
-  // loop step 8 ("record action"). Reuses an existing pending action for
-  // the same subject+requirement rather than spawning a duplicate every
-  // time the recommendation is recomputed against the same unmet gap.
-  result.action = null;
-  if (chosenRequirement) {
-    const existingActionResult = await query(
-      `SELECT id, description, status FROM actions
-       WHERE subject_id = $1 AND transition_requirement_id = $2 AND status = 'pending'`,
-      [subjectId, chosenRequirement.id]
-    );
-    if (existingActionResult.rows[0]) {
-      await query('UPDATE actions SET recommendation_id = $1 WHERE id = $2', [result.id, existingActionResult.rows[0].id]);
-      result.action = {
-        id: existingActionResult.rows[0].id,
-        description: existingActionResult.rows[0].description,
-        status: existingActionResult.rows[0].status,
-      };
+  // loop step 8 ("record action"). Only touched here, on a genuine new
+  // history row — never on a read that changed nothing.
+  let action = null;
+  if (chosenReq) {
+    const existing = await findPendingAction({ subjectId, transitionRequirementId: chosenReq.id });
+    if (existing) {
+      await query('UPDATE actions SET recommendation_id = $1 WHERE id = $2', [persisted.id, existing.id]);
+      action = existing;
     } else {
       const actionInsertResult = await query(
         `INSERT INTO actions (subject_id, goal_id, transition_requirement_id, recommendation_id, description)
          VALUES ($1, $2, $3, $4, $5)
          RETURNING id, description, status`,
-        [subjectId, goalId, chosenRequirement.id, result.id, chosenRequirement.action_if_unmet]
+        [subjectId, goalId, chosenReq.id, persisted.id, chosenReq.actionIfUnmet]
       );
-      result.action = actionInsertResult.rows[0];
+      action = actionInsertResult.rows[0];
     }
   }
 
-  return result;
+  return {
+    recommendation: {
+      ...recommendation, id: persisted.id, computedAt: persisted.computed_at,
+      ruleVersion: persisted.rule_version, stateFingerprint: persisted.state_fingerprint,
+    },
+    action, wasNew: true,
+  };
 }
 
 // Marks a pending action completed. A boolean_true requirement's
@@ -409,6 +510,7 @@ async function listActions({ subjectId, status }) {
 }
 
 module.exports = {
-  computeRecommendation, evaluateRequirement, completeAction, listActions,
-  getRequirementSequence, RULE_VERSION,
+  computeRecommendation, recordRecommendation, evaluateRequirement, completeAction, listActions,
+  getRequirementSequence, getFactsMap, deriveGoalState, RULE_VERSION,
+  getLatestRecommendation, computeRecommendationFingerprint, // exported for direct unit testing only
 };

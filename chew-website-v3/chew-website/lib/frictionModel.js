@@ -38,6 +38,7 @@
 const { query } = require('./db');
 const { listSnapshots } = require('./weatherModel');
 const { getRequirementSequence } = require('./intelligenceEngine');
+const { CERTAINTY_VALUES } = require('./util');
 
 const FRICTION_MODEL_VERSION = 'friction-model-v1';
 
@@ -50,10 +51,10 @@ const FRICTION_MODEL_VERSION = 'friction-model-v1';
 const FRICTION_TYPES = ['persistent_requirement', 'repeated_focus', 'readiness_stall', 'recurring_requirement'];
 
 // Every result here is a fixed-rule computation over real observed
-// state — never an inference, estimate, or guess. Reuses the exact
-// 5-value vocabulary scenarios/leverage_items already use, rather than
-// inventing a new one.
-const CERTAINTY = 'deterministic';
+// state — never an inference, estimate, or guess. Reuses the one
+// authoritative certainty vocabulary in lib/util.js (see
+// ARCHITECTURE_REVIEW.md §3b) rather than a hardcoded string literal.
+const CERTAINTY = CERTAINTY_VALUES.DETERMINISTIC;
 
 const SEVERITY_LEVELS = ['persistent', 'repeated', 'recurring'];
 
