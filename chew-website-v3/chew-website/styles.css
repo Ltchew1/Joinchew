@@ -601,11 +601,14 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 }
 
 /* Selection state, driven by JS toggling classes on .lifemap-wrap and
-   data-territory-matched elements */
-.lifemap-wrap.has-selection .lifemap-node circle { stroke: var(--panel-border); opacity: 0.3; }
-.lifemap-wrap.has-selection .lifemap-label { opacity: 0.3; }
-.lifemap-wrap.has-selection .lifemap-spoke { opacity: 0.08; }
-.lifemap-wrap.has-selection .lifemap-edge { opacity: 0.05; }
+   data-territory-matched elements. The :not() exclusions here matter —
+   without them this rule's higher specificity (three classes) silently
+   wins over .is-selected/.is-connected's opacity (two classes), which
+   would dim the very nodes meant to stand out. */
+.lifemap-wrap.has-selection .lifemap-node:not(.is-selected):not(.is-connected) circle { stroke: var(--panel-border); opacity: 0.3; }
+.lifemap-wrap.has-selection .lifemap-label:not(.is-selected):not(.is-connected) { opacity: 0.3; }
+.lifemap-wrap.has-selection .lifemap-spoke:not(.is-lit) { opacity: 0.08; }
+.lifemap-wrap.has-selection .lifemap-edge:not(.is-lit) { opacity: 0.05; }
 
 .lifemap-node.is-selected circle {
   stroke: var(--gold-light); stroke-width: 2; fill: rgba(201,162,39,0.16);
@@ -648,6 +651,14 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 .lifemap-detail-list li { font-size: 0.88rem; color: var(--text-muted); line-height: 1.55; margin: 0 0 10px; }
 .lifemap-detail-list li:last-child { margin-bottom: 0; }
 .lifemap-detail-list strong { color: var(--gold-light); font-family: var(--font-display); font-style: italic; font-weight: 600; }
+.lifemap-detail-why {
+  margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--panel-border);
+  font-size: 0.86rem; color: var(--text-muted); line-height: 1.55;
+}
+.lifemap-detail-why-label {
+  display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 6px;
+}
 .lifemap-detail-close {
   display: block; margin: 16px auto 0; background: none; border: none; color: var(--text-faint);
   font-size: 0.78rem; text-decoration: underline; cursor: pointer; padding: 4px 8px;
@@ -658,6 +669,120 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   .lifemap-wrap { max-width: 320px; }
   .lifemap-hit { width: 40px; height: 40px; margin: -20px 0 0 -20px; }
 }
+
+/* ============================================================
+   PHASE 2 — SLICE 2: Life Map Showcase
+   ============================================================
+   "One zoom level deeper" from the hero — same design language
+   (deep black, restrained gold, hairline geometry), same real
+   territory/edge data model already defined in script.js
+   (LIFEMAP_LABELS/LIFEMAP_EDGES — reused verbatim, never a second
+   map model). This section only adds: the signature scroll-triggered
+   reveal choreography, goal-continuity from the hero, a decorative
+   world-boundary ring, and a genuine mobile-specific vertical
+   composition (not a shrunk desktop diagram). ============================================================ */
+
+.hx-lifemap-section {
+  position: relative; overflow: hidden; padding: 96px 0 88px;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 0%, rgba(201,162,39,0.05), transparent 60%),
+    var(--black-soft);
+  border-top: 1px solid var(--panel-border); border-bottom: 1px solid var(--panel-border);
+}
+.hx-lifemap-frame { position: absolute; inset: 5%; pointer-events: none; z-index: 0; }
+.hx-lifemap-frame .corner {
+  position: absolute; width: 30px; height: 30px;
+  border-color: var(--gold-deep); border-style: solid; border-width: 0; opacity: 0;
+  transition: opacity 1s ease;
+}
+.hx-lifemap-frame .corner--tl { top: 0; left: 0; border-top-width: 1px; border-left-width: 1px; }
+.hx-lifemap-frame .corner--tr { top: 0; right: 0; border-top-width: 1px; border-right-width: 1px; }
+.hx-lifemap-frame .corner--bl { bottom: 0; left: 0; border-bottom-width: 1px; border-left-width: 1px; }
+.hx-lifemap-frame .corner--br { bottom: 0; right: 0; border-bottom-width: 1px; border-right-width: 1px; }
+.hx-lifemap-section.is-revealed .hx-lifemap-frame .corner { opacity: 0.4; }
+.hx-lifemap-section .container { position: relative; z-index: 1; }
+
+/* World boundary — a faint architectural ring reinforcing "this is a
+   bounded, engineered system," not a random scatter of bubbles. */
+.lifemap-boundary {
+  fill: none; stroke: var(--panel-border); stroke-width: 1; opacity: 0;
+  transition: opacity 1.2s ease;
+}
+.lifemap-wrap.is-revealed .lifemap-boundary { opacity: 0.4; }
+
+/* Staggered node/edge draw-in, using the real per-element delay custom
+   properties already present in the markup (--node-delay/--edge-delay). */
+.lifemap-node, .lifemap-label { opacity: 0; transform: scale(0.6); transform-box: fill-box; transform-origin: center; }
+.lifemap-label { transform: none; }
+.lifemap-wrap.is-revealed .lifemap-node {
+  opacity: 1; transform: scale(1);
+  transition: opacity 0.5s cubic-bezier(.16,1,.3,1), transform 0.5s cubic-bezier(.16,1,.3,1);
+  transition-delay: var(--node-delay, 0ms);
+}
+.lifemap-wrap.is-revealed .lifemap-label {
+  opacity: 1; transition: opacity 0.5s ease; transition-delay: var(--node-delay, 0ms);
+}
+.lifemap-edge { opacity: 0; }
+.lifemap-wrap.is-revealed .lifemap-edge { opacity: 0.22; transition: opacity 0.4s ease; transition-delay: var(--edge-delay, 0ms); }
+.lifemap-wrap.is-revealed.has-selection .lifemap-edge:not(.is-lit) { opacity: 0.05; }
+.lifemap-spoke { opacity: 0; }
+.lifemap-wrap.is-revealed .lifemap-spoke { opacity: 0.35; transition: opacity 0.5s ease 0.2s; }
+.node-center { opacity: 0; transform: scale(0.7); transform-box: fill-box; transform-origin: center; transition: opacity 0.6s ease, transform 0.6s cubic-bezier(.16,1,.3,1); }
+.lifemap-wrap.is-revealed .node-center { opacity: 1; transform: scale(1); }
+
+/* Stronger background tier for unselected/unconnected territories once
+   something is selected — real depth, not a fabricated 3D effect. */
+.lifemap-wrap.has-selection .lifemap-node:not(.is-selected):not(.is-connected) circle { opacity: 0.22; filter: saturate(0.5); }
+.lifemap-wrap.has-selection .lifemap-label:not(.is-selected):not(.is-connected) { opacity: 0.22; }
+
+.lifemap-signature {
+  text-align: center; font-family: var(--font-display); font-size: 1.1rem; font-style: italic;
+  color: var(--gold-light); margin: 26px 0 4px; opacity: 0; height: 0; overflow: hidden;
+  transition: opacity 0.7s ease;
+}
+.lifemap-signature.is-visible { opacity: 1; height: auto; overflow: visible; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hx-lifemap-frame .corner, .lifemap-boundary, .lifemap-node, .lifemap-label, .lifemap-edge, .lifemap-spoke, .node-center, .lifemap-signature {
+    transition: none !important;
+  }
+}
+
+/* ---- Mobile-specific composition: a real vertical territory chain,
+   never a shrunk copy of the desktop orbital diagram. Swaps in below
+   640px; the SVG diagram and its hit-layer are hidden at that width
+   instead. Populated by script.js from the same real LIFEMAP_LABELS/
+   LIFEMAP_EDGES data — one source of truth, two presentations. ---- */
+.lifemap-mobile { display: none; }
+@media (max-width: 640px) {
+  .lifemap-wrap { max-width: none; aspect-ratio: auto; margin: 32px 0 8px; }
+  .lifemap-wrap .lifemap, .lifemap-wrap .lifemap-hit-layer { display: none; }
+  .lifemap-mobile { display: flex; flex-direction: column; gap: 2px; }
+}
+.lifemap-mobile-item {
+  display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+  background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border);
+  border-radius: 10px; padding: 14px 16px; font-family: var(--font-body);
+  color: var(--text-muted); cursor: pointer; position: relative;
+  transition: border-color 0.3s ease, background 0.3s ease, opacity 0.3s ease;
+  min-height: 52px;
+}
+.lifemap-mobile-item + .lifemap-mobile-item { margin-top: 8px; }
+.lifemap-mobile-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  background: var(--black); border: 1.5px solid var(--panel-border-soft);
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.lifemap-mobile-name { font-size: 0.94rem; font-weight: 600; color: var(--text); flex: 1; }
+.lifemap-mobile-item:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+.lifemap-mobile.has-selection .lifemap-mobile-item { opacity: 0.35; }
+.lifemap-mobile-item.is-selected {
+  opacity: 1 !important; border-color: var(--gold-light); background: rgba(201,162,39,0.1);
+}
+.lifemap-mobile-item.is-selected .lifemap-mobile-dot { background: var(--gold-light); border-color: var(--gold-light); box-shadow: 0 0 8px rgba(232,206,122,0.7); }
+.lifemap-mobile-item.is-selected .lifemap-mobile-name { color: var(--gold-light); }
+.lifemap-mobile-item.is-connected { opacity: 1 !important; border-color: var(--panel-border-soft); }
+.lifemap-mobile-item.is-connected .lifemap-mobile-dot { background: var(--gold); border-color: var(--gold); }
 
 /* ---------- The Path: where you are → target ---------- */
 .path-flow { display: flex; align-items: flex-start; justify-content: center; gap: 4px; flex-wrap: wrap; margin-top: 44px; }

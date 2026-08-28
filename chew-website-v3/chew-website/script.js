@@ -42,6 +42,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // Shared across the hero goal picker and the Life Map below it: which
+  // real demo goal (if any) the visitor has already picked in the hero,
+  // so Life Map can carry that choice forward (goal continuity) instead
+  // of resetting to a neutral state every section.
+  var chewLastSelectedGoal = null;
+
   // The CHEW Life Map: 8 territories, 13 curated real relationship edges.
   // This is editorial content about how financial domains generally
   // relate to each other — the same class of claim the caption below it
@@ -69,9 +75,25 @@ document.addEventListener('DOMContentLoaded', function () {
       { a: 'assets', b: 'liquidity', reason: 'Not everything you own is something you can use right now — CHEW tracks that gap.' },
       { a: 'ownership', b: 'assets', reason: 'Ownership and assets tend to grow together — one is usually a sign the other is too.' },
     ];
+    // One short, concise story per territory — why CHEW treats its
+    // connections as worth tracking together, not a textbook entry.
+    // Same editorial status as LIFEMAP_EDGES above, not a separate claim.
+    var LIFEMAP_WHY = {
+      credit: 'Credit changes can quietly reopen or close off financing across several other areas at once.',
+      capital: 'Capital is the fuel other moves run on — how much exists changes what becomes possible elsewhere.',
+      business: 'A business rarely stays contained to itself — it pulls on personal credit, capital, and coverage as it grows.',
+      property: 'Property ties up credit, capital, and protection all at once — one of the most connected moves CHEW tracks.',
+      insurance: 'What you build is only as secure as what protects it — insurance is the quiet dependency behind the rest.',
+      assets: 'Assets are where other moves eventually land — capital, business, and property all tend to become one.',
+      liquidity: 'What you can use right now shapes which other moves are even on the table today.',
+      ownership: 'Ownership compounds — it both results from other moves and becomes leverage for the next one.',
+    };
 
     var lifemapHint = document.getElementById('lifemap-hint');
     var lifemapDetail = document.getElementById('lifemap-detail');
+    var lifemapMobileEl = document.getElementById('lifemap-mobile');
+    var lifemapSignatureEl = document.getElementById('lifemap-signature');
+    var lifemapSectionEl = document.getElementById('hx-lifemap-section');
     var lifemapReduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var lifemapSelected = null;
 
@@ -87,6 +109,19 @@ document.addEventListener('DOMContentLoaded', function () {
         .map(function (e) { return { other: e.a === territory ? e.b : e.a, reason: e.reason }; });
     }
 
+    // Real vertical mobile composition — built once from the exact same
+    // LIFEMAP_LABELS data above, not a second map model. Wired into the
+    // same lifemapSelect()/lifemapClearState() functions as the desktop
+    // SVG hit targets below, via the shared [data-territory] contract.
+    if (lifemapMobileEl) {
+      lifemapMobileEl.innerHTML = Object.keys(LIFEMAP_LABELS).map(function (t) {
+        return '<button type="button" class="lifemap-mobile-item" data-territory="' + t + '" aria-pressed="false">'
+          + '<span class="lifemap-mobile-dot" aria-hidden="true"></span>'
+          + '<span class="lifemap-mobile-name">' + lifemapEscapeHtml(LIFEMAP_LABELS[t]) + '</span>'
+          + '</button>';
+      }).join('');
+    }
+
     function lifemapClearState() {
       lifemapWrap.querySelectorAll('.lifemap-node, .lifemap-label').forEach(function (el) {
         el.classList.remove('is-selected', 'is-connected');
@@ -97,6 +132,13 @@ document.addEventListener('DOMContentLoaded', function () {
       lifemapWrap.querySelectorAll('.lifemap-hit').forEach(function (el) {
         el.setAttribute('aria-pressed', 'false');
       });
+      if (lifemapMobileEl) {
+        lifemapMobileEl.classList.remove('has-selection');
+        lifemapMobileEl.querySelectorAll('.lifemap-mobile-item').forEach(function (el) {
+          el.classList.remove('is-selected', 'is-connected');
+          el.setAttribute('aria-pressed', 'false');
+        });
+      }
     }
 
     function lifemapDeselect() {
@@ -108,10 +150,15 @@ document.addEventListener('DOMContentLoaded', function () {
       if (lifemapHint) lifemapHint.style.opacity = '1';
     }
 
-    function lifemapSelect(territory) {
-      if (lifemapSelected === territory) { lifemapDeselect(); return; }
+    // auto: true only for the goal-continuity reveal below — suppresses
+    // the scroll-into-view a real user click should still get, since an
+    // auto-selection fires while the visitor is already mid-scroll into
+    // this exact section.
+    function lifemapSelect(territory, auto) {
+      if (lifemapSelected === territory) { if (!auto) lifemapDeselect(); return; }
       lifemapSelected = territory;
       lifemapWrap.classList.add('has-selection');
+      if (lifemapMobileEl) lifemapMobileEl.classList.add('has-selection');
       lifemapClearState();
 
       var connections = lifemapConnectionsFor(territory);
@@ -137,12 +184,23 @@ document.addEventListener('DOMContentLoaded', function () {
       var hitBtn = lifemapWrap.querySelector('.lifemap-hit[data-territory="' + territory + '"]');
       if (hitBtn) hitBtn.setAttribute('aria-pressed', 'true');
 
+      if (lifemapMobileEl) {
+        var mobileSelected = lifemapMobileEl.querySelector('.lifemap-mobile-item[data-territory="' + territory + '"]');
+        if (mobileSelected) { mobileSelected.classList.add('is-selected'); mobileSelected.setAttribute('aria-pressed', 'true'); }
+        Object.keys(connectedSet).forEach(function (t) {
+          var el = lifemapMobileEl.querySelector('.lifemap-mobile-item[data-territory="' + t + '"]');
+          if (el) el.classList.add('is-connected');
+        });
+      }
+
       var html = '<span class="lifemap-detail-eyebrow">' + lifemapEscapeHtml(LIFEMAP_LABELS[territory]) + ' connects to</span>'
         + '<ul class="lifemap-detail-list">'
         + connections.map(function (c) {
           return '<li><strong>' + lifemapEscapeHtml(LIFEMAP_LABELS[c.other]) + '</strong> — ' + lifemapEscapeHtml(c.reason) + '</li>';
         }).join('')
         + '</ul>'
+        + '<p class="lifemap-detail-why"><span class="lifemap-detail-why-label">Why CHEW connects these</span>'
+        + lifemapEscapeHtml(LIFEMAP_WHY[territory] || '') + '</p>'
         + '<button type="button" class="lifemap-detail-close" id="lifemap-detail-close">Clear selection</button>';
       lifemapDetail.innerHTML = html;
       lifemapDetail.hidden = false;
@@ -151,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function () {
       var closeBtn = document.getElementById('lifemap-detail-close');
       if (closeBtn) closeBtn.addEventListener('click', lifemapDeselect);
 
-      if (!lifemapReduceMotion) {
+      if (!auto && !lifemapReduceMotion) {
         lifemapDetail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     }
@@ -162,6 +220,53 @@ document.addEventListener('DOMContentLoaded', function () {
         lifemapSelect(btn.getAttribute('data-territory'));
       });
     });
+    if (lifemapMobileEl) {
+      lifemapMobileEl.querySelectorAll('.lifemap-mobile-item').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          lifemapSelect(btn.getAttribute('data-territory'));
+        });
+      });
+    }
+
+    // Signature reveal: fires once, the first time the Life Map scrolls
+    // into view. Nodes/edges stagger-draw (CSS, via the real --node-
+    // delay/--edge-delay custom properties already on each element),
+    // then — only if the visitor already picked a real goal in the hero
+    // above — CHEW carries that choice forward by auto-selecting the
+    // one territory this goal is editorially mapped to (goal continuity).
+    // With no prior goal selection, the map simply settles into its
+    // neutral, fully-visible state and invites exploration instead.
+    var LIFEMAP_GOAL_FOCUS = { home: 'property', funding: 'business' };
+    var lifemapRevealed = false;
+
+    function runLifemapReveal() {
+      if (lifemapRevealed) return;
+      lifemapRevealed = true;
+      if (lifemapSectionEl) lifemapSectionEl.classList.add('is-revealed');
+      lifemapWrap.classList.add('is-revealed');
+
+      var settle = function () {
+        var focusTerritory = chewLastSelectedGoal ? LIFEMAP_GOAL_FOCUS[chewLastSelectedGoal] : null;
+        if (focusTerritory) lifemapSelect(focusTerritory, true);
+        if (lifemapSignatureEl) lifemapSignatureEl.classList.add('is-visible');
+      };
+      if (lifemapReduceMotion) settle();
+      else setTimeout(settle, 950);
+    }
+
+    if (lifemapSectionEl && 'IntersectionObserver' in window) {
+      var lifemapObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            runLifemapReveal();
+            lifemapObserver.disconnect();
+          }
+        });
+      }, { threshold: 0.3 });
+      lifemapObserver.observe(lifemapSectionEl);
+    } else {
+      runLifemapReveal();
+    }
   }
 
   // Scroll-reveal: fade/rise elements into view once, respecting reduced motion.
@@ -801,6 +906,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     goalButtons.forEach(function (btn) {
       btn.addEventListener('click', function () {
+        chewLastSelectedGoal = btn.getAttribute('data-goal');
         clearPendingTimeouts();
         clearDominoTimeouts();
         dominoSectionEl.hidden = true;

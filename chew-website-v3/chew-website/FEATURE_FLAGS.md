@@ -2498,6 +2498,109 @@ order per the directive's own sequencing). No backend change was made;
 every visual state here was already fully supported by the existing,
 tested `/api/intelligence-demo` contract.
 
+## Phase 2, Slice 2 — Life Map Showcase (index.html, styles.css, script.js)
+
+The second visual-supremacy slice: "one level deeper" from the hero,
+making the Life Map feel like a real zoom level of CHEW's world rather
+than another section on the page.
+
+**Reused the real existing data model verbatim — no second map
+invented.** `LIFEMAP_LABELS` (8 territories) and `LIFEMAP_EDGES` (13
+curated editorial relationships, each with a real reason string) are the
+exact same constants already built and shipped in the prior Life Map
+pass — unchanged. This slice adds presentation and choreography around
+that data, never a parallel model. One new editorial constant was added,
+`LIFEMAP_WHY` — a single "why CHEW connects these" sentence per
+territory, same editorial status as `LIFEMAP_EDGES`, satisfying the
+directive's "Connection Story" requirement without turning the panel
+into a textbook entry.
+
+**Moved to sit directly after the hero**, ahead of the below-field
+progressive-disclosure content (Blind Spot/Domino/Radar/Future-Back),
+so scrolling out of the hero lands on Life Map first — the "one zoom
+level deeper" continuity the directive asked for, not a generic section
+further down the page.
+
+**Goal continuity.** A new small shared variable (`chewLastSelectedGoal`,
+set by the existing hero goal-button handler) is read once, the first
+time Life Map scrolls into view. If the visitor already picked a real
+demo goal in the hero, CHEW auto-selects the one territory it's
+editorially mapped to (`LIFEMAP_GOAL_FOCUS`: `home → property`,
+`funding → business`) — both chosen because they're the territory each
+real demo goal's own connections are richest for, using the exact same
+selection function a manual click uses. This mapping is explicitly
+editorial (documented as such in the code), not a database-derived
+association — there is no real backend link between a demo goal and a
+Life Map territory to draw from. If no goal was picked, the map settles
+into its neutral state and invites exploration instead of forcing a
+selection.
+
+**Signature reveal choreography**, fired once via `IntersectionObserver`
+(threshold 0.3): a hairline corner frame resolves, a faint "world
+boundary" ring fades in, then all 8 territory nodes and their edges
+stagger-draw using the real per-element `--node-delay`/`--edge-delay`
+custom properties already present in the SVG markup. Only after that
+settles does the goal-continuity auto-selection (if any) fire, followed
+by the "CHEW sees the connections." signature line. Every stage collapses
+to its instantly-final state under `prefers-reduced-motion`, verified
+directly in a `reducedMotion: 'reduce'` Playwright context.
+
+**Precision, not a floodlit map.** Selecting a territory (`lifemapSelect()`
+— unchanged core logic, extended to also drive the new mobile list)
+brightens exactly the selected node and its real connected neighbors;
+every other territory recedes to a genuinely low-contrast "background"
+tier. Real depth through interaction state, not a fabricated 3D effect —
+matching the directive's own instruction not to overcomplicate a
+CENTER/INNER/OUTER hierarchy that doesn't map to anything real.
+
+**A genuine mobile-specific composition, not a shrunk diagram.** Below
+640px the SVG orbital diagram and its hit-layer are hidden entirely and
+replaced with `#lifemap-mobile` — a real vertical list of territory
+buttons, built once from the same `LIFEMAP_LABELS` data, wired into the
+exact same `lifemapSelect()`/`lifemapClearState()` functions via the
+shared `[data-territory]` contract (one source of truth, two
+presentations, not duplicated selection logic). Touch targets are a real
+52px minimum height.
+
+**Real bug found and fixed during screenshot validation — pre-existing,
+not introduced by this slice.** The `.lifemap-wrap.has-selection
+.lifemap-node circle { opacity: 0.3 }` rule (three classes, specificity
+0,3,1) had always had higher CSS specificity than `.lifemap-node
+.is-selected circle`'s properties (two classes, 0,2,1) for the `opacity`
+and `stroke` properties specifically — meaning a selected or connected
+node was silently rendering at the dimmed, unselected opacity the whole
+time this feature has existed, just subtly enough (small gold-tinted
+circles on a dark background) that it went unnoticed by eye until this
+slice's added `filter: saturate(0.5)` on the same rule made the effect
+more visually obvious in a screenshot. Fixed by adding explicit
+`:not(.is-selected):not(.is-connected)` (and `:not(.is-lit)` for
+spokes/edges) to every one of the four affected dimming rules, so the
+cascade can never again silently override the exact states the feature
+exists to highlight. Verified directly: DOM state showed the correct
+class before the fix (`propNodeClasses: "lifemap-node is-selected"`), so
+this was purely a CSS specificity defect, not a JS logic defect —
+confirmed by re-screenshotting after the fix and seeing the selected
+node render fully gold, scaled, and glowing as intended.
+
+**Tests**: real Chromium screenshots across desktop/tablet/mobile ×
+{neutral reveal, goal-continuity reveal, manual territory selection},
+plus a dedicated `prefers-reduced-motion` pass and a keyboard-only
+selection pass (focus a territory button, press Enter, confirm
+`aria-pressed` and the detail panel's real connection text both update
+identically to a mouse click). A full-page scroll-through of the entire
+homepage confirmed zero JS errors and no layout regression in any
+section below Life Map from the section reorder. The Slice 1 hero test
+suite was re-run in full and produced pixel-identical results — zero
+regression.
+
+**What this slice does not attempt.** No cross-system "Focus Mode" reuse
+from the portal (documented in the master directive as optional,
+concept-only, and this repo has no portal code to draw from). No sound.
+Business/Real Estate/Insurance's own "engine" pages (business-pathfinder,
+network-room, etc.) are unchanged — only the Life Map's own presentation
+was touched. Per the visual-supremacy ordering, the next slice is CHEW
+Move Showcase.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of
