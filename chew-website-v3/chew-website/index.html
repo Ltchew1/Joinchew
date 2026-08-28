@@ -114,6 +114,12 @@
     </div>
   </section>
 
+  <div class="hx-move-recall" id="hx-move-recall" role="status" aria-live="off">
+    <span class="hx-move-recall-dot" aria-hidden="true"></span>
+    <span class="hx-move-recall-text" id="hx-move-recall-text"></span>
+    <button type="button" class="hx-move-recall-link" id="hx-move-recall-link">Back to the Move</button>
+  </div>
+
   <section class="hx-lifemap-section" id="hx-lifemap-section">
     <div class="hx-lifemap-frame" aria-hidden="true">
       <span class="corner corner--tl"></span><span class="corner corner--tr"></span>
@@ -226,10 +232,13 @@
   <section class="section">
     <div class="container">
       <div class="hx-below-field" id="intelligence-reveal-result" hidden>
+        <span class="hx-below-field-label">What the Move above sets off, traced forward</span>
         <div class="blind-spot" id="blind-spot" hidden>
+          <span class="blind-spot-glyph" aria-hidden="true">?</span>
           <span class="blind-spot-eyebrow">Blind Spot Detected</span>
           <p class="blind-spot-assumed">A common focus in this situation <span class="blind-spot-caveat">(not necessarily yours)</span>:<br><strong id="blind-spot-assumed-label"></strong></p>
           <p class="blind-spot-actual"><strong id="blind-spot-actual-label"></strong><br><span id="blind-spot-actual-note"></span></p>
+          <span class="blind-spot-tie">This is the same real analysis behind THE CHEW MOVE above &mdash; not a separate guess.</span>
         </div>
         <div class="reveal-chain" id="reveal-chain"></div>
         <div class="domino-section" id="domino-section" hidden>

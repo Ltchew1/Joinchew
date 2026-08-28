@@ -2601,6 +2601,59 @@ network-room, etc.) are unchanged — only the Life Map's own presentation
 was touched. Per the visual-supremacy ordering, the next slice is CHEW
 Move Showcase.
 
+## Phase 2, Slice 3 — CHEW Move Showcase (index.html, styles.css, script.js)
+
+Elevates THE CHEW MOVE from a one-time reveal into a persistent through-
+line, and frames the below-field chain (Blind Spot → Domino → Radar →
+Future-Back) as one connected system the Move sets off, rather than four
+unrelated optional buttons — matching the master directive's own
+language for this moment ("of everything CHEW can see, this deserves
+focus now"; "related systems respond... affected chain traces").
+Domino/Radar/Future-Back's own internals are unchanged and out of scope
+here — they're Slice 4's job per the visual-supremacy ordering; this
+slice only reframes the real chain they already form.
+
+**Persistent "Current Move" recall.** A slim fixed-position bar
+(`#hx-move-recall`) appears only when both are true: a real move exists
+(the hero's own `computeRecommendation()` result has resolved) AND the
+hero's own move banner has scrolled out of view — driven by a second
+`IntersectionObserver` watching `#hx-move-banner` itself. It shows the
+exact same real `recommendedAction` text (never re-derived) with a "Back
+to the Move" control that scrolls back up. Verified directly: it does
+NOT appear if scrolled past before any goal is picked (no fabricated
+reminder for a move that doesn't exist yet), appears the instant the
+banner leaves the viewport once a move is real, and disappears again on
+return.
+
+**The trace.** `.hx-below-field` gained a thin connecting spine (a
+hairline gradient line with a small glowing origin dot) running down the
+left edge of the Blind Spot/Domino/Radar/Future-Back sequence, plus a
+plain-text label — "What the Move above sets off, traced forward" —
+naming the relationship in words as well as visually, so nothing here is
+conveyed by position/glow alone.
+
+**Blind Spot, elevated.** Same underlying data and logic as before
+(`findAssumedKey`/`showBlindSpotIfApplicable` — untouched) — only the
+presentation gained a small glyph and one explicit tie-back sentence:
+"This is the same real analysis behind THE CHEW MOVE above — not a
+separate guess," directly naming the real shared derivation rather than
+leaving the connection implicit.
+
+**Tests**: real Chromium screenshots (desktop/mobile/reduced-motion)
+covering the recall bar's full lifecycle (absent → visible → dismissed),
+the trace + elevated Blind Spot rendering, and a full-page scroll-through
+of the entire homepage plus a full re-run of both the Slice 1 hero suite
+and the Slice 2 Life Map suite — all pixel-consistent, zero new JS
+errors, confirming the new persistent/fixed-position element and second
+`IntersectionObserver` don't interfere with either earlier slice.
+
+**What this slice does not attempt.** Domino/Radar/Future-Back's own
+visual treatment (Slice 4). No live "recommendation changes" event exists
+on the public site to showcase — the only real state change a visitor
+can trigger here is switching between the two demo goals, which Slice 1
+already handles by reconfiguring the hero field; this slice does not
+fabricate a second, unrequested change mechanism to demonstrate.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of

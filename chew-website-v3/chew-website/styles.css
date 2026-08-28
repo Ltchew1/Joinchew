@@ -2016,3 +2016,76 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
    functional behavior in script.js is unchanged and out of scope for
    this slice (see the visual-supremacy ordering in FEATURE_FLAGS.md). ---- */
 .hx-below-field { margin-top: 52px; padding-top: 44px; border-top: 1px solid var(--panel-border); }
+
+/* ============================================================
+   PHASE 2 — SLICE 3: CHEW Move Showcase
+   ============================================================
+   Elevates THE CHEW MOVE from a one-time reveal into a persistent
+   through-line: a real trace connects it forward into the Domino/
+   Radar/Future-Back chain below, and a slim recall bar keeps the real
+   chosen move visible while exploring deeper (Life Map, the below-
+   field breakdown) — "of everything CHEW can see, this deserves focus
+   now" as an ongoing presence, not a one-shot banner that vanishes on
+   scroll. Domino/Radar/Future-Back's own internals are Slice 4's job
+   (see the visual-supremacy ordering) — this only frames the chain
+   they already form, honestly, around real already-fetched data.
+   ============================================================ */
+
+/* ---- Persistent "Current Move" recall — appears once the hero's own
+   move banner scrolls out of view, only when a real move exists. ---- */
+.hx-move-recall {
+  position: fixed; left: 50%; bottom: 22px; z-index: 500;
+  transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(10,10,11,0.92); border: 1px solid var(--panel-border);
+  border-radius: 999px; padding: 10px 10px 10px 18px; max-width: min(92vw, 480px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(.16,1,.3,1);
+}
+.hx-move-recall.is-visible { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.hx-move-recall-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold-light); box-shadow: 0 0 8px rgba(232,206,122,0.8); flex-shrink: 0; }
+.hx-move-recall-text { font-size: 0.82rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+.hx-move-recall-link {
+  flex-shrink: 0; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em; color: var(--black);
+  background: linear-gradient(135deg, var(--gold-light), var(--gold) 60%); border-radius: 999px;
+  padding: 7px 14px; white-space: nowrap; cursor: pointer; border: none; font-family: var(--font-body);
+}
+.hx-move-recall-link:hover { filter: brightness(1.08); }
+@media (max-width: 640px) {
+  .hx-move-recall { bottom: 14px; padding: 8px 8px 8px 14px; }
+  .hx-move-recall-text { font-size: 0.76rem; }
+}
+@media (prefers-reduced-motion: reduce) { .hx-move-recall { transition: none; } }
+
+/* ---- The trace: a real connecting spine down the below-field chain,
+   framing Blind Spot -> Domino -> Radar -> Future-Back as one system
+   the Move sets off, not four unrelated optional buttons. ---- */
+.hx-below-field { position: relative; padding-left: 28px; }
+.hx-below-field::before {
+  content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 1px;
+  background: linear-gradient(to bottom, var(--gold-deep), rgba(138,133,122,0.15) 85%);
+}
+.hx-below-field::after {
+  content: ''; position: absolute; left: -3px; top: 0; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--gold-light); box-shadow: 0 0 10px rgba(232,206,122,0.7);
+}
+.hx-below-field-label {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-faint); margin: 0 0 28px;
+}
+@media (max-width: 640px) { .hx-below-field { padding-left: 20px; } }
+
+/* ---- Blind Spot, elevated: a stronger glyph + explicit tie back to
+   the real Move above, same underlying markup/data as before. ---- */
+.blind-spot { border-left-width: 3px; }
+.blind-spot-glyph {
+  position: absolute; top: 28px; right: 30px; width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid var(--panel-border-soft); display: flex; align-items: center; justify-content: center;
+  color: var(--gold-light); font-family: var(--font-display); font-size: 1rem; font-style: italic;
+}
+.blind-spot-tie {
+  display: block; margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06);
+  font-size: 0.78rem; color: var(--text-faint);
+}
+@media (max-width: 640px) { .blind-spot-glyph { display: none; } }

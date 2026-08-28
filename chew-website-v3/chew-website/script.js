@@ -474,6 +474,36 @@ document.addEventListener('DOMContentLoaded', function () {
     var hxMoveRationaleEl = document.getElementById('hx-move-rationale');
     var HX_VB_W = 400, HX_VB_H = 370, HX_HUB_X = 200, HX_HUB_Y = 178, HX_RADIUS = 132;
 
+    // Persistent "Current Move" recall — keeps the real chosen move
+    // visible as the visitor explores deeper (Life Map, the below-field
+    // breakdown), instead of the hero's own banner being a one-shot
+    // reveal that vanishes the moment it scrolls out of view. Shows only
+    // when BOTH are true: a real move exists (recall text set) AND the
+    // hero's own banner is actually out of view — never a fabricated
+    // "reminder" for a move that hasn't been computed yet.
+    var hxMoveRecallEl = document.getElementById('hx-move-recall');
+    var hxMoveRecallTextEl = document.getElementById('hx-move-recall-text');
+    var hxMoveRecallLinkEl = document.getElementById('hx-move-recall-link');
+    var hxMoveBannerInView = true;
+    var hxHasRealMove = false;
+
+    function syncMoveRecallVisibility() {
+      if (hxHasRealMove && !hxMoveBannerInView) hxMoveRecallEl.classList.add('is-visible');
+      else hxMoveRecallEl.classList.remove('is-visible');
+    }
+    if ('IntersectionObserver' in window) {
+      var moveRecallObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) { hxMoveBannerInView = entry.isIntersecting; });
+        syncMoveRecallVisibility();
+      }, { threshold: 0 });
+      moveRecallObserver.observe(hxMoveBannerEl);
+    }
+    if (hxMoveRecallLinkEl) {
+      hxMoveRecallLinkEl.addEventListener('click', function () {
+        hxMoveBannerEl.scrollIntoView({ behavior: revealReduceMotion ? 'auto' : 'smooth', block: 'center' });
+      });
+    }
+
     function resetHeroField() {
       hxFieldEl.classList.remove('is-ready', 'is-drawn');
       hxFieldSvgEl.innerHTML = '';
@@ -481,6 +511,8 @@ document.addEventListener('DOMContentLoaded', function () {
       hxMoveBannerEl.classList.remove('is-visible');
       hxMoveActionEl.textContent = '';
       hxMoveRationaleEl.textContent = '';
+      hxHasRealMove = false;
+      syncMoveRecallVisibility();
     }
 
     function nodePosition(index, total) {
@@ -603,9 +635,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (edge) edge.classList.add('is-chosen-edge');
           }
         }
-        hxMoveActionEl.textContent = recommendedAction || 'Every known requirement is met — nothing further to recommend for this example.';
+        var moveText = recommendedAction || 'Every known requirement is met — nothing further to recommend for this example.';
+        hxMoveActionEl.textContent = moveText;
         hxMoveRationaleEl.textContent = rationale || '';
         hxMoveBannerEl.classList.add('is-visible');
+        hxMoveRecallTextEl.textContent = moveText;
+        hxHasRealMove = true;
+        syncMoveRecallVisibility();
       });
     }
 
