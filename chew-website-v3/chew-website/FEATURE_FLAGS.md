@@ -2279,7 +2279,105 @@ prerequisite for it. But the user's own directive was to extend the
 mechanism to this one additional real relationship, not to build
 aggregation across rooms; per the master directive's Cross-Room
 Aggregation Rule, that's a separate, explicitly-scoped step for when it's
-actually asked for, not an inferred next task.
+actually asked for, not an inferred next task. See the next section for
+where it was actually built, once the prerequisite existed and was
+explicitly requested.
+
+## Economic Weather — cross-room provenance: the global Opportunity Access signal (lib/weatherModel.js, api/weather-model.js)
+
+Directed by the "FINAL INTELLIGENCE-FIRST, VISUAL-SUPREMACY-AFTER MASTER
+DIRECTIVE," specifically its Cross-Room Aggregation Rule: *"A global CHEW
+signal may never imply broader coverage than the rooms actually
+contributing to it,"* with a worked example — `Opportunity Access —
+Mixed`, then expandable per-room provenance (`Business: Expanded`,
+`Accounting: Unchanged`, `Home: Unavailable`) rather than a global score
+that hides an unavailable room.
+
+**Premise checked before writing anything, per this build's own standing
+discipline.** Before this pass there were only two real goals in the
+entire schema (home id=1, business id=2), confirmed again by a fresh
+query rather than recalled from memory, and both already had a real
+opportunity-identity pipeline from the prior two passes. There was no
+third real room to add — extending "room by room" further would have
+meant fabricating a goal, which the doctrine forbids. So this pass builds
+exactly what was asked: the aggregation mechanism across the two real
+rooms that had already earned participation, not a new room.
+
+**`getGlobalOpportunityAccess({subjectId})`** (`lib/weatherModel.js`):
+queries every real `active` goal for the subject, then calls the exact
+same, already-proven `getEconomicWeather()` pipeline independently per
+goal — no new derivation logic, no second way of computing what a room's
+opportunity state is. A `provenance` array names every real room by
+title, category, its own real `trendClassification`, `availability`, and
+`linkType`, exactly matching the directive's own worked example format.
+No new table was added — this is a pure, real-time aggregation over the
+already-real per-goal `state_snapshots` history each room already writes
+via its own `getEconomicWeather()` call; a persisted global history table
+would be speculative scope beyond what was asked, and can be added later
+if a *global* trend-over-time concept is ever requested.
+
+**The aggregation rule, applied only to rooms that actually contribute
+(`availability === 'available'`):**
+- 0 contributing rooms → global classification `unavailable` (never a
+  fabricated `unchanged` or `0`).
+- 1 contributing room → the global classification is that room's own
+  real classification directly — no aggregation ambiguity to invent.
+- 2+ contributing rooms, all sharing one real classification → that
+  shared classification.
+- 2+ contributing rooms with genuinely differing classifications →
+  `mixed` — the real world changed differently across rooms, and saying
+  anything else would hide that.
+
+`currentState` is the real sum of active-opportunity-id counts across
+*contributing* rooms only — an unavailable room is never counted as a
+real 0, matching the doctrine's "unavailable ≠ zero" rule at the global
+level too. `roomCoverage` (`'full' | 'partial' | 'none'`) discloses how
+many of the subject's real rooms actually contributed, so a caller can
+never mistake a 1-of-2-room signal for full coverage. Every unavailable
+room is named individually in the `explanation` string, never folded
+silently into the rollup — e.g. `"Opportunity Access — Contracted (1 of 2
+rooms currently have a real opportunity pipeline) (Buy a first home
+(example): Unavailable; Get business funding-ready (example):
+Contracted)."`
+
+**API**: `GET /api/weather-model?action=global` — no `goalId` required,
+same `economic_weather_foundation` gate as every other action on this
+endpoint.
+
+**Proof, run against live Postgres**: reset both real rooms to a shared
+fresh baseline (`current_state_only`, `roomCoverage: 'full'`); seeded a
+real provider on business only, reproducing the doctrine's own worked
+example exactly — global `Mixed` with `Business: Expanded` / `Home:
+Unchanged`; expanded both real rooms together in the same observation
+window to prove the shared-classification branch (`Expanded`, not a
+fabricated `Mixed`, when both rooms genuinely agree); temporarily
+deactivated the home goal's one real `capability_relevance_rules` row
+(the same real-row-toggle technique `dormant-capability-test.js` already
+established, not a fabrication) to prove `roomCoverage: 'partial'` with
+the unavailable room named by title, not hidden; then temporarily removed
+*both* real relationships (the business requirement's `capability_id` set
+to `NULL`, the home rule deactivated) to prove the zero-coverage case:
+global `unavailable`, `currentState: null`, every room individually named
+unavailable in `provenance`. Every real row touched was reverted and
+verified back to its original value.
+
+**Tests**: `cross-room-provenance-test.js` — 20 new assertions. All 13
+non-UI intelligence test suites (now including this one) re-run together
+afterward, zero failures. Re-verified live over real HTTP against a
+freshly restarted server: the baseline full-coverage signal, the exact
+doctrine worked-example `Mixed` case reproduced live from a real seeded
+provider, and the partial-coverage case with the unavailable room
+disclosed by name — all with the identical explanation text the
+Node-level test produced. Every scratch row, the deactivated relevance
+rule, and the feature flag were fully reverted afterward; the production
+database was never touched.
+
+**What this does not do**: there is still no visual surface for any of
+Economic Weather's signals (global or per-room) — this remains an
+internal-only, `internal`-gated API, same as the rest of the historical
+engine. This pass built the data contract the directive's own Phase 2
+"Opportunity Radar," "Economic Weather," and cross-system focus moments
+would read from; it does not attempt any of those visual moments itself.
 
 ## What was deliberately not attempted, across all of these directives
 

@@ -18,6 +18,7 @@
 // GET /api/weather-model?action=current&goalId=1   — real-time: captures/dedupes a snapshot, returns full Weather (signals + unavailable list)
 // GET /api/weather-model?action=snapshots&goalId=1  — real snapshot history, chronological
 // GET /api/weather-model?action=latest&goalId=1     — most recent snapshot only, no new capture
+// GET /api/weather-model?action=global              — cross-room Opportunity Access, real per-goal provenance disclosed, no goalId required
 
 const weatherModel = require('../lib/weatherModel');
 const { isFeatureActive } = require('../lib/featureFlags');
@@ -36,6 +37,12 @@ module.exports = async (req, res) => {
 
   try {
     const { action, goalId } = req.query || {};
+
+    if (action === 'global') {
+      const globalOpportunityAccess = await weatherModel.getGlobalOpportunityAccess({ subjectId: ILLUSTRATIVE_SUBJECT_ID });
+      return res.status(200).json({ globalOpportunityAccess });
+    }
+
     const goalIdNum = parseInt(goalId, 10);
     if (!Number.isInteger(goalIdNum)) return res.status(400).json({ error: 'goalId (integer) is required.' });
 

@@ -513,9 +513,105 @@ async function getEconomicWeather({ subjectId, goalId, reason }) {
   return buildEconomicWeather(current, priorSnapshotsOldestFirst);
 }
 
+// Human labels for the real classification vocabulary — used only for
+// the global explanation string; the machine-readable classification
+// itself is always the same 5-state (+ current_state_only/unavailable)
+// value already used per-room, never a separate global vocabulary.
+const CLASSIFICATION_LABELS = {
+  unchanged: 'Unchanged', expanded: 'Expanded', contracted: 'Contracted',
+  composition_changed: 'Composition Changed', mixed: 'Mixed',
+  current_state_only: 'Current State Only', unavailable: 'Unavailable',
+};
+
+function buildGlobalOpportunityExplanation(classification, roomCoverage, provenance) {
+  if (provenance.length === 0) {
+    return 'Opportunity Access is unavailable — this subject has no active goals yet.';
+  }
+  const parts = provenance.map((p) => `${p.goalTitle}: ${p.availability === 'unavailable' ? 'Unavailable' : CLASSIFICATION_LABELS[p.trendClassification]}`);
+  const coverageNote = roomCoverage === 'partial'
+    ? ` (${provenance.filter((p) => p.availability === 'available').length} of ${provenance.length} rooms currently have a real opportunity pipeline)`
+    : roomCoverage === 'none'
+      ? ' (no room currently has a real opportunity pipeline)'
+      : '';
+  return `Opportunity Access — ${CLASSIFICATION_LABELS[classification]}${coverageNote} (${parts.join('; ')}).`;
+}
+
+// Cross-room aggregation — the master directive's own Cross-Room
+// Aggregation Rule: "A global CHEW signal may never imply broader
+// coverage than the rooms actually contributing to it." Every real
+// active goal (room) this subject has is queried independently through
+// the exact same per-goal opportunity_access pipeline already proven
+// above (getEconomicWeather -> buildEconomicWeather); a room with no
+// real capability relationship comes back honestly 'unavailable' from
+// that same pipeline and is disclosed by name in `provenance`, never
+// silently folded into the global count as if it contributed a real 0.
+//
+// Aggregation rule, applied only across the rooms that actually
+// contribute (availability === 'available'):
+//   0 contributing rooms   -> global classification 'unavailable' (not "unchanged")
+//   1 contributing room    -> global classification is that room's own real classification directly (no ambiguity to resolve)
+//   2+ contributing rooms, all the same classification -> that shared classification
+//   2+ contributing rooms, differing classifications   -> 'mixed' (the real world genuinely changed differently across rooms)
+// currentState is the real sum of active opportunity ids across
+// contributing rooms only — never guesses a 0 for an unavailable room.
+async function getGlobalOpportunityAccess({ subjectId }) {
+  const goalsResult = await query(
+    `SELECT id, title, category FROM goals WHERE subject_id = $1 AND status = 'active' ORDER BY id ASC`,
+    [subjectId]
+  );
+  const goals = goalsResult.rows;
+
+  const provenance = [];
+  for (const goal of goals) {
+    // eslint-disable-next-line no-await-in-loop
+    const weather = await getEconomicWeather({ subjectId, goalId: goal.id });
+    const opp = weather.signals.find((s) => s.signal === 'opportunity_access');
+    provenance.push({
+      goalId: goal.id,
+      goalTitle: goal.title,
+      goalCategory: goal.category,
+      availability: opp.availability,
+      linkType: opp.linkType || null,
+      trendClassification: opp.trendClassification,
+      currentState: opp.currentState,
+      comparisonState: opp.comparisonState,
+      explanation: opp.explanation,
+      evidence: opp.evidence,
+    });
+  }
+
+  const contributing = provenance.filter((p) => p.availability === 'available');
+  let classification;
+  let currentState = null;
+  if (contributing.length === 0) {
+    classification = 'unavailable';
+  } else {
+    currentState = contributing.reduce((sum, p) => sum + p.currentState, 0);
+    const distinct = new Set(contributing.map((p) => p.trendClassification));
+    classification = distinct.size === 1 ? contributing[0].trendClassification : 'mixed';
+  }
+  const roomCoverage = provenance.length === 0 ? 'none'
+    : contributing.length === 0 ? 'none'
+      : contributing.length === provenance.length ? 'full' : 'partial';
+
+  return {
+    signal: 'opportunity_access_global',
+    label: 'Opportunity Access — All Rooms',
+    currentState,
+    trendClassification: classification,
+    availability: contributing.length > 0 ? 'available' : 'unavailable',
+    roomCoverage,
+    contributingRoomCount: contributing.length,
+    totalRoomCount: provenance.length,
+    provenance,
+    explanation: buildGlobalOpportunityExplanation(classification, roomCoverage, provenance),
+  };
+}
+
 module.exports = {
   WEATHER_MODEL_VERSION, SNAPSHOT_REASONS, IMPLEMENTED_SNAPSHOT_REASONS, SIGNAL_TYPES, UNAVAILABLE_SIGNALS,
   OPPORTUNITY_COMPOSITION_STATES,
   captureSnapshot, getLatestSnapshot, listSnapshots, buildEconomicWeather, getEconomicWeather,
+  getGlobalOpportunityAccess,
   computeCurrentStateFields, computeFingerprint, classifyOpportunityComposition, // exported for direct unit testing only
 };
