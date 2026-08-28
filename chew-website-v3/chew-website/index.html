@@ -18,9 +18,26 @@
 </head>
 <body>
 <div id="chew-activation" class="chew-activation" aria-hidden="true">
-  <div class="activation-lines" aria-hidden="true"></div>
+  <div class="activation-frame" aria-hidden="true">
+    <span class="corner corner--tl"></span><span class="corner corner--tr"></span>
+    <span class="corner corner--bl"></span><span class="corner corner--br"></span>
+  </div>
+  <div class="activation-topology" aria-hidden="true">
+    <svg viewBox="0 0 460 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path class="a-edge" d="M230,110 L90,60"/>
+      <path class="a-edge" d="M230,110 L370,50"/>
+      <path class="a-edge" d="M230,110 L100,175"/>
+      <path class="a-edge" d="M230,110 L360,170"/>
+      <circle class="a-node a-node--hub" cx="230" cy="110" r="7"/>
+      <circle class="a-node" cx="90" cy="60" r="5"/>
+      <circle class="a-node" cx="370" cy="50" r="5"/>
+      <circle class="a-node" cx="100" cy="175" r="5"/>
+      <circle class="a-node" cx="360" cy="170" r="5"/>
+    </svg>
+  </div>
   <div class="activation-mark"><img src="assets/chew-icon-official.png" alt="" width="64" height="64"></div>
   <div class="activation-label">CHEW</div>
+  <button type="button" class="activation-skip" id="activation-skip">Skip</button>
 </div>
 <header class="site-header">
   <div class="container">
@@ -49,92 +66,57 @@
 
 <main>
 
-  <section class="page-hero hero-home hero-cinematic">
-    <div class="hero-photo" aria-hidden="true"></div>
+  <section class="page-hero hero-home hx-hero">
     <div class="hero-glow" data-parallax="0.08"></div>
     <div class="hero-focal-glow" aria-hidden="true" data-parallax="0.14"></div>
     <div class="grid-lines"></div>
     <div class="container" style="position:relative; z-index:2;">
-      <div class="hero-cinematic-content">
-        <div class="hero-eyebrow-line"><span class="rule-short"></span><span class="eyebrow" style="margin-bottom:0;">Welcome to CHEW: The Lab</span></div>
-        <h1 style="max-width:18ch;">You're making money.<br><em style="color:var(--gold-light); font-style:normal;">So why doesn't it</em><br>feel like it?</h1>
-        <p class="max-prose" style="font-size:1.14rem; margin-top:26px;">
-          You're not broke — you're unorganized. Income comes in, and somehow there's nothing
-          to show for it. CHEW builds the system that puts your money in order and keeps it
-          working. Not survival. Structure.
-          <br><br>
-          <span style="color:var(--text-faint); font-size:0.95rem;">Your next move shouldn't be
-          a guess &mdash; that's the vision behind
-          <em style="color:var(--gold-light); font-style:normal;">CHEW: The Lab</em>, the system
-          we're building to run your whole financial life, one room at a time.</span>
-        </p>
-        <div class="btn-row" style="margin-top:40px;">
-          <a href="apply.html" class="btn btn-gold cta-glow">I'm Ready to Chew</a>
-          <a href="#the-lab" class="btn btn-outline">See What We're Building &darr;</a>
+      <div class="hx-hero-inner">
+        <div class="hx-copy">
+          <div class="hx-eyebrow-row"><span class="rule-short"></span><span class="eyebrow" style="margin-bottom:0;">Welcome to CHEW: The Lab</span></div>
+          <h1 class="hx-headline">You're making money.<br><em style="color:var(--gold-light); font-style:normal;">So why doesn't it</em><br>feel like it?</h1>
+          <p class="hx-sub">
+            You're not broke &mdash; you're unorganized. CHEW builds the system that puts your
+            money in order and keeps it working. Not survival. Structure.
+          </p>
+          <div class="hx-goal-row" id="tell-chew">
+            <span class="hx-goal-row-label">See how CHEW actually reasons &mdash; pick a real example goal</span>
+            <div class="goal-picker" role="group" aria-label="Choose an example goal">
+              <button type="button" class="goal-btn" data-goal="home" aria-pressed="false"><span class="goal-btn-check" aria-hidden="true"></span>Buy a home</button>
+              <button type="button" class="goal-btn" data-goal="funding" aria-pressed="false"><span class="goal-btn-check" aria-hidden="true"></span>Get business funding-ready</button>
+            </div>
+            <p class="reveal-status" id="reveal-status" role="status" aria-live="polite">This is CHEW's real reasoning engine, running on an illustrative example &mdash; select a goal to watch it think.</p>
+            <span class="tag tag--sample reveal-disclaimer" id="reveal-disclaimer" hidden></span>
+          </div>
+          <div class="btn-row" style="margin-top:28px;">
+            <a href="apply.html" class="btn btn-gold cta-glow">I'm Ready to Chew</a>
+            <a href="#the-lab" class="btn btn-outline">See What We're Building &darr;</a>
+          </div>
+          <p style="margin-top:20px;">
+            <a href="contact.html" style="font-size:0.86rem; color:var(--text-faint); text-decoration:underline;">Have a question first? Ask CHEW directly &rarr;</a>
+          </p>
         </div>
-        <p style="margin-top:22px;">
-          <a href="contact.html" style="font-size:0.86rem; color:var(--text-faint); text-decoration:underline;">Have a question first? Ask CHEW directly &rarr;</a>
-        </p>
+        <div class="hx-field-wrap" id="hx-field-wrap">
+          <div class="hx-field-idle" aria-hidden="true">
+            <div class="hx-field-idle-dot"></div>
+            <p class="hx-field-idle-label">CHEW is idle, waiting on a real goal to reason through &mdash; pick one on the left.</p>
+          </div>
+          <div class="hx-field" id="hx-field" aria-hidden="true">
+            <svg class="hx-field-svg" id="hx-field-svg" viewBox="0 0 400 370" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+          <div class="hx-move-banner" id="hx-move-banner">
+            <span class="hx-move-eyebrow">The CHEW Move</span>
+            <p class="hx-move-action" id="hx-move-action"></p>
+            <p class="hx-move-rationale" id="hx-move-rationale"></p>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="hero-visual-accent" aria-hidden="true">
-      <div class="visual-ring"></div>
-      <div class="visual-ring ring-2"></div>
-      <div class="dust" style="width:5px; height:5px; top:18%; left:22%;"></div>
-      <div class="dust" style="width:3px; height:3px; top:66%; left:74%; animation-delay:-2.5s;"></div>
-      <div class="dust" style="width:4px; height:4px; top:78%; left:30%; animation-delay:-5s;"></div>
-      <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="heroBarGold" x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0" stop-color="#8A6E1C"/>
-            <stop offset="1" stop-color="#E8CE7A"/>
-          </linearGradient>
-          <linearGradient id="heroBarAsh" x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0" stop-color="#3A362E"/>
-            <stop offset="1" stop-color="#8A857A"/>
-          </linearGradient>
-        </defs>
-        <rect class="bar" x="30" y="120" width="26" height="60" rx="3" fill="url(#heroBarAsh)" style="animation-delay:0.1s"/>
-        <rect class="bar" x="87" y="70" width="26" height="110" rx="3" fill="url(#heroBarGold)" style="animation-delay:0.3s"/>
-        <rect class="bar" x="144" y="95" width="26" height="85" rx="3" fill="url(#heroBarGold)" style="animation-delay:0.5s"/>
-      </svg>
-    </div>
-    <div class="hero-wave" aria-hidden="true">
-      <svg viewBox="0 0 1200 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M0,120 C150,180 300,40 450,90 C600,140 750,60 900,110 C1020,150 1120,80 1200,100 L1200,200 L0,200 Z" fill="url(#waveGold)"/>
-        <defs>
-          <linearGradient id="waveGold" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stop-color="#8A6E1C" stop-opacity="0.35"/>
-            <stop offset="0.5" stop-color="#E8CE7A" stop-opacity="0.5"/>
-            <stop offset="1" stop-color="#8A6E1C" stop-opacity="0.2"/>
-          </linearGradient>
-        </defs>
-      </svg>
     </div>
   </section>
 
-  <section class="section" id="tell-chew">
+  <section class="section">
     <div class="container">
-      <div class="text-center max-prose mx-auto" data-reveal>
-        <span class="eyebrow">See How CHEW Thinks</span>
-        <h2>Tell CHEW where you're trying to go.</h2>
-        <p style="font-size:1.02rem;">
-          This is CHEW's real reasoning engine, not a mockup &mdash; running on an illustrative
-          example so you can watch how it thinks before it's reasoning about your life. Pick a
-          goal below.
-        </p>
-      </div>
-      <div class="goal-picker" data-reveal role="group" aria-label="Choose an example goal">
-        <button type="button" class="goal-btn" data-goal="home">Buy a home</button>
-        <button type="button" class="goal-btn" data-goal="funding">Get business funding-ready</button>
-      </div>
-      <p class="reveal-status" id="reveal-status" role="status" aria-live="polite"></p>
-      <div class="intelligence-reveal-result" id="intelligence-reveal-result" hidden>
-        <span class="tag tag--gold reveal-disclaimer" id="reveal-disclaimer"></span>
-        <div class="move-collapse" id="move-collapse">
-          <p class="move-collapse-label">Evaluating options for this goal&hellip;</p>
-          <div class="move-chip-row" id="move-chip-row"></div>
-        </div>
+      <div class="hx-below-field" id="intelligence-reveal-result" hidden>
         <div class="blind-spot" id="blind-spot" hidden>
           <span class="blind-spot-eyebrow">Blind Spot Detected</span>
           <p class="blind-spot-assumed">A common focus in this situation <span class="blind-spot-caveat">(not necessarily yours)</span>:<br><strong id="blind-spot-assumed-label"></strong></p>

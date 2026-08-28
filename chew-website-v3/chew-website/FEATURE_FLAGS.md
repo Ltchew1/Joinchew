@@ -2379,6 +2379,125 @@ engine. This pass built the data contract the directive's own Phase 2
 "Opportunity Radar," "Economic Weather," and cross-system focus moments
 would read from; it does not attempt any of those visual moments itself.
 
+## Phase 2, Slice 1 — CHEW Activation + Hero Intelligence Environment (index.html, styles.css, script.js)
+
+The first slice of "FINAL INTELLIGENCE-FIRST, VISUAL-SUPREMACY-AFTER" —
+begun once Phase 1 (canonical identity, cross-room provenance, side-
+effect-free reads, real history) was judged complete enough. This slice
+touches only the public homepage's opening experience; no backend or
+intelligence-engine code changed, and none of the doctrines above were
+loosened — every visual state below maps to a real field from
+`/api/intelligence-demo`, an already-existing, already-tested endpoint.
+
+**CHEW Activation, rebuilt.** The two simple radial lines from the
+original build were replaced with an architectural sequence: four corner
+brackets resolve (a hairline frame, not a loading spinner), then a small
+hub-and-node topology draws in via real `stroke-dashoffset` animation —
+deliberately using the same visual grammar (a hub with radiating nodes)
+the hero field below actually uses, so the activation reads as "the same
+system waking up," not a disconnected splash screen. The mark and
+wordmark resolve last. Still one-shot per browser session
+(`sessionStorage`), still an instant no-op under `prefers-reduced-motion`,
+still dismissible early — a `Skip` button was added (the original build
+only supported click-anywhere-to-dismiss, undiscoverable without a visual
+affordance), and the auto-dismiss timeout is now mobile-aware (shorter on
+narrow viewports, matching the "mobile must be its own experience" rule).
+
+**The hero, rebuilt into a live intelligence environment, not headline +
+paragraph + decoration.** The old hero's purely decorative elements
+(a photo layer gated on a file that was never supplied, ambient
+gradient rings, a static bar-chart SVG, a wave divider) were removed —
+none of them represented anything real. The goal picker, previously a
+separate section below the hero, now lives inside the hero itself, and
+selecting a goal drives a real node field (`#hx-field`) built from that
+goal's actual `requirementSequence` (real `transition_requirements`,
+ordered by real `sequence_order`) — this is the "selecting a goal
+reconfigures the visual system" requirement, verified directly: the home
+goal (3 real requirements) and the business/funding goal (2 real
+requirements) produce genuinely different node counts, layouts, and
+labels, not a text swap over a fixed template. A dormant idle state (a
+single slowly-rotating hub with a plain-text hint) fills the field before
+any goal is picked, so the hero doesn't read as broken/empty pre-interaction.
+
+**THE CHEW MOVE REVEAL — five real stages, adapted honestly to what this
+schema actually records.** The directive's own script (multiple moves
+appear → low-value dim → blocked collapse → dependent group → one
+remains) was mapped to the real fields that exist, not fabricated ones:
+this schema has no "blocking" relationship between two requirements, only
+a real `sequence_order`, so "blocked" became **"Next in sequence"** — an
+honest, real label, never an invented causal claim (the same "correlation
+≠ causation" / "editorial ≠ deterministic relationships" doctrine
+enforced throughout Phase 1). Concretely, staged over real time:
+1. all real requirement-nodes appear together around the hub, pulsing, undifferentiated ("considering")
+2. real `met: true` requirements settle and dim — labeled "Resolved"
+3. requirements sharing a real, non-null `capabilitySlug` get a connecting dashed arc — labeled "Connected" (mechanism is real; with today's seed data neither demo goal has 2+ requirements sharing one capability, so this branch is currently dormant — same honest gap this build has already disclosed elsewhere, e.g. `linkType: 'goal_relevance'` before it had real data to exercise it)
+4. remaining real unmet, non-chosen requirements recede — labeled "Next in sequence"
+5. the engine's own real `chosenRequirementKey` scales up, its edge glows gold, and a banner reveals the engine's own real `recommendedAction` + `rationale` text verbatim — never re-derived or reworded client-side
+
+All staging is skipped (every end-state applied at once) under
+`prefers-reduced-motion`, verified directly via a Playwright context with
+`reducedMotion: 'reduce'`.
+
+**Demo Truth Boundary.** The "sample/demonstration" disclaimer (already
+required by an earlier directive) now uses a distinct blue `tag--sample`
+token rather than the site's gold accent, so it reads visually as a
+disclosure, not a call-to-action — and only becomes visible once a real
+API response actually arrives (a real bug was caught and fixed here: the
+element's own CSS `display` declaration was overriding the browser's
+`[hidden]` attribute, so the empty disclaimer badge rendered before any
+goal was ever selected — fixed with an explicit `.reveal-disclaimer[hidden]
+{ display: none; }` rule).
+
+**Design language.** Deep black, the existing Ember Gold family, hairline
+architectural geometry (corner brackets, thin edge-lit borders), and a
+new `.hx-metal` premium-glass primitive (layered gradient + inset
+highlight + real box-shadow depth, not `backdrop-filter` blur) — added
+additively in `styles.css`; none of the site's existing `.glass`/`.card`
+usage elsewhere was touched, so this slice is fully scoped to the
+homepage hero and doesn't risk the other ~20 pages. No generic
+blue/purple gradients, no particles, no crypto/Web3 clichés, no "AI
+brain" imagery.
+
+**Accessibility.** The node field is `aria-hidden` — legitimate only
+because every real fact it displays is duplicated in accessible text
+elsewhere on the page (the existing `#reveal-chain` breakdown, and the
+new move-banner's plain-text action/rationale), satisfying "no meaning
+conveyed only by animation/glow/color." Goal buttons are real `<button
+aria-pressed>` elements, fully keyboard-operable (verified: focusing a
+goal button and pressing Enter triggers the real fetch and the full
+reveal sequence, identical to a click). Decorative field nodes are
+confirmed not to introduce spurious tab stops.
+
+**Mobile.** The two-column hero collapses to a single stacked column
+below 980px (not a shrunk desktop layout) — copy and goal picker first,
+field and move banner following on scroll; verified at a 390×844 mobile
+viewport with the field scrolled into view, at 834×1112 tablet, and at
+1440×900 desktop.
+
+**Validation.** Real Chromium (Playwright) screenshots captured at all
+three breakpoints across seven states each (pre-activation, idle hero,
+field mid-reveal at two staged timestamps, move revealed, and after
+switching to the second real goal to prove reconfiguration), plus a
+dedicated `prefers-reduced-motion` pass and a keyboard-only interaction
+pass. Two real defects were caught and fixed this way — the disclaimer-
+visibility bug above, and a 2-node field defaulting to a perfectly
+vertical line through the hub (now offset for a legible spatial spread)
+— exactly the discipline this file's own testing sections have already
+established. Zero JavaScript runtime errors across every viewport and
+interaction; the only console errors observed (a Google Fonts
+`ERR_CONNECTION_RESET` and an automatic `/favicon.ico` 404) are pre-
+existing environmental artifacts of this sandbox having no outbound
+internet access and no declared favicon `<link>`, unrelated to and
+unaffected by this change.
+
+**What this slice does not attempt.** Per the visual-supremacy ordering
+in the master directive, Life Map, Opportunity Radar, Domino, Future-
+Back, and the rest remain as they were — this pass touched only the
+hero's opening experience. Sound and haptics were not attempted (out of
+order per the directive's own sequencing). No backend change was made;
+every visual state here was already fully supported by the existing,
+tested `/api/intelligence-demo` contract.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of

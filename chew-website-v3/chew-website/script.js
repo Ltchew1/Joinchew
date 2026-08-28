@@ -24,7 +24,12 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(function () { activation.hidden = true; }, 650);
       };
       activation.addEventListener('click', finishActivation);
-      setTimeout(finishActivation, 2200);
+      var skipBtn = document.getElementById('activation-skip');
+      if (skipBtn) {
+        skipBtn.addEventListener('click', function (e) { e.stopPropagation(); finishActivation(); });
+      }
+      var activationTimeoutMs = window.matchMedia && window.matchMedia('(max-width: 640px)').matches ? 1900 : 2300;
+      setTimeout(finishActivation, activationTimeoutMs);
     }
   }
 
@@ -332,14 +337,22 @@ document.addEventListener('DOMContentLoaded', function () {
       return html;
     }
 
-    // CHEW Move collapse: renders every real requirement the engine
-    // actually evaluated as a chip, then resolves them — met ones dim,
-    // the untouched-for-now one(s) recede, and the real chosen
-    // requirement (chosenRequirementKey, from the engine, not guessed
-    // client-side) expands. Every chip and every classification comes
-    // straight from the API response; nothing here is invented content.
-    var moveCollapseEl = document.getElementById('move-collapse');
-    var moveChipRowEl = document.getElementById('move-chip-row');
+    // THE CHEW MOVE REVEAL — the hero's live node field. Every real
+    // requirement in the engine's actual sequence (requirementSequence,
+    // real sequence_order from transition_requirements) appears as a
+    // node around the hub. Five real, staged states — never a fabricated
+    // "blocked" state, since nothing in this schema records a
+    // requirement literally blocking another:
+    //   1. all nodes appear together, considering (pulsing, neutral)
+    //   2. real met:true requirements settle — "Resolved"
+    //   3. requirements sharing a real capability_slug get a connecting
+    //      arc — "Connected" (only renders when 2+ genuinely share one;
+    //      with today's seed data this is real but usually dormant,
+    //      same honest gap the rest of this build already discloses)
+    //   4. remaining real unmet, non-chosen requirements recede —
+    //      "Next in sequence" (real sequenceOrder, not invented causality)
+    //   5. the real chosenRequirementKey scales up — THE CHEW MOVE, with
+    //      the engine's own real recommendedAction/rationale text
     var revealReduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var pendingTimeouts = [];
 
@@ -348,33 +361,147 @@ document.addEventListener('DOMContentLoaded', function () {
       pendingTimeouts = [];
     }
 
-    function buildAndResolveMoveCollapse(basedOnFacts, chosenRequirementKey) {
-      var keys = Object.keys(basedOnFacts);
-      moveCollapseEl.classList.remove('is-resolved');
-      moveChipRowEl.innerHTML = keys.map(function (key) {
-        return '<span class="move-chip" data-key="' + escapeHtml(key) + '">' + escapeHtml(formatFactKey(key)) + '</span>';
-      }).join('');
+    var hxFieldWrapEl = document.getElementById('hx-field-wrap');
+    var hxFieldEl = document.getElementById('hx-field');
+    var hxFieldSvgEl = document.getElementById('hx-field-svg');
+    var hxMoveBannerEl = document.getElementById('hx-move-banner');
+    var hxMoveActionEl = document.getElementById('hx-move-action');
+    var hxMoveRationaleEl = document.getElementById('hx-move-rationale');
+    var HX_VB_W = 400, HX_VB_H = 370, HX_HUB_X = 200, HX_HUB_Y = 178, HX_RADIUS = 132;
 
-      var resolve = function () {
-        keys.forEach(function (key) {
-          var chip = moveChipRowEl.querySelector('[data-key="' + key.replace(/"/g, '') + '"]');
-          if (!chip) return;
-          if (key === chosenRequirementKey) {
-            chip.classList.add('is-chosen');
-          } else if (basedOnFacts[key].met) {
-            chip.classList.add('is-met');
-          } else {
-            chip.classList.add('is-deferred');
-          }
-        });
-        moveCollapseEl.classList.add('is-resolved');
+    function resetHeroField() {
+      hxFieldEl.classList.remove('is-ready', 'is-drawn');
+      hxFieldSvgEl.innerHTML = '';
+      hxFieldEl.querySelectorAll('.hx-node').forEach(function (n) { n.remove(); });
+      hxMoveBannerEl.classList.remove('is-visible');
+      hxMoveActionEl.textContent = '';
+      hxMoveRationaleEl.textContent = '';
+    }
+
+    function nodePosition(index, total) {
+      // Exactly 2 nodes at the default -90deg start would sit in a plain
+      // vertical line through the hub; offset the start angle so a
+      // 2-requirement real sequence (e.g. the funding-ready example)
+      // still reads as a spatial field, not a straight stick.
+      var startAngle = total === 2 ? -55 : -90;
+      var angle = (360 / total) * index + startAngle;
+      var rad = angle * Math.PI / 180;
+      return { x: HX_HUB_X + HX_RADIUS * Math.cos(rad), y: HX_HUB_Y + HX_RADIUS * Math.sin(rad) };
+    }
+
+    // requirementSequence: real, ordered transition_requirements (each
+    // with key/label/sequenceOrder/capabilitySlug). basedOnFacts: real
+    // met/value per key, from the same engine call. chosenRequirementKey
+    // and recommendedAction/rationale: the engine's own real output —
+    // never recomputed or guessed client-side.
+    function renderHeroField(requirementSequence, basedOnFacts, chosenRequirementKey, recommendedAction, rationale) {
+      resetHeroField();
+      hxFieldWrapEl.classList.add('has-selection');
+      var tiles = (requirementSequence || []).filter(function (t) { return basedOnFacts[t.key]; });
+      if (!tiles.length) {
+        hxFieldEl.classList.add('is-ready');
+        return;
+      }
+      var total = tiles.length;
+
+      // Real capability-sharing groups: 2+ requirements with the same
+      // non-null capabilitySlug. Empty today for both real demo goals —
+      // the mechanism is real, current seed data just doesn't exercise it.
+      var slugGroups = {};
+      tiles.forEach(function (t, i) {
+        if (!t.capabilitySlug) return;
+        (slugGroups[t.capabilitySlug] = slugGroups[t.capabilitySlug] || []).push(i);
+      });
+
+      var svgParts = [];
+      svgParts.push('<circle class="hx-node-hub-dot" cx="' + HX_HUB_X + '" cy="' + HX_HUB_Y + '" r="0" fill="none"/>');
+      tiles.forEach(function (t, i) {
+        var pos = nodePosition(i, total);
+        svgParts.push('<path class="hx-edge" data-index="' + i + '" d="M' + HX_HUB_X + ',' + HX_HUB_Y + ' L' + pos.x.toFixed(1) + ',' + pos.y.toFixed(1) + '"/>');
+      });
+      Object.keys(slugGroups).forEach(function (slug) {
+        var idxs = slugGroups[slug];
+        if (idxs.length < 2) return;
+        for (var g = 0; g < idxs.length - 1; g++) {
+          var a = nodePosition(idxs[g], total), b = nodePosition(idxs[g + 1], total);
+          var mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 - 18;
+          svgParts.push('<path class="hx-group-arc" data-slug="' + escapeHtml(slug) + '" d="M' + a.x.toFixed(1) + ',' + a.y.toFixed(1) + ' Q' + mx.toFixed(1) + ',' + my.toFixed(1) + ' ' + b.x.toFixed(1) + ',' + b.y.toFixed(1) + '"/>');
+        }
+      });
+      hxFieldSvgEl.innerHTML = svgParts.join('');
+
+      var hub = document.createElement('div');
+      hub.className = 'hx-node hx-node--hub';
+      hub.style.left = (HX_HUB_X / HX_VB_W * 100) + '%';
+      hub.style.top = (HX_HUB_Y / HX_VB_H * 100) + '%';
+      hub.innerHTML = '<span class="hx-node-dot"></span><span class="hx-node-label">CHEW</span>';
+      hxFieldEl.appendChild(hub);
+
+      var nodeEls = tiles.map(function (t, i) {
+        var pos = nodePosition(i, total);
+        var el = document.createElement('div');
+        el.className = 'hx-node is-considering';
+        el.style.left = (pos.x / HX_VB_W * 100) + '%';
+        el.style.top = (pos.y / HX_VB_H * 100) + '%';
+        el.innerHTML = '<span class="hx-node-dot"></span><span class="hx-node-label">' + escapeHtml(t.label) + '</span><span class="hx-node-status"></span>';
+        hxFieldEl.appendChild(el);
+        return el;
+      });
+
+      var edgeEls = function () { return hxFieldSvgEl.querySelectorAll('.hx-edge'); };
+
+      var runStage = function (delay, fn) {
+        if (revealReduceMotion) { fn(); } else { pendingTimeouts.push(setTimeout(fn, delay)); }
       };
 
-      if (revealReduceMotion) {
-        resolve();
-      } else {
-        pendingTimeouts.push(setTimeout(resolve, 650));
-      }
+      runStage(0, function () {
+        hxFieldEl.classList.add('is-ready');
+        requestAnimationFrame(function () { hxFieldEl.classList.add('is-drawn'); });
+      });
+
+      runStage(650, function () {
+        tiles.forEach(function (t, i) {
+          if (basedOnFacts[t.key].met) {
+            nodeEls[i].classList.remove('is-considering');
+            nodeEls[i].classList.add('is-resolved');
+            nodeEls[i].querySelector('.hx-node-status').textContent = 'Resolved';
+            var edge = edgeEls()[i];
+            if (edge) edge.classList.add('is-resolved-edge');
+          }
+        });
+      });
+
+      runStage(1150, function () {
+        hxFieldSvgEl.querySelectorAll('.hx-group-arc').forEach(function (arc) { arc.classList.add('is-visible'); });
+      });
+
+      runStage(1650, function () {
+        tiles.forEach(function (t, i) {
+          if (!basedOnFacts[t.key].met && t.key !== chosenRequirementKey) {
+            nodeEls[i].classList.remove('is-considering');
+            nodeEls[i].classList.add('is-deferred');
+            nodeEls[i].querySelector('.hx-node-status').textContent = 'Next in sequence';
+            var edge = edgeEls()[i];
+            if (edge) edge.classList.add('is-deferred-edge');
+          }
+        });
+      });
+
+      runStage(2150, function () {
+        if (chosenRequirementKey) {
+          var chosenIndex = tiles.findIndex(function (t) { return t.key === chosenRequirementKey; });
+          if (chosenIndex !== -1) {
+            nodeEls[chosenIndex].classList.remove('is-considering');
+            nodeEls[chosenIndex].classList.add('is-chosen');
+            nodeEls[chosenIndex].querySelector('.hx-node-status').textContent = 'The Move';
+            var edge = edgeEls()[chosenIndex];
+            if (edge) edge.classList.add('is-chosen-edge');
+          }
+        }
+        hxMoveActionEl.textContent = recommendedAction || 'Every known requirement is met — nothing further to recommend for this example.';
+        hxMoveRationaleEl.textContent = rationale || '';
+        hxMoveBannerEl.classList.add('is-visible');
+      });
     }
 
     // CHEW Blind Spot: a deliberate interrupt built from real data only.
@@ -688,12 +815,14 @@ document.addEventListener('DOMContentLoaded', function () {
         futurebackSectionEl.hidden = true;
         futurebackChainEl.hidden = true;
         futurebackChainEl.innerHTML = '';
-        goalButtons.forEach(function (b) { b.classList.remove('is-active'); });
+        goalButtons.forEach(function (b) { b.classList.remove('is-active'); b.setAttribute('aria-pressed', 'false'); });
         btn.classList.add('is-active');
+        btn.setAttribute('aria-pressed', 'true');
         statusEl.textContent = 'CHEW is thinking...';
         statusEl.classList.remove('is-error');
         resultEl.hidden = true;
         chainEl.classList.remove('is-visible');
+        resetHeroField();
 
         fetch('/api/intelligence-demo?goal=' + encodeURIComponent(btn.getAttribute('data-goal')))
           .then(function (res) {
@@ -703,6 +832,7 @@ document.addEventListener('DOMContentLoaded', function () {
           .then(function (data) {
             statusEl.textContent = '';
             disclaimerEl.textContent = data.disclaimer;
+            disclaimerEl.hidden = false;
             var rec = data.recommendation;
             chainEl.innerHTML =
               '<div class="reveal-stage">' + buildStateStage(rec.basedOnFacts) + '</div>'
@@ -713,7 +843,7 @@ document.addEventListener('DOMContentLoaded', function () {
               + '<div class="reveal-arrow-row" aria-hidden="true">&darr;</div>'
               + '<div class="reveal-stage chew-move intelligence-pulse">' + buildMoveStage(rec.recommendedAction, rec.rationale) + '</div>';
             resultEl.hidden = false;
-            buildAndResolveMoveCollapse(rec.basedOnFacts, rec.chosenRequirementKey);
+            renderHeroField(data.requirementSequence, rec.basedOnFacts, rec.chosenRequirementKey, rec.recommendedAction, rec.rationale);
             showBlindSpotIfApplicable(rec.basedOnFacts, rec.chosenRequirementKey, rec.recommendedAction);
             lastRequirementSequence = data.requirementSequence || null;
             lastBasedOnFacts = rec.basedOnFacts;
@@ -731,7 +861,6 @@ document.addEventListener('DOMContentLoaded', function () {
               pendingTimeouts.push(setTimeout(function () { radarSectionEl.hidden = false; }, 2300));
               pendingTimeouts.push(setTimeout(function () { futurebackSectionEl.hidden = false; }, 2600));
             }
-            resultEl.scrollIntoView({ behavior: revealReduceMotion ? 'auto' : 'smooth', block: 'nearest' });
           })
           .catch(function (err) {
             statusEl.textContent = err.message || 'CHEW couldn\'t load this example right now.';
