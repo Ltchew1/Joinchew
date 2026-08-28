@@ -966,3 +966,21 @@ CREATE INDEX IF NOT EXISTS idx_state_snapshots_subject_goal ON state_snapshots (
 -- silently deduped as "identical state" and never captured as a new
 -- snapshot at all, defeating the entire point of this column.
 ALTER TABLE state_snapshots ADD COLUMN IF NOT EXISTS active_opportunity_ids JSONB;
+
+-- active_opportunity_link_type discloses WHICH real relationship an
+-- observation's opportunity identity is actually sourced from — never
+-- blurred into one generic "linked" bucket. 'requirement' = a direct
+-- transition_requirements.capability_id link on this goal's own real
+-- requirement chain (the original, more specific relationship).
+-- 'goal_relevance' = a real capability_relevance_rules row at the goal
+-- level (a human-authored "this capability helps execute this
+-- transaction" relationship, not a requirement-level match) — the
+-- second real pipeline this schema supports, first exercised for the
+-- home goal's real real_asset_execution rule. NULL alongside a NULL
+-- active_opportunity_ids means neither real relationship exists for
+-- this goal. Included in state_fingerprint for the same reason
+-- active_opportunity_ids is — a goal gaining a MORE specific
+-- relationship (requirement replacing goal_relevance) is itself a real,
+-- material state change worth its own snapshot.
+ALTER TABLE state_snapshots ADD COLUMN IF NOT EXISTS active_opportunity_link_type TEXT
+  CHECK (active_opportunity_link_type IS NULL OR active_opportunity_link_type IN ('requirement', 'goal_relevance'));

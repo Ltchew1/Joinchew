@@ -27,6 +27,13 @@
 //     prove a composition change (the same COUNT, but different real
 //     opportunities) instead of only ever seeing a number move. Same
 //     null-vs-empty-array discipline as the count above.
+//   - active_opportunity_link_type — WHICH real relationship a goal's
+//     opportunity coverage is actually sourced from: a direct
+//     requirement-level transition_requirements.capability_id link, or
+//     a real goal-level capability_relevance_rules row (see
+//     lib/capabilityGraph.js's getGoalRelevantCapabilitySlugs()) when no
+//     requirement-level link exists. Two genuinely different real
+//     relationships, never blurred into one generic "linked" claim.
 //   - capability availability count — lib/capabilityGraph.js's real,
 //     live getCapabilityOverview(), site-wide rather than goal-scoped,
 //     which is a genuinely different real signal than the goal-scoped
@@ -57,7 +64,7 @@
 const crypto = require('crypto');
 const { query } = require('./db');
 const { buildBaselineSnapshot } = require('./scenarioModel');
-const { getCapabilityOverview, getActiveProviderIds } = require('./capabilityGraph');
+const { getCapabilityOverview, getActiveProviderIds, getGoalRelevantCapabilitySlugs } = require('./capabilityGraph');
 const { stableStringify } = require('./util');
 
 const WEATHER_MODEL_VERSION = 'weather-model-v1';
@@ -122,6 +129,7 @@ function rowToSnapshot(row) {
     linkedCapabilityCount: row.linked_capability_count,
     activeOpportunityCount: row.active_opportunity_count,
     activeOpportunityIds: row.active_opportunity_ids, // null = no capability link exists; [] = linked but zero active providers right now
+    activeOpportunityLinkType: row.active_opportunity_link_type, // 'requirement' | 'goal_relevance' | null — WHICH real relationship backs this observation
     capabilityAvailabilityCount: row.capability_availability_count,
     capabilityTotalCount: row.capability_total_count,
     stateFingerprint: row.state_fingerprint,
@@ -152,6 +160,10 @@ function fingerprintFields(fields) {
     // real opportunity ids) would be silently deduped as "identical
     // state" and never captured as a new snapshot at all.
     activeOpportunityIds: fields.activeOpportunityIds ? [...fields.activeOpportunityIds].sort((a, b) => a - b) : null,
+    // A goal gaining a MORE specific relationship (e.g. a real
+    // requirement link later replacing a goal-level relevance rule) is
+    // itself a real, material change worth its own snapshot.
+    activeOpportunityLinkType: fields.activeOpportunityLinkType,
     capabilityAvailabilityCount: fields.capabilityAvailabilityCount,
     capabilityTotalCount: fields.capabilityTotalCount,
   };
@@ -170,14 +182,37 @@ async function computeCurrentStateFields({ subjectId, goalId }) {
   const capabilityAvailabilityCount = capabilityOverview.filter((c) => c.available).length;
 
   // Real canonical opportunity identity (network_providers.id), never a
-  // fabricated one. null when this goal's chain links no capability at
-  // all (same condition as linkedCapabilityCount/activeOpportunityCount
-  // above — no real pipeline exists to track); [] when a real link
-  // exists but zero providers are currently active — a real, legitimate
-  // empty state, not the same as "no coverage."
-  const activeOpportunityIds = baseline.capabilityCoverage
-    ? await getActiveProviderIds(baseline.capabilityCoverage.linkedSlugs)
-    : null;
+  // fabricated one — sourced from WHICHEVER real relationship this goal
+  // actually has, disclosed honestly rather than blurred together:
+  //   'requirement' — a direct transition_requirements.capability_id
+  //     link somewhere in this goal's own real requirement chain (the
+  //     original, more specific relationship — takes precedence when
+  //     both exist, since it's the more precise real signal).
+  //   'goal_relevance' — no requirement-level link, but a real
+  //     human-authored capability_relevance_rules row at the goal level
+  //     (see lib/capabilityGraph.js's getGoalRelevantCapabilitySlugs())
+  //     — a genuinely different, still-real relationship, not a guess.
+  //   null — neither real relationship exists for this goal; no
+  //     pipeline to track (structurally unavailable).
+  let linkedSlugs = null;
+  let linkedCapabilityCount = null;
+  let activeOpportunityLinkType = null;
+  if (baseline.capabilityCoverage) {
+    linkedSlugs = baseline.capabilityCoverage.linkedSlugs;
+    linkedCapabilityCount = baseline.capabilityCoverage.linkedCount;
+    activeOpportunityLinkType = 'requirement';
+  } else {
+    const goalRelevantSlugs = await getGoalRelevantCapabilitySlugs(goalId);
+    if (goalRelevantSlugs.length > 0) {
+      linkedSlugs = goalRelevantSlugs;
+      linkedCapabilityCount = goalRelevantSlugs.length;
+      activeOpportunityLinkType = 'goal_relevance';
+    }
+  }
+  // [] when a real relationship exists but zero providers are currently
+  // active — a real, legitimate empty state, not the same as "no coverage."
+  const activeOpportunityIds = linkedSlugs ? await getActiveProviderIds(linkedSlugs) : null;
+  const activeOpportunityCount = activeOpportunityIds ? activeOpportunityIds.length : null;
 
   return {
     readinessNumerator: baseline.readiness.resolvedCount,
@@ -187,9 +222,10 @@ async function computeCurrentStateFields({ subjectId, goalId }) {
     currentFocusRequirementKey: baseline.currentRecommendation.chosenRequirementKey,
     currentFocusAction: baseline.currentRecommendation.actionIfUnmet,
     unresolvedConstraintCount: baseline.constraintState.length,
-    linkedCapabilityCount: baseline.capabilityCoverage ? baseline.capabilityCoverage.linkedCount : null,
-    activeOpportunityCount: baseline.capabilityCoverage ? baseline.capabilityCoverage.availableCount : null,
+    linkedCapabilityCount,
+    activeOpportunityCount,
     activeOpportunityIds,
+    activeOpportunityLinkType,
     capabilityAvailabilityCount,
     capabilityTotalCount: capabilityOverview.length,
     rawStatePayload: {
@@ -247,16 +283,16 @@ async function captureSnapshot({ subjectId, goalId, reason }) {
        (subject_type, subject_ref, goal_id, snapshot_reason, readiness_numerator, readiness_denominator,
         resolved_requirement_count, unresolved_requirement_count, current_focus_requirement_key,
         current_focus_action, unresolved_constraint_count, linked_capability_count, active_opportunity_count,
-        active_opportunity_ids, capability_availability_count, capability_total_count, state_fingerprint,
-        raw_state_payload, source_version, rule_version)
-     VALUES ('illustrative', $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+        active_opportunity_ids, active_opportunity_link_type, capability_availability_count, capability_total_count,
+        state_fingerprint, raw_state_payload, source_version, rule_version)
+     VALUES ('illustrative', $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
      RETURNING *`,
     [
       subjectId, goalId, effectiveReason, fields.readinessNumerator, fields.readinessDenominator,
       fields.resolvedRequirementCount, fields.unresolvedRequirementCount, fields.currentFocusRequirementKey,
       fields.currentFocusAction, fields.unresolvedConstraintCount, fields.linkedCapabilityCount,
       fields.activeOpportunityCount, fields.activeOpportunityIds === null ? null : JSON.stringify(fields.activeOpportunityIds),
-      fields.capabilityAvailabilityCount, fields.capabilityTotalCount,
+      fields.activeOpportunityLinkType, fields.capabilityAvailabilityCount, fields.capabilityTotalCount,
       fingerprint, JSON.stringify(fields.rawStatePayload), WEATHER_MODEL_VERSION, WEATHER_MODEL_VERSION,
     ]
   );
@@ -388,21 +424,26 @@ function buildEconomicWeather(currentSnapshot, priorSnapshotsOldestFirst) {
   if (currentSnapshot.activeOpportunityIds === null) {
     signals.push({
       signal: 'opportunity_access', label: 'Opportunity Access', currentState: null, comparisonState: null,
-      trendClassification: 'unavailable', scope, coverage: 'unlinked',
-      explanation: 'No requirement in this goal\'s real chain links to a capability, so opportunity access cannot be measured for this goal.',
+      trendClassification: 'unavailable', scope, coverage: 'unlinked', linkType: null,
+      explanation: 'Neither a requirement-level capability link nor a real goal-level capability_relevance_rules relationship exists for this goal, so opportunity access cannot be measured.',
       evidence: [currentSnapshot.id], availability: 'unavailable', historySufficiency: 0,
     });
   } else {
     const currentIds = currentSnapshot.activeOpportunityIds;
+    const linkType = currentSnapshot.activeOpportunityLinkType;
     const priorWithIds = priorSnapshotsOldestFirst.filter((s) => s.activeOpportunityIds !== null);
-    const linkedNote = ` of ${currentSnapshot.linkedCapabilityCount} linked capabilities' real active provider(s)`;
+    // Honest, distinct phrasing per real relationship type — never
+    // blurred into one generic "linked" claim (see linkType above).
+    const relationshipNote = linkType === 'goal_relevance'
+      ? ` of ${currentSnapshot.linkedCapabilityCount} goal-relevant capabilities' real active provider(s) (via a real capability_relevance_rules relationship, not a direct requirement link)`
+      : ` of ${currentSnapshot.linkedCapabilityCount} linked capabilities' real active provider(s)`;
 
     if (priorWithIds.length === 0) {
       signals.push({
         signal: 'opportunity_access', label: 'Opportunity Access',
         currentState: currentIds.length, comparisonState: null,
-        trendClassification: 'current_state_only', scope, coverage: 'linked',
-        explanation: `Opportunity Access: ${currentIds.length}${linkedNote} — no prior comparable observation exists yet.`,
+        trendClassification: 'current_state_only', scope, coverage: 'linked', linkType,
+        explanation: `Opportunity Access: ${currentIds.length}${relationshipNote} — no prior comparable observation exists yet.`,
         evidence: [currentSnapshot.id], availability: 'available', historySufficiency: 0,
       });
     } else {
@@ -411,17 +452,17 @@ function buildEconomicWeather(currentSnapshot, priorSnapshotsOldestFirst) {
       const { classification, added, removed } = classifyOpportunityComposition(currentIds, priorIds);
 
       const explanations = {
-        unchanged: `Opportunity Access unchanged since the last observation (${currentIds.length}${linkedNote}, the same real opportunities).`,
-        expanded: `Opportunity Access expanded since the last observation (${priorIds.length} → ${currentIds.length}${linkedNote}; ${added.length} new).`,
-        contracted: `Opportunity Access contracted since the last observation (${priorIds.length} → ${currentIds.length}${linkedNote}; ${removed.length} no longer active).`,
+        unchanged: `Opportunity Access unchanged since the last observation (${currentIds.length}${relationshipNote}, the same real opportunities).`,
+        expanded: `Opportunity Access expanded since the last observation (${priorIds.length} → ${currentIds.length}${relationshipNote}; ${added.length} new).`,
+        contracted: `Opportunity Access contracted since the last observation (${priorIds.length} → ${currentIds.length}${relationshipNote}; ${removed.length} no longer active).`,
         composition_changed: `Opportunity Access composition changed since the last observation — the count held at ${currentIds.length}, but the real opportunities are different (${removed.length} replaced by ${added.length} new).`,
-        mixed: `Opportunity Access changed since the last observation in a mixed way — ${added.length} new real opportunit${added.length === 1 ? 'y' : 'ies'} appeared while ${removed.length} disappeared (${priorIds.length} → ${currentIds.length}${linkedNote}).`,
+        mixed: `Opportunity Access changed since the last observation in a mixed way — ${added.length} new real opportunit${added.length === 1 ? 'y' : 'ies'} appeared while ${removed.length} disappeared (${priorIds.length} → ${currentIds.length}${relationshipNote}).`,
       };
 
       signals.push({
         signal: 'opportunity_access', label: 'Opportunity Access',
         currentState: currentIds.length, comparisonState: priorIds.length,
-        trendClassification: classification, scope, coverage: 'linked',
+        trendClassification: classification, scope, coverage: 'linked', linkType,
         explanation: explanations[classification],
         evidence: [priorSnapshot.id, currentSnapshot.id], availability: 'available', historySufficiency: priorWithIds.length,
       });

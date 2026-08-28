@@ -99,6 +99,32 @@ async function getCapabilityOverview() {
   });
 }
 
+// The real, human-authored goal-level relevance a capability has to a
+// goal's execution — capability_relevance_rules where source_type =
+// 'goal', the same real rule lib/leverageModel.js's Dormant Capability
+// detector already reads. Only 'goal' source_type has real, exercised
+// logic anywhere in this schema (see leverageModel.js's own comment on
+// discoverDormantCapabilityLeverage) — 'requirement'/'fact' relevance
+// rules are real, legal schema values with no seeded row yet, so this
+// deliberately only ever returns what a real 'goal' rule actually
+// declares, never guessed from a requirement/fact.
+//
+// This is a genuinely different real relationship than a direct
+// transition_requirements.capability_id link — see
+// lib/weatherModel.js's linkType field, which discloses which kind of
+// real relationship backs a given opportunity-access observation rather
+// than blurring the two together.
+async function getGoalRelevantCapabilitySlugs(goalId) {
+  const result = await query(
+    `SELECT DISTINCT c.slug
+     FROM capability_relevance_rules r
+     JOIN capabilities c ON c.id = r.capability_id
+     WHERE r.source_type = 'goal' AND r.source_ref = $1 AND r.active = TRUE`,
+    [goalId]
+  );
+  return result.rows.map((row) => row.slug);
+}
+
 // The canonical persisted identity for "one real opportunity" — a real
 // network_providers.id, never a title, an array index, or a fuzzy match.
 // Given a set of real capability slugs (e.g. every capability a goal's
@@ -149,4 +175,7 @@ async function recordConsent({ applicationId, capabilitySlug, providerId, dataSh
   return result.rows[0].id;
 }
 
-module.exports = { getCapabilities, getRoutingRecommendation, getCapabilityOverview, getActiveProviderIds, recordRoutingEvent, recordConsent };
+module.exports = {
+  getCapabilities, getRoutingRecommendation, getCapabilityOverview,
+  getActiveProviderIds, getGoalRelevantCapabilitySlugs, recordRoutingEvent, recordConsent,
+};

@@ -2196,22 +2196,90 @@ this real proof — the bay's own two live public gauges and Experimental
 status are unchanged; this remains internal-only, same as the rest of
 the historical engine.
 
-**What remains honestly unavailable**: the home/housing goal (and every
-other goal category, including "credit" specifically) still shows
-`unavailable` for Opportunity Access, because no real capability is
-linked there. This is not a bug — it's the honest state of the real
-registry, unchanged by this pass. It becomes real the moment a real,
-business-authorized capability is linked to a real requirement in that
-chain, with zero code changes required — the mechanism is generic, not
-goal-specific.
+**What remained honestly unavailable at the time**: as of this pass, the
+home/housing goal had no *requirement-level* capability link, so it
+showed `unavailable` for Opportunity Access. That was the honest state of
+the real registry at the time, not a bug — see the next section for how
+it changed once a second real relationship was checked.
 
-**Next architectural step, per the user's own framing**: extend stable
-opportunity identity beyond this one real link, one room at a time, as
-real capability/provider data actually exists to support it — not
-speculatively ahead of it. Once more than one room has a persisted
-opportunity pipeline, cross-room aggregation (Radar, Hidden Leverage,
-"What Changed" all reasoning from the same canonical opportunity ids)
-becomes the next real opportunity, not before.
+## Economic Weather — the second real pipeline: goal-level relevance (lib/capabilityGraph.js, lib/weatherModel.js)
+
+Directed as the follow-up to the pass above: extend the mechanism to a
+second real relationship, `capability_relevance_rules` (`source_type =
+'goal'`) — the same real rule `lib/leverageModel.js`'s Dormant Capability
+detector already reads (rule id 1: the home goal → `real_asset_execution`,
+`active = true`). This is a genuinely different real relationship than a
+`transition_requirements.capability_id` link — a human-authored statement
+that a capability is relevant to a goal's execution overall, not that a
+specific requirement in the chain depends on it. Blurring the two into one
+generic "linked" claim would have violated the master directive's
+"editorial ≠ deterministic relationships" doctrine, so they're kept
+explicit instead.
+
+**`getGoalRelevantCapabilitySlugs(goalId)`** (`lib/capabilityGraph.js`):
+a real query against `capability_relevance_rules JOIN capabilities`,
+`source_type = 'goal' AND source_ref = $1 AND active = TRUE` — deliberately
+only ever returns what a real `'goal'` rule declares, matching Dormant
+Capability's own documented boundary that only `'goal'` source_type has
+real, exercised logic in this schema (`'requirement'`/`'fact'` relevance
+rules are legal schema values with no seeded row yet).
+
+**`linkType` disclosure.** `computeCurrentStateFields()` in
+`lib/weatherModel.js` first checks the existing requirement-level
+`capabilityCoverage`; only when that's absent does it fall back to
+`getGoalRelevantCapabilitySlugs(goalId)`. Whichever real relationship
+supplied the linked capability slugs, the signal now discloses which one
+via a new `linkType` field (`'requirement' | 'goal_relevance' | null`),
+carried through `rowToSnapshot()`, `fingerprintFields()`, the
+`state_snapshots` INSERT, and `buildEconomicWeather()`'s explanation text
+— e.g. "via a real capability_relevance_rules relationship, not a direct
+requirement link" for `goal_relevance`, versus the plain "linked
+capabilities" phrasing for `requirement`. Requirement-level always takes
+precedence when both could theoretically apply (not a real scenario in
+current data, but structurally sound). Schema: `state_snapshots` gained
+`active_opportunity_link_type TEXT CHECK (... IN ('requirement',
+'goal_relevance'))` (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS`, the same
+idempotent pattern used throughout this file).
+
+**Proof.** The home goal now honestly shows `available` /
+`coverage: 'linked'` / `linkType: 'goal_relevance'` with `currentState: 0`
+(real_asset_execution has no active provider yet — a real zero, not a
+fabricated one) — never a fabricated "Credit" claim, and never the old
+"unavailable" now that the real second relationship is actually checked.
+The same full Observation A–D proof already run against the business
+goal's requirement-level pipeline was re-run against this pipeline
+independently: `current_state_only` (1 provider seeded), `expanded` ([H1]
+→ [H1,H2]), `composition_changed` (the sophisticated case: [H1,H2] →
+[H2,H3], count held at 2, correctly reported as composition change, not
+"unchanged"), and `contracted` ([H2,H3] → []) — all via real
+`network_providers` rows linked to `real_asset_execution`, fully deleted
+afterward. A regression check confirmed the business goal's own signal
+still resolves `linkType: 'requirement'` and is untouched by the new
+fallback existing. Re-verified live over real HTTP against a freshly
+restarted server: baseline `goal_relevance` disclosure, a seeded provider
+producing `expanded`, and its removal producing `contracted`, with the
+exact same explanation text the Node-level test produced; every scratch
+row and the feature flag were fully reverted afterward.
+
+**Tests**: `opportunity-identity-test.js` extended from 31 to 39
+assertions (Block 0's baseline check updated to match the new honest
+home-goal state, plus a new Block 6 covering this pipeline end-to-end and
+the business-goal regression check). All 14 non-UI intelligence test
+suites re-run together afterward, zero failures (the remaining suites in
+the scratch test directory cover Playwright-driven UI pages and require a
+browser-automation package not installed in this container — unrelated to
+and unaffected by this backend-only change). The production database was
+never touched.
+
+**Cross-room aggregation was deliberately not built in this pass.** Two
+rooms (business/`accounting_tax` via a requirement, home/`real_asset_execution`
+via a goal-level rule) now have a real, persisted opportunity-identity
+pipeline each, with explicit `linkType` provenance — the stated
+prerequisite for it. But the user's own directive was to extend the
+mechanism to this one additional real relationship, not to build
+aggregation across rooms; per the master directive's Cross-Room
+Aggregation Rule, that's a separate, explicitly-scoped step for when it's
+actually asked for, not an inferred next task.
 
 ## What was deliberately not attempted, across all of these directives
 
