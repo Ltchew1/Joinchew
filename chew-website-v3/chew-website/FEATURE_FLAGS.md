@@ -2749,6 +2749,52 @@ public site, so the Domino's chain remains an honestly-labeled sample
 sequence ("Sample unlock sequence... Nothing here is saved or completed
 for real"), never a claim about what will happen for a real visitor.
 
+## Phase 2, Slice 5 — Future-Back Showcase (index.html, styles.css, script.js)
+
+Applies the same gold-hairline-trace grammar Domino and Life Map already
+use to the pre-existing Future-Back reverse-journey chain (`runFutureBack()`
+— untouched logic, built in an earlier session), replacing its plain
+text-arrow separators with a genuinely traced path. No new data, no new
+derivation — same real `goalTitle`, `requirementSequence`, and
+`chosenRequirementKey` walked backward as before.
+
+**The trace.** Each `.futureback-stage` gained a waypoint marker (a
+hollow ring that fills gold once that stage is walked to) connected by a
+`.futureback-trace-seg` hairline that lights gold in step with the reveal
+timing — the same "dim until walked, then lit" language Domino's
+connectors and the Life Map's edges already use, so a visitor who has
+seen either earlier element reads this one immediately. An eyebrow line
+("Every Real Goal Is Reachable by a Real, Ordered Path") frames the
+purpose in words, matching Domino's eyebrow pattern. Added the same
+`role="list"`/`aria-live="polite"`/`role="listitem"` semantics Domino
+gained in Slice 4, for the same reason — the chain must read correctly
+as DOM content, not only as animation.
+
+**Tests**: real Chromium screenshots (desktop, mobile, reduced-motion)
+across both seeded goals, confirming correct stage order, correct trace
+lighting (verified directly via DOM class inspection, not just visual
+comparison — both real hairlines report `is-lit` once their stage is
+walked to), the mobile vertical composition holds with no text collision,
+and reduced-motion reaches the fully-lit final state within 150ms of
+trigger (3/3 stages visible, 2/2 traces lit). Zero real JS errors. Re-ran
+the Slice 1/2/3/4 regression suites plus a full-page scroll-through of
+`index.html` and `unlock-room.html` afterward — all pass unchanged.
+
+**Parallel Futures — deliberately not attempted here, and why that's not
+new.** A genuine public Parallel Futures showcase remains blocked by the
+same real, pre-existing constraint documented since the Conflict
+Detection and Parallel Futures sections above: `compareCrossGoalFutures()`
+is real and gated `internal`, pending a real member identity system to
+hold a real subject's own cross-goal state — there is still no
+authenticated portal in this repository. CHEW Lab's Bay 01 already is
+this feature's honest public disclosure: a fixed, explicitly labeled
+"Simulation" sketch, not wired to the shared illustrative subject's real
+requirement chain. Building a second, homepage-level "showcase" using
+that same shared subject would either duplicate Bay 01 for no reason or
+risk implying — sitting alongside Domino and Future-Back's genuinely real
+per-visitor derivation — that the comparison itself is live. It isn't,
+and won't be until real identity exists to hold real per-member state.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of

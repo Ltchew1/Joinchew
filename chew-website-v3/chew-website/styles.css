@@ -1184,27 +1184,43 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 
 /* CHEW Future-Back: walks the real requirementSequence backward from the
    real goal to the real chosenRequirementKey ("today"), using only
-   already-fetched data. See script.js — never a database write. */
+   already-fetched data. See script.js — never a database write. Slice 5
+   gives it the same gold-hairline-trace grammar as Domino/Life Map — a
+   waypoint marker per stage, connected by a trace segment that lights as
+   the path is walked, rather than a plain text arrow between boxes. */
 .futureback-section { text-align: center; margin-top: 40px; }
+.futureback-eyebrow {
+  display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--gold-light); margin-bottom: 14px;
+}
 .futureback-caveat { font-size: 0.8rem; color: var(--text-faint); margin: 14px auto 0; max-width: 50ch; font-style: italic; }
 .futureback-chain {
   display: flex; flex-direction: column; align-items: stretch; gap: 0;
   max-width: 520px; margin: 30px auto 0;
 }
 .futureback-stage {
-  padding: 20px 24px; border-radius: var(--radius); text-align: left;
+  position: relative; padding: 20px 24px 20px 40px; border-radius: var(--radius); text-align: left;
   background: var(--panel); border: 1px solid var(--panel-border-soft);
   opacity: 0; transform: translateY(-12px);
   transition: opacity 0.5s cubic-bezier(0.22,1,0.36,1), transform 0.5s cubic-bezier(0.22,1,0.36,1), border-color 0.4s ease, background 0.4s ease, box-shadow 0.4s ease;
 }
 .futureback-stage.is-visible { opacity: 1; transform: translateY(0); }
+/* The waypoint marker: a hollow ring while distant, filling gold once
+   this stage has been walked to (is-visible) — the same "resolved node"
+   language the Life Map and Domino already use. */
+.futureback-stage::before {
+  content: ''; position: absolute; left: 14px; top: 24px; width: 10px; height: 10px; border-radius: 50%;
+  border: 2px solid var(--text-faint); background: var(--black); transition: border-color 0.4s ease, background 0.4s ease, box-shadow 0.4s ease;
+}
+.futureback-stage.is-visible::before { border-color: var(--gold-light); background: var(--gold-light); box-shadow: 0 0 10px rgba(232,206,122,0.6); }
 .futureback-stage-eyebrow {
   display: block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--text-faint); margin-bottom: 8px;
 }
 .futureback-stage-label { display: block; font-size: 0.96rem; font-weight: 600; color: var(--text); margin-bottom: 4px; line-height: 1.35; }
 .futureback-stage-note { display: block; font-size: 0.83rem; color: var(--text-muted); line-height: 1.5; }
-.futureback-stage--goal { text-align: center; border-color: var(--gold); background: rgba(201,162,39,0.09); }
+.futureback-stage--goal { text-align: center; border-color: var(--gold); background: rgba(201,162,39,0.09); padding-left: 24px; }
+.futureback-stage--goal::before { display: none; }
 .futureback-stage--goal .futureback-stage-eyebrow { color: var(--gold-light); }
 .futureback-stage--goal .futureback-stage-label { font-family: var(--font-display); font-size: 1.25rem; font-style: italic; color: var(--gold-light); }
 .futureback-stage--today {
@@ -1212,12 +1228,18 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   box-shadow: 0 0 22px rgba(232,206,122,0.2);
 }
 .futureback-stage--today .futureback-stage-eyebrow { color: var(--gold-light); }
-.futureback-arrow { text-align: center; color: var(--gold); opacity: 0.4; font-size: 1rem; padding: 6px 0; }
+/* The hairline trace between waypoints — dim until the stage below it is
+   walked to, then lights gold, matching Domino's `.domino-trace-seg`. */
+.futureback-trace-seg {
+  display: block; width: 2px; height: 22px; margin: 0 auto; background: var(--panel-border);
+  transition: background 0.5s ease, box-shadow 0.5s ease;
+}
+.futureback-trace-seg.is-lit { background: var(--gold-light); box-shadow: 0 0 8px rgba(232,206,122,0.5); }
 .futureback-resolved {
   margin: 18px auto 0; font-size: 0.8rem; color: var(--text-faint); font-style: italic; text-align: center; max-width: 46ch;
 }
-@media (prefers-reduced-motion: reduce) { .futureback-stage { transition: none; } }
-@media (max-width: 640px) { .futureback-chain { max-width: 100%; } .futureback-stage { padding: 18px 18px; } }
+@media (prefers-reduced-motion: reduce) { .futureback-stage, .futureback-stage::before, .futureback-trace-seg { transition: none; } }
+@media (max-width: 640px) { .futureback-chain { max-width: 100%; } .futureback-stage { padding: 18px 18px 18px 34px; } .futureback-stage::before { left: 10px; } }
 
 /* CHEW Network Room: reuses the real, already-public capability registry
    (api/capability-routing.js -> lib/capabilityGraph.js) to show the real

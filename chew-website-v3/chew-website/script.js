@@ -959,14 +959,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
       var chosenIndex = lastRequirementSequence.findIndex(function (t) { return t.key === lastChosenRequirementKey; });
       var goalLabel = lastGoalTitle || 'This example\'s goal';
-      var stagesHtml = '<div class="futureback-stage futureback-stage--goal" data-index="0">'
+      var stagesHtml = '<div class="futureback-stage futureback-stage--goal" role="listitem" data-index="0">'
         + '<span class="futureback-stage-eyebrow">The Real Goal</span>'
         + '<span class="futureback-stage-label">' + escapeHtml(goalLabel) + '</span>'
         + '</div>';
 
       if (chosenIndex === -1) {
-        stagesHtml += '<div class="futureback-arrow" aria-hidden="true">&darr;</div>'
-          + '<div class="futureback-stage futureback-stage--today" data-index="1">'
+        stagesHtml += '<span class="futureback-trace-seg" aria-hidden="true"></span>'
+          + '<div class="futureback-stage futureback-stage--today" role="listitem" data-index="1">'
           + '<span class="futureback-stage-eyebrow">Today</span>'
           + '<span class="futureback-stage-label">Every real requirement for this goal is already met in this example.</span>'
           + '</div>';
@@ -974,6 +974,8 @@ document.addEventListener('DOMContentLoaded', function () {
         futurebackChainEl.hidden = false;
         var onlyStage = futurebackChainEl.querySelectorAll('.futureback-stage');
         onlyStage.forEach(function (el) { el.classList.add('is-visible'); });
+        var onlyTrace = futurebackChainEl.querySelector('.futureback-trace-seg');
+        if (onlyTrace) onlyTrace.classList.add('is-lit');
         return;
       }
 
@@ -982,8 +984,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       forward.forEach(function (tile, i) {
         var isToday = i === forward.length - 1;
-        stagesHtml += '<div class="futureback-arrow" aria-hidden="true">&darr;</div>';
-        stagesHtml += '<div class="futureback-stage' + (isToday ? ' futureback-stage--today' : '') + '" data-index="' + (i + 1) + '">'
+        stagesHtml += '<span class="futureback-trace-seg" data-trace-index="' + i + '" aria-hidden="true"></span>';
+        stagesHtml += '<div class="futureback-stage' + (isToday ? ' futureback-stage--today' : '') + '" role="listitem" data-index="' + (i + 1) + '">'
           + '<span class="futureback-stage-eyebrow">' + (isToday ? 'Today &mdash; Start Here' : 'For that to be true, first') + '</span>'
           + '<span class="futureback-stage-label">' + escapeHtml(tile.label) + '</span>'
           + '<span class="futureback-stage-note">' + escapeHtml(tile.actionIfUnmet || '') + '</span>'
@@ -999,8 +1001,16 @@ document.addEventListener('DOMContentLoaded', function () {
       futurebackChainEl.hidden = false;
 
       var stageEls = futurebackChainEl.querySelectorAll('.futureback-stage');
+      var traceEls = futurebackChainEl.querySelectorAll('.futureback-trace-seg');
       stageEls.forEach(function (el, i) {
-        var reveal = function () { el.classList.add('is-visible'); };
+        var reveal = function () {
+          el.classList.add('is-visible');
+          // traceEls[i - 1] is the hairline directly above this stage (the
+          // goal stage at i=0 has none) — light it the moment this stage
+          // becomes the walked-to waypoint, so the trace lights in step
+          // with the path being traced, not all at once.
+          if (traceEls[i - 1]) traceEls[i - 1].classList.add('is-lit');
+        };
         if (revealReduceMotion) { reveal(); } else { futurebackTimeouts.push(setTimeout(reveal, 300 + i * 260)); }
       });
     }
