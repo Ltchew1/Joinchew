@@ -306,6 +306,51 @@ document.addEventListener('DOMContentLoaded', function () {
     }, { passive: true });
   }
 
+  // Magnetic CTAs: the button leans toward the cursor within a small
+  // radius and snaps back on leave. Skipped under reduced-motion and
+  // on touch (no hover concept to be magnetic toward).
+  if (!reduceMotion && window.matchMedia && !window.matchMedia('(hover: none)').matches) {
+    document.querySelectorAll('.btn-magnetic').forEach(function (btn) {
+      var strength = 0.35;
+      btn.addEventListener('mousemove', function (e) {
+        var rect = btn.getBoundingClientRect();
+        var relX = e.clientX - (rect.left + rect.width / 2);
+        var relY = e.clientY - (rect.top + rect.height / 2);
+        btn.style.transform = 'translate(' + (relX * strength).toFixed(1) + 'px, ' + (relY * strength).toFixed(1) + 'px)';
+      });
+      btn.addEventListener('mouseleave', function () { btn.style.transform = ''; });
+    });
+  }
+
+  // Hero field parallax tilt: the intelligence field responds to the
+  // cursor with real 3D depth. Desktop hover-capable only; reduced-motion
+  // and touch devices get the flat, static panel.
+  var hxFieldWrapForTilt = document.getElementById('hx-field-wrap');
+  if (hxFieldWrapForTilt && !reduceMotion && window.matchMedia && !window.matchMedia('(hover: none)').matches) {
+    hxFieldWrapForTilt.addEventListener('mousemove', function (e) {
+      var rect = hxFieldWrapForTilt.getBoundingClientRect();
+      var px = (e.clientX - rect.left) / rect.width - 0.5;
+      var py = (e.clientY - rect.top) / rect.height - 0.5;
+      hxFieldWrapForTilt.style.transform = 'perspective(900px) rotateY(' + (px * 6).toFixed(2) + 'deg) rotateX(' + (py * -6).toFixed(2) + 'deg)';
+    });
+    hxFieldWrapForTilt.addEventListener('mouseleave', function () { hxFieldWrapForTilt.style.transform = ''; });
+  }
+
+  // Room-grid constellation: the one-shot connector pulse fires the
+  // first time the room grid enters view, not on every scroll past it.
+  var roomGridWrapEl = document.getElementById('room-grid-wrap');
+  if (roomGridWrapEl && 'IntersectionObserver' in window) {
+    var roomGridObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          roomGridWrapEl.classList.add('is-lit');
+          roomGridObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+    roomGridObserver.observe(roomGridWrapEl);
+  }
+
   // "What's Next" expansion cards: rendered entirely from the shared
   // feature-flag registry (/api/feature-flags), not hard-coded per page.
   // A card's badge reads "Coming Soon" while status is 'internal'/'locked'

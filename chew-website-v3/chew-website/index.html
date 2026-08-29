@@ -70,11 +70,16 @@
     <div class="hero-glow" data-parallax="0.08"></div>
     <div class="hero-focal-glow" aria-hidden="true" data-parallax="0.14"></div>
     <div class="grid-lines"></div>
+    <div class="hx-searchlight" aria-hidden="true"></div>
+    <svg class="hx-hero-trace" aria-hidden="true" viewBox="0 0 1200 640" preserveAspectRatio="none">
+      <path class="hx-hero-trace-path" d="M 40,560 C 300,560 320,320 600,320 S 900,120 1160,120" />
+      <path class="hx-hero-trace-pulse" d="M 40,560 C 300,560 320,320 600,320 S 900,120 1160,120" />
+    </svg>
     <div class="container" style="position:relative; z-index:2;">
       <div class="hx-hero-inner">
         <div class="hx-copy">
           <div class="hx-eyebrow-row"><span class="rule-short"></span><span class="eyebrow" style="margin-bottom:0;">Welcome to CHEW: The Lab</span></div>
-          <h1 class="hx-headline">You're making money.<br><em style="color:var(--gold-light); font-style:normal;">So why doesn't it</em><br>feel like it?</h1>
+          <h1 class="hx-headline">You're making money.<br><em style="color:var(--gold-light); font-style:normal;">So why doesn't&nbsp;it</em><br>feel like it?</h1>
           <p class="hx-sub">
             You're not broke &mdash; you're unorganized. CHEW builds the system that puts your
             money in order and keeps it working. Not survival. Structure.
@@ -89,14 +94,18 @@
             <span class="tag tag--sample reveal-disclaimer" id="reveal-disclaimer" hidden></span>
           </div>
           <div class="btn-row" style="margin-top:28px;">
-            <a href="apply.html" class="btn btn-gold cta-glow">I'm Ready to Chew</a>
+            <a href="apply.html" class="btn btn-gold cta-glow btn-magnetic">I'm Ready to Chew</a>
             <a href="#the-lab" class="btn btn-outline">See What We're Building &darr;</a>
           </div>
           <p style="margin-top:20px;">
             <a href="contact.html" style="font-size:0.86rem; color:var(--text-faint); text-decoration:underline;">Have a question first? Ask CHEW directly &rarr;</a>
           </p>
         </div>
-        <div class="hx-field-wrap" id="hx-field-wrap">
+        <div class="hx-field-wrap hx-field-frame" id="hx-field-wrap">
+          <span class="corner corner--tl" aria-hidden="true"></span>
+          <span class="corner corner--tr" aria-hidden="true"></span>
+          <span class="corner corner--bl" aria-hidden="true"></span>
+          <span class="corner corner--br" aria-hidden="true"></span>
           <div class="hx-field-idle" aria-hidden="true">
             <div class="hx-field-idle-dot"></div>
             <p class="hx-field-idle-label">CHEW is idle, waiting on a real goal to reason through &mdash; pick one on the left.</p>
@@ -356,7 +365,12 @@
         </p>
       </div>
 
-      <div class="rooms-grid" style="margin-top:44px;">
+      <div class="room-grid-wrap" id="room-grid-wrap" style="margin-top:44px;">
+        <svg class="room-constellation" aria-hidden="true" viewBox="0 0 300 200" preserveAspectRatio="none">
+          <path class="room-constellation-line" d="M 50,50 L 150,50 L 250,50 L 250,150 L 150,150 L 50,150" />
+          <path class="room-constellation-pulse" d="M 50,50 L 150,50 L 250,50 L 250,150 L 150,150 L 50,150" />
+        </svg>
+      <div class="rooms-grid">
         <div class="glass card room-card" data-reveal style="--reveal-delay:0.03s;">
           <div class="room-icon" aria-hidden="true">
             <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="6" width="28" height="36" rx="3" stroke="url(#iconGold)" stroke-width="2"/><path d="M16 16h16M16 24h16M16 32h10" stroke="url(#iconGold)" stroke-width="2" stroke-linecap="round"/></svg>
@@ -398,6 +412,7 @@
           </div>
           <h3>Money Systems</h3>
           <p>Quiet architecture, running underneath everything &mdash; so money has a job before it disappears.</p>
+        </div>
         </div>
       </div>
 
