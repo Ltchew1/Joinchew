@@ -405,6 +405,106 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
+  // The Eight Worlds: no dedicated public World routes exist yet, so a
+  // World button never masquerades as an unrelated existing page —
+  // selecting one opens a shared inline preview in place instead. Only
+  // "build" carries a genuinely relevant existing-page link (CHEW
+  // Programs, which really is about business funding); every other
+  // World gets the same honest "ask CHEW" fallback rather than a forced
+  // link to a page that isn't actually that World.
+  var WORLD_DETAILS = {
+    home: {
+      title: 'Home',
+      body: 'Everyday money, finally in one place — income, spending, and structure viewed as one system instead of a dozen disconnected accounts.'
+    },
+    drive: {
+      title: 'Drive',
+      body: 'Getting a vehicle without wrecking the rest of the plan — readiness and timing, weighed against everything else you’re building toward.'
+    },
+    build: {
+      title: 'Build',
+      body: 'Turning a business idea into something fundable — the documentation, structure, and sequencing lenders actually look for.',
+      relatedHref: 'services.html',
+      relatedLabel: 'See CHEW Programs →'
+    },
+    go: {
+      title: 'Go',
+      body: 'The freedom to move — relocation, travel, or a new opportunity — planned so it strengthens your position instead of straining it.'
+    },
+    celebrate: {
+      title: 'Celebrate',
+      body: 'Milestones — weddings, milestones, big moments — without the money hangover that usually follows them.'
+    },
+    property: {
+      title: 'Property',
+      body: 'Owning real estate, on purpose and on paper — the real requirements between where you are and a real offer.'
+    },
+    levelup: {
+      title: 'Level Up',
+      body: 'Skills, credentials, and income, moving in the same direction — growth that actually shows up in what you’re able to do next.'
+    },
+    protect: {
+      title: 'Protect',
+      body: 'The plan for when life doesn’t go to plan — the coverage and cushion most people only think about after they needed it.'
+    }
+  };
+
+  var worldButtons = document.querySelectorAll('.cx-world');
+  var worldPanel = document.getElementById('cx-world-panel');
+  if (worldButtons.length && worldPanel) {
+    var worldReduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var worldPanelTitle = document.getElementById('cx-world-panel-title');
+    var worldPanelBody = document.getElementById('cx-world-panel-body');
+    var worldPanelRelated = document.getElementById('cx-world-panel-related');
+    var openWorldKey = null;
+
+    function closeWorldPanel() {
+      openWorldKey = null;
+      worldPanel.hidden = true;
+      worldButtons.forEach(function (b) {
+        b.classList.remove('is-open');
+        b.setAttribute('aria-expanded', 'false');
+      });
+    }
+
+    function openWorldPanel(btn, key) {
+      var detail = WORLD_DETAILS[key];
+      if (!detail) return;
+      openWorldKey = key;
+      worldButtons.forEach(function (b) {
+        var isThis = b === btn;
+        b.classList.toggle('is-open', isThis);
+        b.setAttribute('aria-expanded', isThis ? 'true' : 'false');
+      });
+      worldPanelTitle.textContent = detail.title;
+      worldPanelBody.textContent = detail.body;
+      if (detail.relatedHref) {
+        worldPanelRelated.href = detail.relatedHref;
+        worldPanelRelated.textContent = detail.relatedLabel || 'Learn more →';
+        worldPanelRelated.hidden = false;
+      } else {
+        worldPanelRelated.hidden = true;
+      }
+      worldPanel.hidden = false;
+      worldPanel.scrollIntoView({ block: 'nearest', behavior: worldReduceMotion ? 'auto' : 'smooth' });
+    }
+
+    worldButtons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var key = btn.getAttribute('data-world');
+        if (openWorldKey === key) { closeWorldPanel(); return; }
+        openWorldPanel(btn, key);
+      });
+    });
+
+    var worldPanelCloseBtn = document.getElementById('cx-world-panel-close');
+    if (worldPanelCloseBtn) worldPanelCloseBtn.addEventListener('click', closeWorldPanel);
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && openWorldKey) closeWorldPanel();
+    });
+  }
+
   // "Tell CHEW where you're trying to go" — a real, working call to
   // CHEW's intelligence engine (see ARCHITECTURE.md), run against a
   // fixed illustrative example, never the visitor's own data. Every
@@ -418,14 +518,22 @@ document.addEventListener('DOMContentLoaded', function () {
     var chainEl = document.getElementById('reveal-chain');
     var cxWorldEls = document.querySelectorAll('.cx-world');
 
-    // Genuine reaction, not a fabricated one: light the real site World
-    // whose page the just-returned recommendation actually points a
-    // visitor toward. No invented data — just a real fact (the selected
-    // goal) driving a real UI state.
+    // The only two mappings the real demo legitimately supports: the
+    // "buy a home" scenario is a real-estate goal (World: Property), the
+    // "business funding-ready" scenario is a business goal (World:
+    // Build). The other six Worlds have no demo-backed goal yet, so they
+    // are deliberately absent from this map rather than guessed at.
+    var GOAL_TO_WORLD = { home: 'property', funding: 'build' };
+
+    // Genuine reaction, not a fabricated one: light the real CHEW World
+    // the just-returned recommendation actually corresponds to. No
+    // invented data — just a real fact (the selected goal) driving a
+    // real UI state, and only where a safe/direct mapping exists.
     function lightMatchingWorld(goal) {
       cxWorldEls.forEach(function (el) { el.classList.remove('is-lit'); });
-      if (!goal) return;
-      var target = document.querySelector('.cx-world[data-world="' + goal + '"]');
+      var worldKey = goal && GOAL_TO_WORLD[goal];
+      if (!worldKey) return;
+      var target = document.querySelector('.cx-world[data-world="' + worldKey + '"]');
       if (target) target.classList.add('is-lit');
     }
 

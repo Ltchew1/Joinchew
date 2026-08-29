@@ -2546,9 +2546,32 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   overflow: hidden;
   background:
     radial-gradient(circle at 22% 20%, rgba(201,162,39,0.10), transparent 55%),
-    radial-gradient(circle at 82% 78%, rgba(201,162,39,0.07), transparent 50%),
+    radial-gradient(circle at 60% 92%, rgba(201,162,39,0.09), transparent 55%),
     var(--black);
-  border-bottom: 1px solid var(--panel-border);
+}
+/* Bridge into the hero: one shared light source spanning the seam so the
+   page reads as waking up, not as two stacked panels. Zero footprint in
+   flow (negative margins collapse it) — pure atmosphere, no DOM merge. */
+.cx-awaken-bridge {
+  position: relative;
+  height: 1px;
+  margin: -190px 0 -190px;
+  pointer-events: none;
+  z-index: 1;
+}
+.cx-awaken-bridge::before {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  width: min(1100px, 94vw);
+  height: 460px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse 55% 55% at 50% 50%, rgba(232,206,122,0.24), transparent 70%);
+  filter: blur(1px);
+}
+@media (max-width: 640px) {
+  .cx-awaken-bridge { margin: -110px 0 -110px; }
+  .cx-awaken-bridge::before { height: 280px; }
 }
 .cx-philosophy-route {
   position: absolute;
@@ -2643,9 +2666,10 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   align-items: center;
   gap: 8px;
   font-family: var(--font-body);
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--gold-light);
   border-bottom: 1px solid var(--gold-deep);
   padding-bottom: 3px;
@@ -2657,18 +2681,22 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 }
 
 /* ============================================================
-   FLAGSHIP HOMEPAGE — Act 3: Eight Worlds constellation
-   The site's own eight real destinations, presented as a spatial
-   field rather than a numbered card grid. Reacts honestly to the
-   real goal-selection demo above it (a genuine, non-fabricated
-   Domino effect — no invented data).
+   FLAGSHIP HOMEPAGE — Act 3: The Eight Worlds constellation
+   The locked CHEW World system (Home / Drive / Build / Go /
+   Celebrate / Property / Level Up / Protect) — member goal/life
+   destination environments, not website navigation. Each World is
+   a button, not a link: no dedicated public World routes exist
+   yet, so selecting one opens an honest inline preview rather than
+   masquerading as an unrelated existing page. Reacts to the real
+   goal-selection demo above it (genuine Domino, no invented data):
+   only the two Worlds the demo's two real scenarios legitimately
+   support (Property ← buy-a-home, Build ← business funding-ready)
+   ever light up — the other six simply never fabricate a reaction.
    ============================================================ */
 .cx-worlds {
   position: relative;
   padding: 96px 0 108px;
   background: var(--black-soft);
-  border-top: 1px solid var(--panel-border);
-  border-bottom: 1px solid var(--panel-border);
   overflow: hidden;
 }
 .cx-worlds-field {
@@ -2695,15 +2723,50 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 .cx-world {
   position: relative;
   display: block;
-  padding: 26px 20px;
+  width: 100%;
+  padding: 26px 20px 30px;
   border-radius: 14px;
   border: 1px solid var(--panel-border);
   background:
-    var(--world-asset, linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01)));
+    var(--world-asset, none);
   background-size: cover;
   background-position: center;
   color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
   transition: transform 0.5s cubic-bezier(0.22,1,0.36,1), border-color 0.4s ease, box-shadow 0.4s ease;
+}
+/* Signature environment per World — a distinct visual identity for
+   each destination (not eight identical boxes), built from gradients
+   and pattern-work only (no fabricated photography). --world-asset
+   overrides this the moment real imagery exists, with no markup
+   change needed. */
+.cx-world[data-world="home"] {
+  background-image: var(--world-asset, radial-gradient(circle at 30% 20%, rgba(232,206,122,0.16), transparent 60%), linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01)));
+}
+.cx-world[data-world="drive"] {
+  background-image: var(--world-asset, repeating-linear-gradient(115deg, rgba(232,206,122,0.09) 0px, rgba(232,206,122,0.09) 2px, transparent 2px, transparent 34px), linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01)));
+}
+.cx-world[data-world="build"] {
+  background-image: var(--world-asset, repeating-linear-gradient(0deg, rgba(201,162,39,0.10) 0px, rgba(201,162,39,0.10) 1px, transparent 1px, transparent 22px), repeating-linear-gradient(90deg, rgba(201,162,39,0.10) 0px, rgba(201,162,39,0.10) 1px, transparent 1px, transparent 22px), linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01)));
+}
+.cx-world[data-world="go"] {
+  background-image: var(--world-asset, linear-gradient(200deg, rgba(232,206,122,0.14) 0%, transparent 45%), linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01)));
+}
+.cx-world[data-world="celebrate"] {
+  background-image: var(--world-asset, radial-gradient(circle at 20% 30%, rgba(232,206,122,0.14) 0 3px, transparent 4px), radial-gradient(circle at 60% 65%, rgba(232,206,122,0.12) 0 2px, transparent 3px), radial-gradient(circle at 80% 20%, rgba(232,206,122,0.16) 0 3px, transparent 4px), linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01)));
+}
+.cx-world[data-world="property"] {
+  background-image: var(--world-asset, repeating-linear-gradient(90deg, rgba(201,162,39,0.09) 0px, rgba(201,162,39,0.09) 1px, transparent 1px, transparent 40px), repeating-linear-gradient(0deg, rgba(201,162,39,0.06) 0px, rgba(201,162,39,0.06) 1px, transparent 1px, transparent 12px), linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01)));
+}
+.cx-world[data-world="levelup"] {
+  background-image: var(--world-asset, repeating-linear-gradient(-58deg, rgba(232,206,122,0.11) 0px, rgba(232,206,122,0.11) 2px, transparent 2px, transparent 26px), linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01)));
+}
+.cx-world[data-world="protect"] {
+  background-image: var(--world-asset, repeating-conic-gradient(from 0deg at 50% 50%, rgba(201,162,39,0.10) 0deg 2deg, transparent 2deg 60deg), linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01)));
 }
 .cx-world:hover, .cx-world:focus-visible {
   border-color: var(--panel-border-soft);
@@ -2729,16 +2792,29 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   color: var(--text-faint);
   margin-bottom: 0;
 }
-.cx-world-arrow {
+.cx-world-glyph {
   position: absolute;
   right: 18px;
   bottom: 16px;
-  color: var(--gold-deep);
-  opacity: 0;
-  transform: translateX(-4px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--panel-border-soft);
+  color: var(--gold-light);
+  opacity: 0.7;
+  transition: opacity 0.3s ease, transform 0.3s ease, background 0.3s ease;
 }
-.cx-world:hover .cx-world-arrow, .cx-world:focus-visible .cx-world-arrow { opacity: 1; transform: translateX(0); }
+.cx-world-glyph::before, .cx-world-glyph::after {
+  content: '';
+  position: absolute;
+  background: var(--gold-light);
+  transition: transform 0.3s ease;
+}
+.cx-world-glyph::before { left: 6px; right: 6px; top: 50%; height: 1px; transform: translateY(-0.5px); }
+.cx-world-glyph::after { top: 6px; bottom: 6px; left: 50%; width: 1px; transform: translateX(-0.5px); }
+.cx-world:hover .cx-world-glyph, .cx-world:focus-visible .cx-world-glyph { opacity: 1; }
+.cx-world.is-open .cx-world-glyph { background: rgba(232,206,122,0.14); }
+.cx-world.is-open .cx-world-glyph::after { transform: translateX(-0.5px) rotate(90deg); }
 
 /* organic offsets — a constellation, not a grid of numbered steps */
 .cx-world:nth-child(1) { grid-column: span 2; }
@@ -2759,6 +2835,50 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 .cx-world.is-lit .cx-world-index { color: var(--gold-light); }
 .cx-world.is-lit .cx-world-index::after { content: ' — CHEW is pointing here'; color: var(--gold-light); opacity: 0.8; }
 
+/* Shared World preview panel — a "take the floor" reveal in place,
+   never a route to a page that isn't really that World. */
+.cx-world-panel {
+  position: relative;
+  z-index: 1;
+  margin-top: 28px;
+  padding: 28px 30px 30px;
+  border-radius: 14px;
+  border: 1px solid var(--panel-border-soft);
+  background: linear-gradient(160deg, rgba(232,206,122,0.06), rgba(255,255,255,0.02));
+  box-shadow: 0 20px 50px -20px rgba(0,0,0,0.55);
+}
+.cx-world-panel-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--panel-border-soft);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.cx-world-panel-close:hover { color: var(--gold-light); border-color: var(--gold-light); }
+.cx-world-panel-tag {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  background: rgba(201,162,39,0.14);
+  border: 1px solid var(--panel-border-soft);
+  border-radius: 999px;
+  padding: 4px 12px;
+  margin-bottom: 12px;
+}
+.cx-world-panel h3 { font-size: 1.3rem; margin-bottom: 8px; padding-right: 30px; }
+.cx-world-panel-note { font-size: 0.8rem; color: var(--text-faint); margin-top: 4px; }
+.cx-world-panel-actions { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 16px; }
+.cx-world-panel-link { font-size: 0.86rem; font-weight: 600; text-decoration: underline; }
+.cx-world-panel-link--related { color: var(--text-muted); }
+
 @media (max-width: 900px) {
   .cx-worlds-grid { grid-template-columns: repeat(2, 1fr); }
   .cx-world:nth-child(n) { transform: none; }
@@ -2768,4 +2888,5 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   .cx-worlds { padding: 64px 0 76px; }
   .cx-worlds-grid { grid-template-columns: 1fr; }
   .cx-world:nth-child(1), .cx-world:nth-child(4), .cx-world:nth-child(8) { grid-column: span 1; }
+  .cx-world-panel { padding: 22px 20px 24px; }
 }
