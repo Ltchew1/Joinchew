@@ -2531,3 +2531,241 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 }
 @media (max-width: 700px) { .legacy-close-converge, .legacy-close-frame { display: none; } }
 @media (max-width: 640px) { .legacy-close { padding: 96px 0; } }
+
+/* ============================================================
+   FLAGSHIP HOMEPAGE — Act 1: Philosophy (cx-philosophy)
+   A short, staged copy sequence with a single continuous route
+   line, preceding the real hero. Sets up "route / barrier / next
+   move" as a felt idea before the real hx-hero demo proves it.
+   ============================================================ */
+.cx-philosophy {
+  position: relative;
+  min-height: 82vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 22% 20%, rgba(201,162,39,0.10), transparent 55%),
+    radial-gradient(circle at 82% 78%, rgba(201,162,39,0.07), transparent 50%),
+    var(--black);
+  border-bottom: 1px solid var(--panel-border);
+}
+.cx-philosophy-route {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.9;
+}
+.cx-philosophy-route path {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+.cx-philosophy-route-path {
+  stroke: rgba(201,162,39,0.22);
+  stroke-width: 1.4;
+}
+.cx-philosophy-route-pulse {
+  stroke: var(--gold-light);
+  stroke-width: 2;
+  stroke-dasharray: 140 1400;
+  stroke-dashoffset: 140;
+  opacity: 0;
+  filter: drop-shadow(0 0 6px rgba(232,206,122,0.55));
+}
+.cx-philosophy.is-visible .cx-philosophy-route-pulse {
+  animation: cx-route-travel 3.2s cubic-bezier(0.65,0,0.35,1) 0.4s 1 both;
+}
+@keyframes cx-route-travel {
+  0% { opacity: 0; stroke-dashoffset: 1400; }
+  8% { opacity: 1; }
+  92% { opacity: 1; }
+  100% { opacity: 0; stroke-dashoffset: -140; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cx-philosophy.is-visible .cx-philosophy-route-pulse { animation: none; opacity: 0; }
+  .cx-philosophy-route-path { stroke: rgba(201,162,39,0.3); }
+}
+.cx-philosophy-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 24px;
+  text-align: center;
+}
+.cx-philosophy-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  opacity: 0.85;
+  margin-bottom: 22px;
+}
+.cx-philosophy-eyebrow .rule-short { width: 28px; height: 1px; background: var(--gold-deep); display: inline-block; }
+.cx-philosophy-line {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.6rem, 3.6vw, 2.6rem);
+  line-height: 1.28;
+  color: var(--text-muted);
+  margin: 0 0 10px 0;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.cx-philosophy.is-visible .cx-philosophy-line { opacity: 1; transform: translateY(0); }
+.cx-philosophy.is-visible .cx-philosophy-line:nth-child(1) { transition-delay: 0.1s; }
+.cx-philosophy.is-visible .cx-philosophy-line:nth-child(2) { transition-delay: 0.55s; }
+.cx-philosophy.is-visible .cx-philosophy-line:nth-child(3) { transition-delay: 1s; }
+.cx-philosophy-line--final {
+  color: var(--text);
+}
+.cx-philosophy-line--final em {
+  font-style: normal;
+  color: var(--gold-light);
+}
+.cx-philosophy-next {
+  margin-top: 30px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+  transition-delay: 1.5s;
+}
+.cx-philosophy.is-visible .cx-philosophy-next { opacity: 1; transform: translateY(0); }
+.cx-philosophy-next a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--gold-light);
+  border-bottom: 1px solid var(--gold-deep);
+  padding-bottom: 3px;
+}
+.cx-philosophy-next a:hover { color: var(--text); border-color: var(--gold-light); }
+@media (max-width: 640px) {
+  .cx-philosophy { min-height: 64vh; padding: 72px 0; }
+  .cx-philosophy-line { font-size: 1.4rem; }
+}
+
+/* ============================================================
+   FLAGSHIP HOMEPAGE — Act 3: Eight Worlds constellation
+   The site's own eight real destinations, presented as a spatial
+   field rather than a numbered card grid. Reacts honestly to the
+   real goal-selection demo above it (a genuine, non-fabricated
+   Domino effect — no invented data).
+   ============================================================ */
+.cx-worlds {
+  position: relative;
+  padding: 96px 0 108px;
+  background: var(--black-soft);
+  border-top: 1px solid var(--panel-border);
+  border-bottom: 1px solid var(--panel-border);
+  overflow: hidden;
+}
+.cx-worlds-field {
+  position: relative;
+}
+.cx-worlds-field::before {
+  content: '';
+  position: absolute;
+  inset: -40px -10% auto -10%;
+  height: 480px;
+  background:
+    repeating-conic-gradient(from 0deg, rgba(201,162,39,0.05) 0deg 1deg, transparent 1deg 45deg),
+    radial-gradient(circle at 50% 35%, rgba(201,162,39,0.10), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+.cx-worlds-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 26px;
+}
+.cx-world {
+  position: relative;
+  display: block;
+  padding: 26px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--panel-border);
+  background:
+    var(--world-asset, linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01)));
+  background-size: cover;
+  background-position: center;
+  color: var(--text);
+  transition: transform 0.5s cubic-bezier(0.22,1,0.36,1), border-color 0.4s ease, box-shadow 0.4s ease;
+}
+.cx-world:hover, .cx-world:focus-visible {
+  border-color: var(--panel-border-soft);
+  transform: translateY(-4px);
+  text-decoration: none;
+}
+.cx-world .cx-world-index {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  margin-bottom: 10px;
+}
+.cx-world h3 {
+  font-size: 1.08rem;
+  margin-bottom: 6px;
+  color: var(--gold-light);
+}
+.cx-world p {
+  font-size: 0.86rem;
+  color: var(--text-faint);
+  margin-bottom: 0;
+}
+.cx-world-arrow {
+  position: absolute;
+  right: 18px;
+  bottom: 16px;
+  color: var(--gold-deep);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.cx-world:hover .cx-world-arrow, .cx-world:focus-visible .cx-world-arrow { opacity: 1; transform: translateX(0); }
+
+/* organic offsets — a constellation, not a grid of numbered steps */
+.cx-world:nth-child(1) { grid-column: span 2; }
+.cx-world:nth-child(4) { grid-column: span 2; transform: translateY(22px); }
+.cx-world:nth-child(2) { transform: translateY(-10px); }
+.cx-world:nth-child(3) { transform: translateY(16px); }
+.cx-world:nth-child(5) { transform: translateY(30px); }
+.cx-world:nth-child(6) { transform: translateY(-6px); }
+.cx-world:nth-child(7) { transform: translateY(20px); }
+.cx-world:nth-child(8) { grid-column: span 2; transform: translateY(4px); }
+.cx-world:hover, .cx-world:focus-visible { transform: translateY(-4px) !important; }
+
+.cx-world.is-lit {
+  border-color: var(--gold-light);
+  box-shadow: 0 0 0 1px rgba(232,206,122,0.35), 0 14px 34px -12px rgba(201,162,39,0.4);
+}
+.cx-world.is-lit h3 { color: var(--gold-light); }
+.cx-world.is-lit .cx-world-index { color: var(--gold-light); }
+.cx-world.is-lit .cx-world-index::after { content: ' — CHEW is pointing here'; color: var(--gold-light); opacity: 0.8; }
+
+@media (max-width: 900px) {
+  .cx-worlds-grid { grid-template-columns: repeat(2, 1fr); }
+  .cx-world:nth-child(n) { transform: none; }
+  .cx-world:nth-child(1), .cx-world:nth-child(4), .cx-world:nth-child(8) { grid-column: span 2; }
+}
+@media (max-width: 640px) {
+  .cx-worlds { padding: 64px 0 76px; }
+  .cx-worlds-grid { grid-template-columns: 1fr; }
+  .cx-world:nth-child(1), .cx-world:nth-child(4), .cx-world:nth-child(8) { grid-column: span 1; }
+}

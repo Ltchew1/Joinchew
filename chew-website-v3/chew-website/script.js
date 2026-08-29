@@ -416,6 +416,18 @@ document.addEventListener('DOMContentLoaded', function () {
     var resultEl = document.getElementById('intelligence-reveal-result');
     var disclaimerEl = document.getElementById('reveal-disclaimer');
     var chainEl = document.getElementById('reveal-chain');
+    var cxWorldEls = document.querySelectorAll('.cx-world');
+
+    // Genuine reaction, not a fabricated one: light the real site World
+    // whose page the just-returned recommendation actually points a
+    // visitor toward. No invented data — just a real fact (the selected
+    // goal) driving a real UI state.
+    function lightMatchingWorld(goal) {
+      cxWorldEls.forEach(function (el) { el.classList.remove('is-lit'); });
+      if (!goal) return;
+      var target = document.querySelector('.cx-world[data-world="' + goal + '"]');
+      if (target) target.classList.add('is-lit');
+    }
 
     function formatFactKey(key) {
       return key.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
@@ -1089,6 +1101,7 @@ document.addEventListener('DOMContentLoaded', function () {
         resultEl.hidden = true;
         chainEl.classList.remove('is-visible');
         resetHeroField();
+        lightMatchingWorld(null);
 
         fetch('/api/intelligence-demo?goal=' + encodeURIComponent(btn.getAttribute('data-goal')))
           .then(function (res) {
@@ -1111,6 +1124,7 @@ document.addEventListener('DOMContentLoaded', function () {
             resultEl.hidden = false;
             renderHeroField(data.requirementSequence, rec.basedOnFacts, rec.chosenRequirementKey, rec.recommendedAction, rec.rationale);
             showBlindSpotIfApplicable(rec.basedOnFacts, rec.chosenRequirementKey, rec.recommendedAction);
+            lightMatchingWorld(btn.getAttribute('data-goal'));
             lastRequirementSequence = data.requirementSequence || null;
             lastBasedOnFacts = rec.basedOnFacts;
             lastChosenRequirementKey = rec.chosenRequirementKey;
