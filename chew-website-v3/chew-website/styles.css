@@ -2725,8 +2725,8 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   position: relative;
   display: block;
   width: 100%;
-  min-height: 236px;
-  padding: 22px 20px 26px;
+  min-height: 320px;
+  padding: 22px 22px 26px;
   border-radius: 14px;
   border: 1px solid var(--panel-border);
   overflow: hidden;
@@ -2740,57 +2740,65 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   transition: transform 0.5s cubic-bezier(0.22,1,0.36,1), border-color 0.4s ease,
     box-shadow 0.4s ease, opacity 0.5s ease, filter 0.5s ease;
 }
-/* Environment layer: the real-photography slot (--world-asset). Until
-   real imagery lands, an interim CSS "environment" — layered gradients,
-   a bottom scrim for caption legibility, and a fine grain — reads as an
-   atmosphere rather than a flat icon tile. This is deliberately NOT
-   presented as photography; it is the honest placeholder for it. */
+/* Production photography layer. --world-asset is assigned by script.js
+   once #cx-worlds nears the viewport (lazy — no eight-image fetch on
+   initial load); --cx-world-scene is the gradient fallback shown until
+   then, or if a slot is ever empty. A restrained bottom-only scrim
+   (not a flat overlay) keeps the photography itself the focal point —
+   only the caption zone gets darkened. */
 .cx-world::before {
   content: '';
   position: absolute; inset: 0;
-  background-image: var(--world-asset, none);
+  background-image: var(--world-asset, var(--cx-world-scene));
   background-size: cover;
-  background-position: center;
-  opacity: var(--world-asset-opacity, 0);
-  transition: transform 8s ease, opacity 0.6s ease;
+  background-position: var(--world-focal, center);
+  transition: transform 7s ease;
   z-index: 0;
 }
-.cx-world.is-open::before { transform: scale(1.06); }
+.cx-world:hover::before { transform: scale(1.035); transition-duration: 1.1s; }
+.cx-world.is-open::before { transform: scale(1.06); transition-duration: 7s; }
 .cx-world::after {
   content: '';
   position: absolute; inset: 0;
-  background:
-    linear-gradient(0deg, rgba(10,10,11,0.82) 0%, rgba(10,10,11,0.38) 46%, rgba(10,10,11,0.12) 100%),
-    var(--cx-world-scene);
+  background: linear-gradient(0deg, rgba(6,6,7,0.86) 0%, rgba(6,6,7,0.38) 32%, rgba(6,6,7,0.06) 58%, transparent 72%);
   z-index: 0;
 }
 .cx-world > * { position: relative; z-index: 1; }
-/* Signature environment per World — a distinct atmosphere for each
-   destination (not eight identical boxes) until real photography
-   replaces it via --world-asset, with no markup change needed. */
+/* Gradient fallback scene per World — shown only until the real
+   photograph loads into --world-asset (or if a slot is ever empty).
+   Distinct per destination so the constellation never looks like eight
+   identical boxes even before imagery arrives. */
 .cx-world[data-world="home"] {
   --cx-world-scene: radial-gradient(circle at 28% 18%, rgba(232,206,122,0.20), transparent 62%), linear-gradient(155deg, #1b160c 0%, #0a0a0b 70%);
+  --world-focal: center 38%;
 }
 .cx-world[data-world="drive"] {
   --cx-world-scene: repeating-linear-gradient(112deg, rgba(232,206,122,0.10) 0px, rgba(232,206,122,0.10) 2px, transparent 2px, transparent 30px), linear-gradient(160deg, #14140f 0%, #0a0a0b 75%);
+  --world-focal: 32% 58%;
 }
 .cx-world[data-world="build"] {
   --cx-world-scene: repeating-linear-gradient(0deg, rgba(201,162,39,0.12) 0px, rgba(201,162,39,0.12) 1px, transparent 1px, transparent 22px), repeating-linear-gradient(90deg, rgba(201,162,39,0.12) 0px, rgba(201,162,39,0.12) 1px, transparent 1px, transparent 22px), linear-gradient(160deg, #14140f 0%, #0a0a0b 75%);
+  --world-focal: 38% 55%;
 }
 .cx-world[data-world="go"] {
   --cx-world-scene: linear-gradient(195deg, rgba(232,206,122,0.18) 0%, transparent 48%), linear-gradient(0deg, #0a0a0b 0%, #171208 100%);
+  --world-focal: center 55%;
 }
 .cx-world[data-world="celebrate"] {
   --cx-world-scene: radial-gradient(circle at 20% 26%, rgba(232,206,122,0.18) 0 3px, transparent 4px), radial-gradient(circle at 58% 62%, rgba(232,206,122,0.14) 0 2px, transparent 3px), radial-gradient(circle at 82% 18%, rgba(232,206,122,0.20) 0 3px, transparent 4px), radial-gradient(circle at 40% 82%, rgba(232,206,122,0.12) 0 2px, transparent 3px), linear-gradient(160deg, #171105 0%, #0a0a0b 75%);
+  --world-focal: center 42%;
 }
 .cx-world[data-world="property"] {
   --cx-world-scene: repeating-linear-gradient(90deg, rgba(201,162,39,0.11) 0px, rgba(201,162,39,0.11) 1px, transparent 1px, transparent 38px), repeating-linear-gradient(0deg, rgba(201,162,39,0.07) 0px, rgba(201,162,39,0.07) 1px, transparent 1px, transparent 11px), linear-gradient(160deg, #14140f 0%, #0a0a0b 75%);
+  --world-focal: center 40%;
 }
 .cx-world[data-world="levelup"] {
   --cx-world-scene: repeating-linear-gradient(-58deg, rgba(232,206,122,0.13) 0px, rgba(232,206,122,0.13) 2px, transparent 2px, transparent 24px), linear-gradient(160deg, #14140f 0%, #0a0a0b 75%);
+  --world-focal: center 40%;
 }
 .cx-world[data-world="protect"] {
   --cx-world-scene: repeating-conic-gradient(from 0deg at 50% 50%, rgba(201,162,39,0.12) 0deg 2deg, transparent 2deg 60deg), linear-gradient(160deg, #14140f 0%, #0a0a0b 75%);
+  --world-focal: center 24%;
 }
 .cx-world:hover, .cx-world:focus-visible {
   border-color: var(--panel-border-soft);
@@ -2855,9 +2863,6 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   transform: scale(1.03) translateY(-4px) !important;
   z-index: 2;
 }
-@media (prefers-reduced-motion: reduce) {
-  .cx-world.is-open::before { transition: opacity 0.6s ease; }
-}
 
 /* CHEW's route reaching the selected destination — a one-shot bloom
    positioned over the open tile, not a looping effect. */
@@ -2919,17 +2924,36 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 .cx-world-panel-close {
   position: absolute;
   top: 16px; right: 16px;
-  width: 30px; height: 30px;
+  z-index: 2;
+  width: 32px; height: 32px;
   border-radius: 50%;
-  border: 1px solid var(--panel-border-soft);
-  background: transparent;
-  color: var(--text-muted);
+  border: 1px solid rgba(232,206,122,0.4);
+  background: rgba(6,6,7,0.55);
+  backdrop-filter: blur(3px);
+  color: var(--text);
   font-size: 1.2rem;
   line-height: 1;
   cursor: pointer;
 }
 .cx-world-panel-close:hover { color: var(--gold-light); border-color: var(--gold-light); }
-.cx-world-panel h3 { font-size: 1.5rem; margin-bottom: 14px; padding-right: 30px; }
+/* Tile → selection → panel continuity: the same photograph carries
+   into the open panel as a banner, so the visitor feels like they went
+   deeper into the World rather than landing on a plain text box. */
+.cx-world-panel-image {
+  margin: -30px -32px 20px;
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 14px 14px 0 0;
+  position: relative;
+}
+.cx-world-panel-image::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(0deg, rgba(6,6,7,0.5) 0%, transparent 55%);
+  border-radius: inherit;
+}
+.cx-world-panel h3 { font-size: 1.5rem; margin-bottom: 14px; }
 .cx-world-panel-aspiration {
   font-family: var(--font-display);
   font-size: 1.15rem;
@@ -2974,8 +2998,16 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   .cx-worlds { padding: 64px 0 76px; }
   .cx-worlds-grid { grid-template-columns: 1fr; }
   .cx-world:nth-child(1), .cx-world:nth-child(4), .cx-world:nth-child(8) { grid-column: span 1; }
+  .cx-world { min-height: 240px; }
   .cx-world-panel { padding: 24px 20px 22px; }
+  .cx-world-panel-image { margin: -24px -20px 18px; height: 150px; }
   .cx-worlds-grid.has-selection .cx-world:not(.is-open) { opacity: 0.5; }
+  /* Narrower crop changes what stays in frame — re-aim the same photo,
+     never swap it, per the "no different image on mobile" instruction. */
+  .cx-world[data-world="drive"] { --world-focal: 24% 58%; }
+  .cx-world[data-world="go"] { --world-focal: 30% 55%; }
+  .cx-world[data-world="property"] { --world-focal: center 34%; }
+  .cx-world[data-world="build"] { --world-focal: 44% 58%; }
 }
 
 /* Branded primary CTA presentation — visual treatment only, never

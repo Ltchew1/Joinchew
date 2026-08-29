@@ -460,6 +460,21 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   };
 
+  // Production photography (see assets/worlds/). jpg is authoritative;
+  // webp is offered to browsers that support it via a one-time feature
+  // check, not a <picture> per tile, since these load as CSS
+  // background-images through the existing --world-asset slot.
+  var WORLD_IMAGES = {
+    home: { jpg: 'assets/worlds/home.jpg', webp: 'assets/worlds/home.webp', alt: 'Illuminated modern home at twilight with reflecting water features.' },
+    drive: { jpg: 'assets/worlds/drive.jpg', webp: 'assets/worlds/drive.webp', alt: 'Black luxury sports car on a coastal road at dusk with a city skyline.' },
+    build: { jpg: 'assets/worlds/build.jpg', webp: 'assets/worlds/build.webp', alt: 'Executive workspace overlooking a city skyline, with business dashboards and a warehouse visible beyond.' },
+    go: { jpg: 'assets/worlds/go.jpg', webp: 'assets/worlds/go.webp', alt: 'A private jet and a luxury vehicle on a tarmac at sunset near a coastal skyline.' },
+    celebrate: { jpg: 'assets/worlds/celebrate.jpg', webp: 'assets/worlds/celebrate.webp', alt: 'A formal event space with chandeliers, floral centerpieces, and fireworks over a skyline.' },
+    property: { jpg: 'assets/worlds/property.jpg', webp: 'assets/worlds/property.webp', alt: 'Aerial night view of a waterfront multifamily and mixed-use real estate development.' },
+    levelup: { jpg: 'assets/worlds/levelup.jpg', webp: 'assets/worlds/levelup.webp', alt: 'A modern library and learning space with a staircase and an illuminated globe.' },
+    protect: { jpg: 'assets/worlds/protect.jpg', webp: 'assets/worlds/protect.webp', alt: 'A fortified hillside estate at night under a lightning storm, with a security command center.' }
+  };
+
   var worldButtons = document.querySelectorAll('.cx-world');
   var worldPanel = document.getElementById('cx-world-panel');
   var worldGrid = document.getElementById('cx-worlds-grid');
@@ -469,8 +484,49 @@ document.addEventListener('DOMContentLoaded', function () {
     var worldPanelAspiration = document.getElementById('cx-world-panel-aspiration');
     var worldPanelRole = document.getElementById('cx-world-panel-role');
     var worldPanelRelated = document.getElementById('cx-world-panel-related');
+    var worldPanelImage = document.getElementById('cx-world-panel-image');
     var openWorldKey = null;
     var worldReachEl = null;
+
+    var supportsWebp = false;
+    try {
+      var webpCanvas = document.createElement('canvas');
+      if (webpCanvas.getContext && webpCanvas.getContext('2d')) {
+        supportsWebp = webpCanvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+      }
+    } catch (e) { supportsWebp = false; }
+
+    function worldImageUrl(key) {
+      var img = WORLD_IMAGES[key];
+      if (!img) return null;
+      return supportsWebp ? img.webp : img.jpg;
+    }
+
+    // Lazy-load: the eight photographs only start downloading once the
+    // Worlds section is actually approaching the viewport, not on
+    // initial page load — the same real fact (the visitor scrolled this
+    // far) driving a real network request, nothing eager or wasted.
+    var worldsSectionEl = document.getElementById('cx-worlds');
+    if (worldsSectionEl && 'IntersectionObserver' in window) {
+      var worldImageObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          worldButtons.forEach(function (btn) {
+            var key = btn.getAttribute('data-world');
+            var url = worldImageUrl(key);
+            if (url) btn.style.setProperty('--world-asset', 'url(' + url + ')');
+          });
+          worldImageObserver.disconnect();
+        });
+      }, { rootMargin: '400px 0px' });
+      worldImageObserver.observe(worldsSectionEl);
+    } else {
+      worldButtons.forEach(function (btn) {
+        var key = btn.getAttribute('data-world');
+        var url = worldImageUrl(key);
+        if (url) btn.style.setProperty('--world-asset', 'url(' + url + ')');
+      });
+    }
 
     function clearWorldReach() {
       if (worldReachEl && worldReachEl.parentNode) worldReachEl.parentNode.removeChild(worldReachEl);
@@ -519,6 +575,12 @@ document.addEventListener('DOMContentLoaded', function () {
       worldPanelTitle.textContent = detail.title;
       worldPanelAspiration.textContent = detail.aspiration;
       worldPanelRole.textContent = detail.role;
+      if (worldPanelImage) {
+        var panelUrl = worldImageUrl(key);
+        var panelImg = WORLD_IMAGES[key];
+        worldPanelImage.style.backgroundImage = panelUrl ? 'url(' + panelUrl + ')' : '';
+        worldPanelImage.setAttribute('aria-label', (panelImg && panelImg.alt) || '');
+      }
       if (detail.relatedHref) {
         worldPanelRelated.href = detail.relatedHref;
         worldPanelRelated.textContent = detail.relatedLabel || 'Learn more →';
