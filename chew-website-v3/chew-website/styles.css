@@ -2367,3 +2367,167 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 }
 @media (prefers-reduced-motion: reduce) { .room-constellation-pulse { animation: none !important; opacity: 0; } }
 @media (max-width: 900px) { .room-constellation { display: none; } }
+
+/* ============================================================
+   PHASE 2 — VISUAL REBUILD SLICE 2c
+   "Stop stacking sections, start staging scenes." Each block below
+   restructures an existing section's composition (not just its
+   surface) so the homepage reads as a sequence of distinct visual
+   moments rather than a repeated heading/paragraph/card template.
+   No copy, routes, data sources, or DOM order changed — only how
+   the same real content is composed and revealed.
+   ============================================================ */
+
+/* ---- Six Rooms: floating planes, not a flat grid. Each card gets
+   its own depth (alternating lift, faint rotation, individually
+   staggered shadow) so the set reads as six modules suspended at
+   slightly different distances from the viewer, threaded by the
+   constellation lines already drawn behind them. Flattens to a
+   plain stack below 901px — a tilted card is a liability on a
+   phone, not a flex. ---- */
+@media (min-width: 901px) {
+  .rooms-grid { row-gap: 40px; }
+  .room-card { will-change: transform; }
+  .room-card:nth-child(1) { transform: translateY(6px) rotate(-0.6deg); }
+  .room-card:nth-child(2) { transform: translateY(-16px) rotate(0.4deg); z-index: 1; }
+  .room-card:nth-child(3) { transform: translateY(10px) rotate(-0.3deg); }
+  .room-card:nth-child(4) { transform: translateY(-10px) rotate(0.5deg); }
+  .room-card:nth-child(5) { transform: translateY(18px) rotate(-0.4deg); z-index: 1; }
+  .room-card:nth-child(6) { transform: translateY(-4px) rotate(0.3deg); }
+  .glass.card.room-card:hover { transform: translateY(-10px) rotate(0deg) scale(1.015); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .room-card { transition: border-color 0.5s ease, box-shadow 0.5s ease !important; }
+}
+
+/* ---- Scene statement: a full-bleed editorial beat between working
+   sections — oversized type, selective gold emphasis, no card, no
+   icon, no eyebrow label. A held breath, not another panel. ---- */
+.scene-statement {
+  padding: 132px 0;
+  text-align: center;
+  position: relative;
+  background:
+    radial-gradient(ellipse 60% 100% at 50% 0%, rgba(201,162,39,0.05), transparent 65%),
+    var(--black);
+  border-top: 1px solid var(--panel-border-soft);
+  border-bottom: 1px solid var(--panel-border-soft);
+  overflow: hidden;
+}
+.scene-statement::before {
+  content: '';
+  position: absolute; left: 50%; top: 0; width: 1px; height: 100%;
+  background: linear-gradient(180deg, transparent, rgba(201,162,39,0.25) 40%, rgba(201,162,39,0.25) 60%, transparent);
+  opacity: 0.6;
+}
+.scene-statement-eyebrow {
+  display: block; font-size: 0.72rem; letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 28px; position: relative; z-index: 1;
+}
+.scene-statement p {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 4.4vw, 3.4rem);
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  max-width: 20ch;
+  margin: 0 auto;
+  color: var(--text-body);
+  position: relative; z-index: 1;
+}
+.scene-statement p em { color: var(--gold-light); font-style: normal; }
+@media (max-width: 640px) { .scene-statement { padding: 88px 0; } }
+
+/* ---- Reroute scene: "a plan interrupted, a new path drawn" — the
+   diagram stops being a small illustration inside a section and
+   becomes the section. The reroute line draws itself in once the
+   scene is in view (stroke-dashoffset reveal keyed off the parent's
+   .is-visible class from the existing [data-reveal] observer — never
+   applied to the observed element itself, so it can't repeat the
+   clip-path/IntersectionObserver bug found in Slice 2b). ---- */
+.reroute-scene {
+  padding: 148px 0;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(ellipse 70% 60% at 82% 20%, rgba(201,162,39,0.07), transparent 60%), var(--black-soft);
+}
+/* .reroute-wrap already carries [data-reveal]; its own .is-visible
+   class (opacity/transform only, no clip-path) drives the line-draw
+   below via stroke-dashoffset on a child SVG path — this doesn't
+   touch the observed element's rendered area, so it can't reproduce
+   the IntersectionObserver regression found in Slice 2b. */
+.reroute-scene-label {
+  text-align: center; font-size: 0.72rem; letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 18px;
+}
+.reroute-scene h2 { text-align: center; max-width: 22ch; margin: 0 auto 8px; }
+.reroute-scene .max-prose { margin: 0 auto; }
+.reroute-wrap { display: flex; justify-content: center; margin: 56px 0 4px; }
+.reroute-visual { width: 100%; max-width: 640px; height: auto; }
+.reroute-visual .path-line.reroute {
+  stroke-dasharray: 340;
+  stroke-dashoffset: 340;
+  transition: stroke-dashoffset 1.4s cubic-bezier(.16,1,.3,1) 0.2s;
+}
+.reroute-wrap.is-visible .reroute-visual .path-line.reroute {
+  stroke-dashoffset: 0;
+  animation: dash-flow 2.4s linear 1.6s infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reroute-wrap .reroute-visual .path-line.reroute { stroke-dashoffset: 0; transition: none; }
+  .reroute-wrap.is-visible .reroute-visual .path-line.reroute { animation: none; }
+}
+
+/* ---- Destinations opening: the "what's next" cards stop reading as
+   a locked feature grid and start reading as points appearing on a
+   horizon — staggered lift, a thin baseline they sit on, faint
+   connecting ticks. Same data-driven cards (script.js), no markup
+   change required beyond this container styling. ---- */
+.expansion-scene { position: relative; }
+.expansion-grid { position: relative; }
+.expansion-grid::before {
+  content: '';
+  position: absolute; left: 0; right: 0; bottom: -20px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,162,39,0.3) 15%, rgba(201,162,39,0.3) 85%, transparent);
+}
+@media (min-width: 981px) {
+  .coming-soon-card:nth-child(odd) { transform: translateY(-14px); }
+  .coming-soon-card:nth-child(even) { transform: translateY(10px); }
+}
+.coming-soon-card::after { content: none; }
+.coming-soon-card {
+  background: linear-gradient(165deg, rgba(255,255,255,0.04), rgba(0,0,0,0.2));
+  border-bottom: none;
+}
+.coming-soon-card::before {
+  content: '';
+  position: absolute; left: 26px; right: 26px; bottom: 0; height: 1px;
+  background: linear-gradient(90deg, rgba(201,162,39,0.5), transparent);
+}
+
+/* ---- Command close: the final CTA stops being a centered headline
+   and becomes a console the visitor steps into — the existing
+   activation corner-bracket frame around the whole scene, a slow
+   radial sweep behind the button, gold lines converging on it from
+   the corners. ---- */
+.legacy-close { padding: 152px 0; }
+.legacy-close-frame { position: absolute; inset: 18px; pointer-events: none; }
+.legacy-close-frame .corner {
+  position: absolute; width: 28px; height: 28px;
+  border-color: rgba(201,162,39,0.35); border-style: solid; border-width: 0;
+}
+.legacy-close-frame .corner--tl { top: 0; left: 0; border-top-width: 1px; border-left-width: 1px; }
+.legacy-close-frame .corner--tr { top: 0; right: 0; border-top-width: 1px; border-right-width: 1px; }
+.legacy-close-frame .corner--bl { bottom: 0; left: 0; border-bottom-width: 1px; border-left-width: 1px; }
+.legacy-close-frame .corner--br { bottom: 0; right: 0; border-bottom-width: 1px; border-right-width: 1px; }
+.legacy-close .hero-glow {
+  opacity: 0.9;
+  background: radial-gradient(circle at 50% 55%, rgba(201,162,39,0.22), transparent 62%);
+}
+.legacy-close-converge { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.legacy-close-converge svg { width: 100%; height: 100%; }
+.legacy-close-converge line {
+  stroke: rgba(201,162,39,0.28); stroke-width: 1; stroke-dasharray: 3 6;
+}
+@media (max-width: 700px) { .legacy-close-converge, .legacy-close-frame { display: none; } }
+@media (max-width: 640px) { .legacy-close { padding: 96px 0; } }
