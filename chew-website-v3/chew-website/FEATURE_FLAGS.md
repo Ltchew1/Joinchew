@@ -2654,6 +2654,101 @@ can trigger here is switching between the two demo goals, which Slice 1
 already handles by reconfiguring the hero field; this slice does not
 fabricate a second, unrequested change mechanism to demonstrate.
 
+## Phase 2, Slice 4 — Domino / Unlock Showcase (index.html, styles.css, script.js, unlock-room.html)
+
+Rebuilds the homepage Domino element as a visibly propagating chain
+reaction and deepens the pre-existing Unlock Room into a locked/partial/
+active gate corridor — the site's first real *consequence* experience
+("a smart move changes what becomes possible"). Reuses the exact same
+requirement sequence, met/unmet facts, capability links, and
+`chosenRequirementKey` the Move/Blind Spot already derive — no second
+domino model, no second unlock model, nothing re-derived.
+
+**Domino, choreographed, not listed.** `runDomino()` now renders a "THE
+MOVE" header node (the same real chosen tile the hero already revealed)
+above a vertical chain of real requirement nodes, each with a shared
+blackened-metal gate glyph (`GATE_GLYPH`, a shackle+body SVG reused
+verbatim from the Unlock Room's own door glyph — one real visual
+metaphor, not two). On trigger: the chosen node locks into focus (400ms),
+its connector lights, the node resolves to "cleared" (950ms), the next
+real requirement enters as the new active/opportunity node with any real
+connected capability named via `capabilityOpportunityLine()`, a plain-
+language "Why This Changed" explanation appears, then a CTA into the
+Unlock Room. One-shot only — no loops, no confetti, no casino effects.
+`prefers-reduced-motion` skips straight to the fully-resolved final state
+(verified: chain, explanation, and CTA all present and correct at 150ms
+post-trigger, not merely "not obviously broken").
+
+**Move continuity, honestly scoped.** The Domino's header node renders
+the literal `chosenTile` object the hero's own move banner already
+revealed — not a fresh guess. The CTA link
+(`unlock-room.html?goal=home|funding`) carries the visitor's real
+selected demo goal forward via a validated URL query param (allowlisted
+against `home`/`funding` before use, never trusted blindly); the Unlock
+Room reads it on load and auto-selects the matching scenario so the
+sample goal survives the page transition instead of resetting.
+
+**Unlock Room: lock-state honesty.** Every locked door's reason block
+(`lockReasonHtml()`) now renders the exact directive-specified shape —
+Current / Required / Next useful move — built entirely from real fields
+already on each requirement tile (`requiredValue`, `comparison`, `unit`,
+`actionIfUnmet`) and the real fact value, with no fabricated number.
+
+**Two real bugs found by screenshot validation and fixed:**
+1. The Unlock Room's pre-existing "vault leaf" mechanism (two opaque
+   panels that swing open on unlock — built before this slice) covered
+   the *entire* door card while locked, including title, note, and the
+   new reason block — a locked door showed nothing but a padlock glyph,
+   directly violating "no mystery locks." Fixed by shrinking the leaves'
+   coverage (`styles.css`, `.unlockroom-leaf`) to just the icon/button
+   row, leaving the honesty panel always legible underneath regardless of
+   lock state.
+2. `lockReasonHtml()` displayed cents-denominated requirement values
+   (e.g. `down_payment_savings_cents`) as a raw integer with its unit
+   string appended verbatim — "Required: at least 2000000 cents
+   (illustrative $20,000 threshold)." Fixed with a small
+   `formatRequirementValue()` helper that detects a `cents`-prefixed unit
+   and renders real currency ("Required: at least $20,000") instead.
+
+**Accessibility.** Every domino node and its status/opportunity text is
+real DOM content updated via `textContent`, present and readable
+regardless of animation state — the sequence is never encoded only in
+animation. Added `role="list"`/`aria-live="polite"` on the chain
+container, `role="listitem"` on each node, and `aria-current="step"` that
+tracks the node currently resolving or newly active. The Unlock Room's
+corridor was already a semantic `<ol>` with door toggles as
+`role="switch"` buttons carrying `aria-checked` — untouched, already
+correct.
+
+**A known, pre-existing, out-of-scope cosmetic issue, noted not fixed:**
+the Blind Spot moment's `formatFactKey()` (built in an earlier session,
+Task #65) naively title-cases raw fact keys for its "Still unknown: ..."
+line, producing "Down Payment Savings Cents" instead of the real label
+"Down payment savings." This predates Phase 2, isn't dishonest (just
+inelegant), and is out of this slice's scope.
+
+**Tests**: real Chromium screenshots across desktop/mobile covering the
+Domino's before/initial/mid-fall/active-next/explain-and-cta states (the
+mid-fall and active-next states specifically re-verified with a scroll-
+following test after an initial fixed-viewport pass produced misleading
+below-the-fold screenshots — a test artifact, not a site bug, confirmed
+by direct DOM inspection); the Unlock Room's default/scenario-loaded/
+door-toggled/URL-continuity/mobile states; `prefers-reduced-motion` for
+both pages; a DOM-state check confirming the reduced-motion chain reaches
+its fully-resolved state within 150ms of trigger; zero real JS errors
+(only the pre-existing sandbox font-loading `net::ERR_CONNECTION_RESET`
+noise present in every prior slice's tests). Re-ran the full Slice 1
+(hero), Slice 2 (Life Map), and Slice 3 (Move Showcase) regression suites
+after these changes — all pass unchanged, confirming no cross-slice
+breakage.
+
+**What this slice does not attempt.** The Opportunity Radar and
+Future-Back's own visual treatment — still their pre-Phase-2 presentation
+(next slice's job). No live "recommendation changes" event exists on the
+public site, so the Domino's chain remains an honestly-labeled sample
+sequence ("Sample unlock sequence... Nothing here is saved or completed
+for real"), never a claim about what will happen for a real visitor.
+
 ## What was deliberately not attempted, across all of these directives
 
 Naming these explicitly matters more than leaving them implied — none of

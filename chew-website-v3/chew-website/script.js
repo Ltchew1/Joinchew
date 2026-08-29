@@ -698,6 +698,9 @@ document.addEventListener('DOMContentLoaded', function () {
     var dominoSectionEl = document.getElementById('domino-section');
     var dominoTriggerEl = document.getElementById('domino-trigger');
     var dominoRowEl = document.getElementById('domino-row');
+    var dominoExplainEl = document.getElementById('domino-explain');
+    var dominoCtaEl = document.getElementById('domino-cta');
+    var dominoUnlockLinkEl = document.getElementById('domino-unlock-link');
     var dominoTimeouts = [];
     var lastRequirementSequence = null;
     var lastBasedOnFacts = null;
@@ -708,9 +711,32 @@ document.addEventListener('DOMContentLoaded', function () {
       dominoTimeouts = [];
     }
 
-    function capabilityStatusLine(tile) {
-      if (!tile.capabilitySlug) return '';
-      return ' Connected to: ' + escapeHtml(tile.capabilityName) + '.';
+    var GATE_GLYPH =
+      '<svg class="domino-node-gate" viewBox="0 0 24 24" fill="none" aria-hidden="true">'
+      + '<path class="shackle" d="M8 10V7a4 4 0 0 1 8 0v3" stroke-linecap="round"/>'
+      + '<rect class="body" x="5" y="10" width="14" height="10" rx="2"/>'
+      + '</svg>';
+
+    function capabilityOpportunityLine(tile) {
+      if (!tile.capabilitySlug) return null;
+      var cap = lastCapabilityOverview ? lastCapabilityOverview.filter(function (c) { return c.slug === tile.capabilitySlug; })[0] : null;
+      if (!cap) return 'Real capability connected: ' + escapeHtml(tile.capabilityName);
+      return 'Real capability connected: ' + escapeHtml(tile.capabilityName) + ' — '
+        + (cap.available ? cap.activeProviderCount + ' active provider' + (cap.activeProviderCount === 1 ? '' : 's') : 'no active provider yet');
+    }
+
+    // THE MOVE, echoed at the top of the chain — the same real chosen
+    // tile and action text the hero already revealed, never re-derived,
+    // so this reads as "what the Move above causes," not a fresh guess.
+    function dominoMoveHeaderHtml(chosenTile) {
+      if (!chosenTile) return '';
+      return '<div class="domino-node domino-node--move is-active" role="listitem" style="border-color:var(--gold-light);">'
+        + GATE_GLYPH
+        + '<div class="domino-node-body">'
+        + '<span class="domino-node-status" style="color:var(--gold-light); text-transform:uppercase; letter-spacing:0.08em; font-size:0.68rem; font-weight:700;">The Move</span>'
+        + '<span class="domino-node-label">' + escapeHtml(chosenTile.label) + '</span>'
+        + '</div></div>'
+        + '<span class="domino-trace-seg domino-trace-seg--move is-lit" aria-hidden="true"></span>';
     }
 
     function runDomino() {
@@ -718,36 +744,49 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!lastRequirementSequence || !lastRequirementSequence.length) return;
 
       var chosenIndex = lastRequirementSequence.findIndex(function (t) { return t.key === lastChosenRequirementKey; });
-      var tilesHtml = lastRequirementSequence.map(function (tile, i) {
+      dominoExplainEl.hidden = false;
+      dominoExplainEl.classList.remove('is-visible');
+      dominoCtaEl.hidden = false;
+      dominoCtaEl.classList.remove('is-visible');
+      dominoExplainEl.innerHTML = '';
+
+      var nodesHtml = lastRequirementSequence.map(function (tile, i) {
         var met = lastBasedOnFacts[tile.key] && lastBasedOnFacts[tile.key].met;
         var startState = met ? 'is-cleared' : '';
-        return '<div class="domino-tile ' + startState + '" data-index="' + i + '">'
-          + '<span class="domino-tile-label">' + escapeHtml(tile.label) + '</span>'
-          + '<span class="domino-tile-status" data-status></span>'
-          + '</div>';
-      }).join('<span class="domino-connector" data-connector aria-hidden="true">&rarr;</span>');
+        return '<div class="domino-node ' + startState + '" role="listitem" data-index="' + i + '">'
+          + GATE_GLYPH
+          + '<div class="domino-node-body">'
+          + '<span class="domino-node-label">' + escapeHtml(tile.label) + '</span>'
+          + '<span class="domino-node-status" data-status></span>'
+          + '<span class="domino-node-opportunity" data-opportunity hidden></span>'
+          + '</div></div>';
+      }).join('<span class="domino-trace-seg" data-connector></span>');
 
       if (chosenIndex !== -1 && chosenIndex === lastRequirementSequence.length - 1) {
-        tilesHtml += '<span class="domino-connector" data-connector aria-hidden="true">&rarr;</span>'
-          + '<div class="domino-tile is-final" data-final><span class="domino-tile-label">Pathway Clear</span><span class="domino-tile-status" data-status>(simulated)</span></div>';
+        nodesHtml += '<span class="domino-trace-seg" data-connector></span>'
+          + '<div class="domino-node is-final" role="listitem" data-final><div class="domino-node-body">'
+          + '<span class="domino-node-label">Pathway Clear</span>'
+          + '<span class="domino-node-status" data-status>(sample)</span>'
+          + '</div></div>';
       }
 
-      dominoRowEl.innerHTML = tilesHtml;
+      var chosenTile = chosenIndex !== -1 ? lastRequirementSequence[chosenIndex] : null;
+      dominoRowEl.innerHTML = dominoMoveHeaderHtml(chosenTile) + nodesHtml;
       dominoRowEl.hidden = false;
 
-      var tiles = dominoRowEl.querySelectorAll('.domino-tile');
-      var connectors = dominoRowEl.querySelectorAll('.domino-connector');
+      var tiles = dominoRowEl.querySelectorAll('.domino-node:not(.domino-node--move)');
+      var connectors = dominoRowEl.querySelectorAll('.domino-trace-seg:not(.domino-trace-seg--move)');
 
       // Set the static status text for already-met and locked tiles immediately.
       lastRequirementSequence.forEach(function (tile, i) {
         var statusEl = tiles[i].querySelector('[data-status]');
         var met = lastBasedOnFacts[tile.key] && lastBasedOnFacts[tile.key].met;
         if (met) {
-          statusEl.textContent = 'Already met.' + capabilityStatusLine(tile);
+          statusEl.textContent = 'Already met.';
         } else if (i === chosenIndex) {
-          statusEl.textContent = 'CHEW\'s current real focus.' + capabilityStatusLine(tile);
+          statusEl.textContent = 'CHEW\'s current real focus.';
         } else {
-          statusEl.textContent = 'Comes after.' + capabilityStatusLine(tile);
+          statusEl.textContent = 'Comes after in sequence.';
         }
       });
 
@@ -757,6 +796,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       if (chosenIndex === -1) return; // everything already met — nothing to simulate falling
 
+      // Step: the chosen requirement locks into focus and resolves.
+      tiles[chosenIndex].setAttribute('aria-current', 'step');
       runStep(400, function () {
         tiles[chosenIndex].classList.add('is-falling');
         if (connectors[chosenIndex]) connectors[chosenIndex].classList.add('is-lit');
@@ -764,21 +805,49 @@ document.addEventListener('DOMContentLoaded', function () {
       runStep(revealReduceMotion ? 0 : 950, function () {
         tiles[chosenIndex].classList.remove('is-falling');
         tiles[chosenIndex].classList.add('is-cleared');
-        tiles[chosenIndex].querySelector('[data-status]').textContent = 'Simulated: clears now.' + capabilityStatusLine(lastRequirementSequence[chosenIndex]);
+        tiles[chosenIndex].removeAttribute('aria-current');
+        tiles[chosenIndex].querySelector('[data-status]').textContent = 'Sample: clears now.';
 
         // tiles[] includes the synthetic "Pathway Clear" tile when
         // present, so checking lastRequirementSequence.length (not just
         // whether tiles[chosenIndex + 1] exists) is what correctly tells
         // a real next requirement apart from that synthetic tile.
         var hasRealNextRequirement = chosenIndex + 1 < lastRequirementSequence.length;
+        var explainHtml;
         if (hasRealNextRequirement) {
-          var nextTile = tiles[chosenIndex + 1];
-          nextTile.classList.add('is-active');
-          nextTile.querySelector('[data-status]').textContent = 'Becomes CHEW\'s next real focus.' + capabilityStatusLine(lastRequirementSequence[chosenIndex + 1]);
+          var nextTile = lastRequirementSequence[chosenIndex + 1];
+          var nextEl = tiles[chosenIndex + 1];
+          nextEl.classList.add('is-active');
+          nextEl.setAttribute('aria-current', 'step');
+          nextEl.querySelector('[data-status]').textContent = 'Becomes CHEW\'s next real focus.';
+          var oppLine = capabilityOpportunityLine(nextTile);
+          if (oppLine) {
+            runStep(revealReduceMotion ? 0 : 500, function () {
+              var oppEl = nextEl.querySelector('[data-opportunity]');
+              oppEl.textContent = oppLine;
+              oppEl.hidden = false;
+              requestAnimationFrame(function () { oppEl.classList.add('is-visible'); });
+            });
+          }
+          explainHtml = '<span class="domino-explain-label">Why This Changed</span><p>"' + escapeHtml(chosenTile.label) + '" was next in CHEW\'s real sequence'
+            + (lastGoalTitle ? ' for "' + escapeHtml(lastGoalTitle) + '"' : '') + '. Once resolved, "' + escapeHtml(nextTile.label)
+            + '" becomes the real next focus' + (oppLine ? ', with a real capability already connected to it.' : '.') + '</p>';
         } else {
-          var finalTile = dominoRowEl.querySelector('[data-final]');
-          if (finalTile) finalTile.classList.add('is-active');
+          var finalEl = dominoRowEl.querySelector('[data-final]');
+          if (finalEl) finalEl.classList.add('is-active');
+          explainHtml = '<span class="domino-explain-label">Why This Changed</span><p>"' + escapeHtml(chosenTile.label) + '" was the last real unmet requirement in this sequence'
+            + (lastGoalTitle ? ' for "' + escapeHtml(lastGoalTitle) + '"' : '') + '. Once resolved, every known requirement is honestly met for this example.</p>';
         }
+        runStep(revealReduceMotion ? 0 : 500, function () {
+          dominoExplainEl.innerHTML = explainHtml;
+          dominoExplainEl.classList.add('is-visible');
+        });
+        runStep(revealReduceMotion ? 0 : 850, function () {
+          if (dominoUnlockLinkEl && chewLastSelectedGoal) {
+            dominoUnlockLinkEl.setAttribute('href', 'unlock-room.html?goal=' + encodeURIComponent(chewLastSelectedGoal));
+          }
+          dominoCtaEl.classList.add('is-visible');
+        });
       });
     }
 

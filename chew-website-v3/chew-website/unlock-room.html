@@ -137,6 +137,35 @@
       (cap.available ? cap.activeProviderCount + ' active provider' + (cap.activeProviderCount === 1 ? '' : 's') + '.' : 'no active provider yet.');
   }
 
+  // LOCK STATE HONESTY: every closed door names its real reason, in the
+  // engine's own real terms — the same requiredValue/comparison/unit and
+  // current fact value api/intelligence-demo.js already returns per
+  // requirement (rec.basedOnFacts[key]). Never a mystery lock, and never
+  // a fabricated number when the real state is honestly unknown.
+  // Requirement units carrying a leading "cents" (e.g. the down-payment
+  // threshold's "cents (illustrative $20,000 threshold)") store a
+  // cents-integer value — show it as currency, not a raw integer.
+  function formatRequirementValue(value, unit) {
+    if (unit && /^cents\b/.test(unit)) {
+      return '$' + (Number(value) / 100).toLocaleString('en-US');
+    }
+    return String(value) + (unit ? ' ' + unit : '');
+  }
+
+  function lockReasonHtml(tile) {
+    var fact = realFacts[tile.key];
+    var currentText = !fact || fact.value === null ? 'not yet provided' : escapeHtml(formatRequirementValue(fact.value, tile.unit));
+    var requiredText = escapeHtml(formatRequirementValue(tile.requiredValue, tile.unit));
+    var comparisonWord = { gte: 'at least', lte: 'at most', eq: 'exactly', boolean_true: 'true' }[tile.comparison] || tile.comparison;
+    var requiredLine = tile.comparison === 'boolean_true'
+      ? 'Required: true.'
+      : 'Required: ' + comparisonWord + ' ' + requiredText + '.';
+    return '<span class="unlockroom-door-reason-label">Why locked</span>'
+      + '<span class="unlockroom-door-reason-line">Current: ' + currentText + '</span>'
+      + '<span class="unlockroom-door-reason-line">' + requiredLine + '</span>'
+      + '<span class="unlockroom-door-reason-line">Next useful move: ' + escapeHtml(tile.actionIfUnmet || 'Resolve this condition.') + '</span>';
+  }
+
   function renderCorridor() {
     corridorEl.innerHTML = requirementSequence.map(function (tile, i) {
       var isOpen = !!doorState[tile.key];
@@ -149,7 +178,8 @@
         '<span class="unlockroom-door-num">' + (i + 1) + '</span>' +
         '<span class="unlockroom-lock-state-text">' + (isOpen ? 'Open' : 'Locked') + '</span></button>' +
         '<span class="unlockroom-door-title">' + escapeHtml(tile.label) + '</span>' +
-        '<span class="unlockroom-door-note">' + (isOpen ? 'This condition is met.' : escapeHtml(tile.actionIfUnmet || 'Not yet met.')) + '</span>' +
+        '<span class="unlockroom-door-note" data-note>' + (isOpen ? 'This condition is met.' : escapeHtml(tile.actionIfUnmet || 'Not yet met.')) + '</span>' +
+        '<span class="unlockroom-door-reason" data-reason' + (isOpen ? ' hidden' : '') + '>' + lockReasonHtml(tile) + '</span>' +
         (capNote ? '<span class="unlockroom-door-cap">' + capNote + '</span>' : '') +
         '</div></li>';
     }).join('');
@@ -175,7 +205,8 @@
     btnEl.setAttribute('aria-checked', String(isOpen));
     btnEl.querySelector('.unlockroom-lock-state-text').textContent = isOpen ? 'Open' : 'Locked';
     var tile = requirementSequence.filter(function (t) { return t.key === key; })[0];
-    doorEl.querySelector('.unlockroom-door-note').textContent = isOpen ? 'This condition is met.' : (tile.actionIfUnmet || 'Not yet met.');
+    doorEl.querySelector('[data-note]').textContent = isOpen ? 'This condition is met.' : (tile.actionIfUnmet || 'Not yet met.');
+    doorEl.querySelector('[data-reason]').hidden = isOpen;
   }
 
   function updateStats() {
@@ -221,6 +252,17 @@
   pickerEl.querySelectorAll('.unlockroom-scenario-btn').forEach(function (btn) {
     btn.addEventListener('click', function () { runScenario(btn.getAttribute('data-goal')); });
   });
+
+  // Goal continuity from the homepage Domino chain: "See What Opens
+  // Next" links here as unlock-room.html?goal=home|funding, so the
+  // visitor's sample goal carries straight through rather than
+  // resetting to an empty picker. Only a real, valid goal key is
+  // honored — anything else is silently ignored and the picker just
+  // waits for a manual choice, same as a direct visit.
+  var urlGoal = new URLSearchParams(window.location.search).get('goal');
+  if (urlGoal === 'home' || urlGoal === 'funding') {
+    runScenario(urlGoal);
+  }
 
   resetBtn.addEventListener('click', function () {
     if (!requirementSequence) return;
