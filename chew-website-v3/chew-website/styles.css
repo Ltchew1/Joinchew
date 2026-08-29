@@ -3010,6 +3010,3 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   .cx-world[data-world="build"] { --world-focal: 44% 58%; }
 }
 
-/* Branded primary CTA presentation — visual treatment only, never
-   applied to ordinary sentence prose. */
-.cta-brand { text-transform: uppercase; letter-spacing: 0.06em; }
