@@ -412,72 +412,113 @@ document.addEventListener('DOMContentLoaded', function () {
   // Programs, which really is about business funding); every other
   // World gets the same honest "ask CHEW" fallback rather than a forced
   // link to a page that isn't actually that World.
+  // Copy hierarchy per correction: aspiration first, CHEW's actual role
+  // second, truthful access state last and quiet (rendered separately,
+  // below the fold of the panel, never leading the experience).
   var WORLD_DETAILS = {
     home: {
       title: 'Home',
-      body: 'Everyday money, finally in one place — income, spending, and structure viewed as one system instead of a dozen disconnected accounts.'
+      aspiration: 'Build toward the place you want to call yours.',
+      role: 'CHEW organizes the financial position, information, barriers, and next moves connected to that goal.'
     },
     drive: {
       title: 'Drive',
-      body: 'Getting a vehicle without wrecking the rest of the plan — readiness and timing, weighed against everything else you’re building toward.'
+      aspiration: 'A vehicle that fits the life you’re building, not just the payment.',
+      role: 'CHEW weighs the timing and readiness against everything else already on your plate.'
     },
     build: {
       title: 'Build',
-      body: 'Turning a business idea into something fundable — the documentation, structure, and sequencing lenders actually look for.',
+      aspiration: 'Turn the idea into something a lender can actually say yes to.',
+      role: 'CHEW sequences the documentation and structure funding actually requires.',
       relatedHref: 'services.html',
       relatedLabel: 'See CHEW Programs →'
     },
     go: {
       title: 'Go',
-      body: 'The freedom to move — relocation, travel, or a new opportunity — planned so it strengthens your position instead of straining it.'
+      aspiration: 'The freedom to move, on your own terms.',
+      role: 'CHEW plans it so the move strengthens your position instead of straining it.'
     },
     celebrate: {
       title: 'Celebrate',
-      body: 'Milestones — weddings, milestones, big moments — without the money hangover that usually follows them.'
+      aspiration: 'Milestones, without the money hangover after.',
+      role: 'CHEW builds the buffer before the celebration, not the regret after it.'
     },
     property: {
       title: 'Property',
-      body: 'Owning real estate, on purpose and on paper — the real requirements between where you are and a real offer.'
+      aspiration: 'Real assets, owned on purpose.',
+      role: 'CHEW maps the real requirements between where you are and a real offer.'
     },
     levelup: {
       title: 'Level Up',
-      body: 'Skills, credentials, and income, moving in the same direction — growth that actually shows up in what you’re able to do next.'
+      aspiration: 'Skills and income, moving in the same direction.',
+      role: 'CHEW connects what you’re learning to what it’s actually worth.'
     },
     protect: {
       title: 'Protect',
-      body: 'The plan for when life doesn’t go to plan — the coverage and cushion most people only think about after they needed it.'
+      aspiration: 'The plan for when life doesn’t go to plan.',
+      role: 'CHEW keeps the coverage and cushion in view before you need them, not after.'
     }
   };
 
   var worldButtons = document.querySelectorAll('.cx-world');
   var worldPanel = document.getElementById('cx-world-panel');
-  if (worldButtons.length && worldPanel) {
+  var worldGrid = document.getElementById('cx-worlds-grid');
+  if (worldButtons.length && worldPanel && worldGrid) {
     var worldReduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var worldPanelTitle = document.getElementById('cx-world-panel-title');
-    var worldPanelBody = document.getElementById('cx-world-panel-body');
+    var worldPanelAspiration = document.getElementById('cx-world-panel-aspiration');
+    var worldPanelRole = document.getElementById('cx-world-panel-role');
     var worldPanelRelated = document.getElementById('cx-world-panel-related');
     var openWorldKey = null;
+    var worldReachEl = null;
+
+    function clearWorldReach() {
+      if (worldReachEl && worldReachEl.parentNode) worldReachEl.parentNode.removeChild(worldReachEl);
+      worldReachEl = null;
+    }
+
+    // The gold "reach" bloom: CHEW's route arriving at the selected
+    // destination, positioned over the actual selected tile rather than
+    // a generic connecting line, since the constellation's layout is
+    // organic (not a fixed grid CHEW can precompute paths across).
+    function showWorldReach(btn) {
+      clearWorldReach();
+      var el = document.createElement('div');
+      el.className = 'cx-world-reach';
+      el.style.left = btn.offsetLeft + 'px';
+      el.style.top = btn.offsetTop + 'px';
+      el.style.width = btn.offsetWidth + 'px';
+      el.style.height = btn.offsetHeight + 'px';
+      btn.parentNode.insertBefore(el, btn.nextSibling);
+      worldReachEl = el;
+    }
 
     function closeWorldPanel() {
       openWorldKey = null;
-      worldPanel.hidden = true;
+      worldGrid.classList.remove('has-selection');
+      worldPanel.classList.remove('is-visible');
+      clearWorldReach();
       worldButtons.forEach(function (b) {
         b.classList.remove('is-open');
         b.setAttribute('aria-expanded', 'false');
       });
+      window.setTimeout(function () { if (!openWorldKey) worldPanel.hidden = true; }, worldReduceMotion ? 0 : 450);
     }
 
     function openWorldPanel(btn, key) {
       var detail = WORLD_DETAILS[key];
       if (!detail) return;
       openWorldKey = key;
+      worldGrid.classList.add('has-selection');
       worldButtons.forEach(function (b) {
         var isThis = b === btn;
         b.classList.toggle('is-open', isThis);
         b.setAttribute('aria-expanded', isThis ? 'true' : 'false');
       });
+      showWorldReach(btn);
       worldPanelTitle.textContent = detail.title;
-      worldPanelBody.textContent = detail.body;
+      worldPanelAspiration.textContent = detail.aspiration;
+      worldPanelRole.textContent = detail.role;
       if (detail.relatedHref) {
         worldPanelRelated.href = detail.relatedHref;
         worldPanelRelated.textContent = detail.relatedLabel || 'Learn more →';
@@ -486,6 +527,7 @@ document.addEventListener('DOMContentLoaded', function () {
         worldPanelRelated.hidden = true;
       }
       worldPanel.hidden = false;
+      requestAnimationFrame(function () { worldPanel.classList.add('is-visible'); });
       worldPanel.scrollIntoView({ block: 'nearest', behavior: worldReduceMotion ? 'auto' : 'smooth' });
     }
 
@@ -518,12 +560,15 @@ document.addEventListener('DOMContentLoaded', function () {
     var chainEl = document.getElementById('reveal-chain');
     var cxWorldEls = document.querySelectorAll('.cx-world');
 
-    // The only two mappings the real demo legitimately supports: the
-    // "buy a home" scenario is a real-estate goal (World: Property), the
-    // "business funding-ready" scenario is a business goal (World:
-    // Build). The other six Worlds have no demo-backed goal yet, so they
-    // are deliberately absent from this map rather than guessed at.
-    var GOAL_TO_WORLD = { home: 'property', funding: 'build' };
+    // The only two mappings the real demo legitimately supports. Home and
+    // Property are deliberately separate CHEW Worlds — Home is the
+    // primary-residence goal ("buy a first home"), Property is the
+    // broader investment/commercial real-asset destination — so the
+    // "buy a home" scenario maps to Home, not Property. The "business
+    // funding-ready" scenario maps to Build. The other six Worlds have no
+    // demo-backed goal yet, so they are deliberately absent from this map
+    // rather than guessed at.
+    var GOAL_TO_WORLD = { home: 'home', funding: 'build' };
 
     // Genuine reaction, not a fabricated one: light the real CHEW World
     // the just-returned recommendation actually corresponds to. No
