@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Business Path Engine (Early Preview) | CHEW</title>
+<meta name="description" content="An early, honest preview of CHEW's Path Engine — real, sourced requirements for starting a business, clearly labeled by how verified they actually are. Currently covers one path: Florida LLC formation.">
+<link rel="canonical" href="https://www.joinchew.com/business-pathfinder.html">
+<meta name="robots" content="noindex, follow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="brand">
+      <img src="assets/chew-icon-official.png" alt="" width="40" height="40">
+      CHEW
+    </a>
+    <nav class="nav" id="site-nav">
+      <a href="index.html">Home</a>
+      <a href="how-it-works.html">How It Works</a>
+      <a href="services.html">Programs</a>
+      <a href="blueprint.html">Blueprint</a>
+      <a href="philosophy.html">Philosophy</a>
+      <a href="education.html">Education</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="apply.html" class="btn btn-gold btn-sm">I'm Ready to Chew</a>
+    </div>
+    <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="site-nav">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="hero-glow"></div>
+    <div class="container" style="position:relative;">
+      <span class="eyebrow">Early Preview &middot; Not a Finished Product</span>
+      <h1 style="max-width:22ch;">The Path Engine, honestly, at the very start.</h1>
+      <p class="max-prose" style="font-size:1.05rem; margin-top:16px;">
+        This is the first real, working piece of something much bigger: a system that turns
+        "I want to start a business" into a sourced, sequenced set of steps &mdash; not a
+        generic checklist. Today it covers exactly one path. Every step below is either a
+        genuinely sourced fact or clearly labeled as general guidance. Nothing is invented.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0;">
+    <div class="container" style="max-width:720px;">
+      <div class="glass card">
+        <h3 style="margin-top:0;">Try it</h3>
+        <div class="form-field">
+          <label for="pf-business">Business type</label>
+          <select id="pf-business">
+            <option value="llc-formation">Form an LLC (General)</option>
+            <option value="cleaning-service">Cleaning business &mdash; not yet covered</option>
+            <option value="barbershop">Barbershop &mdash; not yet covered</option>
+            <option value="restaurant">Restaurant &mdash; not yet covered</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="pf-state">State</label>
+          <select id="pf-state">
+            <option value="FL">Florida</option>
+            <option value="CA">California &mdash; not yet covered</option>
+            <option value="TX">Texas &mdash; not yet covered</option>
+            <option value="NY">New York &mdash; not yet covered</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="pf-county">County (optional)</label>
+          <input type="text" id="pf-county" placeholder="e.g. Orange">
+        </div>
+        <button type="button" class="btn btn-gold" id="pf-submit">See the path</button>
+        <div id="pf-error" class="status-note" style="display:none; margin-top:18px;"></div>
+      </div>
+
+      <div id="pf-results" style="margin-top:32px; display:none;">
+        <div id="pf-coverage-banner" class="glass card" style="margin-bottom:24px;"></div>
+        <div id="pf-steps"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--panel">
+    <div class="container max-prose">
+      <span class="eyebrow">What This Actually Is</span>
+      <h2>Two real, sourced facts. A real, tested engine underneath.</h2>
+      <p>
+        As of today, the underlying system holds exactly two verified requirements &mdash;
+        Florida LLC formation and the federal EIN &mdash; each tied to a real government
+        source, a real URL, and the date it was checked. Everything else you could ask this
+        page (a different state, a licensed industry, a different county) will honestly tell
+        you it isn't covered yet, rather than guess. That honesty is the point: this is the
+        foundation for something that will eventually cover real licensing across real
+        jurisdictions, built one verified fact at a time instead of faked all at once.
+      </p>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var COVERAGE_COPY = {
+    VERIFIED: {
+      title: 'Verified coverage',
+      body: 'Every step below has been checked against a real, official source for this jurisdiction.'
+    },
+    PARTIAL: {
+      title: 'Partial coverage',
+      body: 'Some official requirements are verified below. Anything more specific to the county or city you entered has not been confirmed yet — treat those details as general guidance, not a verified answer.'
+    },
+    GENERAL_GUIDANCE: {
+      title: 'CHEW has not completed verified coverage for this business and jurisdiction yet',
+      body: 'We are not going to guess at local licensing requirements we have not confirmed. This path hasn’t been built yet — check back as coverage expands.'
+    }
+  };
+
+  var REQUIREMENT_LABEL = {
+    required: 'Required',
+    recommended: 'Recommended',
+    optional_advantage: 'Optional Advantage'
+  };
+
+  function formatCost(cents, notes) {
+    if (cents === null || cents === undefined) return notes || 'Cost varies';
+    if (cents === 0) return 'Free';
+    return '$' + (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 0 });
+  }
+
+  function formatDate(iso) {
+    if (!iso) return null;
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  function renderStep(step) {
+    var el = document.createElement('div');
+    el.className = 'glass card';
+    el.style.marginBottom = '18px';
+
+    var badgeClass = step.requirementType === 'required' ? 'tag--gold' : '';
+    var verifiedDate = formatDate(step.lastVerifiedAt);
+
+    var html = '';
+    html += '<span class="tag ' + badgeClass + '">' + (REQUIREMENT_LABEL[step.requirementType] || step.requirementType) + '</span>';
+    html += '<h3 style="margin-top:8px;">' + step.sequenceOrder + '. ' + escapeHtml(step.name) + '</h3>';
+    html += '<p><strong>Issued by:</strong> ' + escapeHtml(step.issuingAuthority) + '</p>';
+    html += '<p><strong>Cost:</strong> ' + escapeHtml(formatCost(step.costCents, step.costNotes)) + (step.costNotes ? ' &mdash; ' + escapeHtml(step.costNotes) : '') + '</p>';
+    if (step.documentsNeeded && step.documentsNeeded.length) {
+      html += '<p><strong>What you need:</strong></p><ul>';
+      step.documentsNeeded.forEach(function (d) { html += '<li>' + escapeHtml(d) + '</li>'; });
+      html += '</ul>';
+    }
+    if (step.notes) html += '<p>' + escapeHtml(step.notes) + '</p>';
+    html += '<p style="font-size:0.85rem; color:var(--text-faint);">Verified from ' + escapeHtml(step.source.name) + (verifiedDate ? ' &middot; Last checked ' + verifiedDate : '') + '</p>';
+    if (step.officialActionUrl) {
+      html += '<a href="' + encodeURI(step.officialActionUrl) + '" target="_blank" rel="noopener" class="btn btn-outline" style="margin-top:10px;">Go to the official source &rarr;</a>';
+    }
+    el.innerHTML = html;
+    return el;
+  }
+
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  }
+
+  document.getElementById('pf-submit').addEventListener('click', function () {
+    var businessType = document.getElementById('pf-business').value;
+    var state = document.getElementById('pf-state').value;
+    var county = document.getElementById('pf-county').value.trim();
+    var errorEl = document.getElementById('pf-error');
+    var resultsEl = document.getElementById('pf-results');
+    var bannerEl = document.getElementById('pf-coverage-banner');
+    var stepsEl = document.getElementById('pf-steps');
+
+    errorEl.style.display = 'none';
+    resultsEl.style.display = 'none';
+
+    var url = '/api/business-path?businessType=' + encodeURIComponent(businessType) + '&state=' + encodeURIComponent(state);
+    if (county) url += '&county=' + encodeURIComponent(county);
+
+    fetch(url)
+      .then(function (res) {
+        if (!res.ok) return res.json().then(function (d) { throw new Error(d.error || 'Lookup failed'); });
+        return res.json();
+      })
+      .then(function (data) {
+        var copy = COVERAGE_COPY[data.coverage] || COVERAGE_COPY.GENERAL_GUIDANCE;
+        bannerEl.innerHTML = '<span class="eyebrow">' + data.coverage.replace('_', ' ') + '</span><h3 style="margin-top:6px;">' + copy.title + '</h3><p>' + copy.body + '</p>';
+        stepsEl.innerHTML = '';
+        if (data.steps.length) {
+          data.steps.forEach(function (step) { stepsEl.appendChild(renderStep(step)); });
+        } else {
+          var none = document.createElement('p');
+          none.style.color = 'var(--text-muted)';
+          none.textContent = 'No specific steps to show yet for this combination — general education on this topic is coming as coverage expands.';
+          stepsEl.appendChild(none);
+        }
+        resultsEl.style.display = 'block';
+      })
+      .catch(function (err) {
+        errorEl.textContent = err.message || 'Something went wrong — please try again.';
+        errorEl.style.display = 'block';
+      });
+  });
+})();
+</script>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-legal">
+      <span>&copy; 2026 CHEW LLC. All rights reserved.</span>
+      <span>CHEW LLC is a financial education and business-infrastructure company. CHEW does not provide credit repair services, does not promise or guarantee funding, approvals, score changes, or removal of information, and does not provide legal, tax, or investment advice. Results depend on individual circumstances, participation, and third-party decisions. See our <a href="disclaimer.html" style="color:inherit;">disclaimer</a>.</span>
+    </div>
+  </div>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>

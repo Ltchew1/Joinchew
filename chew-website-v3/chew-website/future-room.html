@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Future Room (Early Preview) | CHEW</title>
+<meta name="description" content="See the real distance between today and a real CHEW goal. The destination, the requirement chain connecting them, what's already built, what's still missing, and exactly where to start — all real data, nothing invented.">
+<link rel="canonical" href="https://www.joinchew.com/future-room.html">
+<meta name="robots" content="noindex, follow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="brand">
+      <img src="assets/chew-icon-official.png" alt="" width="40" height="40">
+      CHEW
+    </a>
+    <nav class="nav" id="site-nav">
+      <a href="index.html">Home</a>
+      <a href="how-it-works.html">How It Works</a>
+      <a href="services.html">Programs</a>
+      <a href="blueprint.html">Blueprint</a>
+      <a href="philosophy.html">Philosophy</a>
+      <a href="education.html">Education</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="apply.html" class="btn btn-gold btn-sm">I'm Ready to Chew</a>
+    </div>
+    <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="site-nav">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="hero-glow"></div>
+    <div class="container" style="position:relative;">
+      <span class="eyebrow">Early Preview &middot; Not a Finished Product</span>
+      <h1 style="max-width:24ch;">The real distance between today and the goal.</h1>
+      <p class="max-prose" style="font-size:1.05rem; margin-top:16px;">
+        Not a checklist &mdash; a structure. The destination on one side, today on the other, and
+        the real requirement chain physically connecting them: what's already built, what's still
+        unfinished, and exactly which piece comes next.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0;">
+    <div class="container">
+      <div class="futureroom-scenario-picker" id="futureroom-scenario-picker" role="group" aria-label="Choose an example scenario" data-reveal>
+        <button type="button" class="unlockroom-scenario-btn" data-goal="home">Buy a home</button>
+        <button type="button" class="unlockroom-scenario-btn" data-goal="funding">Get business funding-ready</button>
+      </div>
+      <p class="netroom-status" id="futureroom-status" role="status" aria-live="polite"></p>
+
+      <div id="futureroom-body" hidden>
+        <p class="futureroom-progress-line">
+          <strong id="futureroom-resolved-count">0</strong> of <span id="futureroom-total-count">0</span> real requirements resolved
+        </p>
+
+        <div class="futureroom-scene">
+          <div class="futureroom-pulse-sweep" id="futureroom-sweep" aria-hidden="true"></div>
+          <div class="futureroom-baseline"><div class="futureroom-baseline-fill" id="futureroom-baseline-fill"></div></div>
+          <div class="futureroom-track" id="futureroom-track" aria-label="The real chain connecting today to the goal"></div>
+        </div>
+
+        <div class="futureroom-controls">
+          <button type="button" class="futureroom-nav-btn" id="futureroom-jump-today">Jump to Today</button>
+          <button type="button" class="futureroom-nav-btn" id="futureroom-prev">&larr; Back</button>
+          <input type="range" class="futureroom-scrubber" id="futureroom-scrubber" min="0" max="1" step="1" value="0" aria-label="Move through the chain from Today to the Future">
+          <button type="button" class="futureroom-nav-btn" id="futureroom-next">Forward &rarr;</button>
+          <button type="button" class="futureroom-nav-btn" id="futureroom-jump-future">Jump to Future</button>
+        </div>
+
+        <button type="button" class="futureroom-pulse-btn" id="futureroom-pulse-btn">Show Me What It Takes &rarr;</button>
+
+        <div class="futureroom-detail" id="futureroom-detail"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--panel">
+    <div class="container max-prose">
+      <span class="eyebrow">What This Actually Is</span>
+      <h2>A real goal, taken apart &mdash; nothing invented about the future itself.</h2>
+      <p>
+        The destination is the real <code>goals.title</code> row for this illustrative scenario.
+        Every segment between today and it is a real <code>transition_requirements</code> row, lit
+        or unfinished based on this example's real current facts, with the current focus landing
+        exactly on CHEW's real <code>chosenRequirementKey</code> &mdash; the same field CHEW Move
+        and Blind Spot already treat as today's real priority. Moving through the chain only
+        changes which piece you're inspecting; it never alters the underlying state, invents a
+        lifestyle outcome, or predicts a date. What's shown is structure, not fantasy.
+      </p>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var pickerEl = document.getElementById('futureroom-scenario-picker');
+  var statusEl = document.getElementById('futureroom-status');
+  var bodyEl = document.getElementById('futureroom-body');
+  var trackEl = document.getElementById('futureroom-track');
+  var baselineFillEl = document.getElementById('futureroom-baseline-fill');
+  var sweepEl = document.getElementById('futureroom-sweep');
+  var resolvedCountEl = document.getElementById('futureroom-resolved-count');
+  var totalCountEl = document.getElementById('futureroom-total-count');
+  var scrubberEl = document.getElementById('futureroom-scrubber');
+  var detailEl = document.getElementById('futureroom-detail');
+  var pulseBtn = document.getElementById('futureroom-pulse-btn');
+
+  var requirementSequence = null;
+  var basedOnFacts = null;
+  var chosenKey = null;
+  var goalTitle = null;
+  var capabilityOverview = null;
+  var items = null;          // [{type:'today'}, {type:'segment', tile}, ..., {type:'future'}]
+  var focusedIndex = 0;
+  var pulseTimeouts = [];
+
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  }
+
+  function capabilityNote(tile) {
+    if (!tile.capabilitySlug) return null;
+    var cap = capabilityOverview ? capabilityOverview.filter(function (c) { return c.slug === tile.capabilitySlug; })[0] : null;
+    if (!cap) return 'Connected to: ' + escapeHtml(tile.capabilityName) + '.';
+    return 'Connected to: ' + escapeHtml(tile.capabilityName) + ' — ' +
+      (cap.available ? cap.activeProviderCount + ' active provider' + (cap.activeProviderCount === 1 ? '' : 's') + '.' : 'no active provider yet.');
+  }
+
+  function isResolved(tile) { return !!(basedOnFacts[tile.key] && basedOnFacts[tile.key].met); }
+
+  function buildItems() {
+    items = [{ type: 'today' }];
+    requirementSequence.forEach(function (tile) { items.push({ type: 'segment', tile: tile }); });
+    items.push({ type: 'future' });
+  }
+
+  function renderTrack() {
+    var resolvedCount = requirementSequence.filter(isResolved).length;
+    var total = requirementSequence.length;
+    resolvedCountEl.textContent = resolvedCount;
+    totalCountEl.textContent = total;
+    baselineFillEl.style.setProperty('--fill-pct', (total ? Math.round((resolvedCount / total) * 100) : 0) + '%');
+
+    var glowOp = 0.22 + (total ? (resolvedCount / total) * 0.4 : 0);
+    document.documentElement.style.setProperty('--futureroom-future-glow-op', String(glowOp));
+    document.documentElement.style.setProperty('--futureroom-future-glow', (24 + (total ? (resolvedCount / total) * 26 : 0)) + 'px');
+
+    var html = '';
+    items.forEach(function (item, i) {
+      if (item.type === 'today') {
+        html += '<div class="futureroom-anchor futureroom-anchor--today" style="--depth:0" data-index="0" tabindex="0" role="button" aria-label="Today — where this example starts">' +
+          '<div class="futureroom-anchor-node">TODAY</div>' +
+          '<span class="futureroom-anchor-eyebrow">Present</span>' +
+          '<span class="futureroom-anchor-title">Where this example starts</span>' +
+          '</div>';
+      } else if (item.type === 'future') {
+        html += '<div class="futureroom-anchor futureroom-anchor--future" style="--depth:' + i + '" data-index="' + i + '" tabindex="0" role="button" aria-label="The real goal: ' + escapeHtml(goalTitle || 'this scenario') + '">' +
+          '<div class="futureroom-anchor-node"><span class="futureroom-anchor-node-inner">&#9670;</span></div>' +
+          '<span class="futureroom-anchor-eyebrow">The Real Goal</span>' +
+          '<span class="futureroom-anchor-title">' + escapeHtml(goalTitle || 'This scenario’s goal') + '</span>' +
+          '</div>';
+      } else {
+        var tile = item.tile;
+        var resolved = isResolved(tile);
+        var isCurrent = tile.key === chosenKey;
+        var stateWord = resolved ? 'Resolved' : (isCurrent ? 'Current focus' : 'Not yet resolved');
+        html += '<div class="futureroom-segment ' + (resolved ? 'is-resolved' : '') + (isCurrent ? ' is-current' : '') + '" style="--depth:' + i + '" data-index="' + i + '">' +
+          '<button type="button" class="futureroom-segment-btn" aria-label="Requirement ' + (i) + ' of ' + requirementSequence.length + ': ' + escapeHtml(tile.label) + ' — ' + stateWord + '" data-index="' + i + '"></button>' +
+          '<span class="futureroom-segment-label">' + escapeHtml(tile.label) + (isCurrent ? '<span class="futureroom-segment-tag">Start Here</span>' : '') + '</span>' +
+          '</div>';
+      }
+    });
+    trackEl.innerHTML = html;
+
+    // Bind to the single genuine interactive control per item only (segment
+    // buttons, anchor divs) — not the [data-index] wrapper divs too, which
+    // also carry data-index purely so setFocus's class-toggle loop can style
+    // them. Binding to both double-fires on keydown bubbling from the button
+    // up through its wrapper, corrupting relative Arrow-key navigation.
+    trackEl.querySelectorAll('.futureroom-segment-btn, .futureroom-anchor').forEach(function (el) {
+      el.addEventListener('click', function () { setFocus(parseInt(el.getAttribute('data-index'), 10)); });
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setFocus(parseInt(el.getAttribute('data-index'), 10)); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); setFocus(Math.min(focusedIndex + 1, items.length - 1)); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); setFocus(Math.max(focusedIndex - 1, 0)); }
+      });
+    });
+
+    scrubberEl.max = String(items.length - 1);
+  }
+
+  function renderDetail(index) {
+    var item = items[index];
+    var html = '';
+    if (item.type === 'today') {
+      var resolvedCount = requirementSequence.filter(isResolved).length;
+      html = '<span class="futureroom-detail-eyebrow">Today</span>' +
+        '<span class="futureroom-detail-title">Where this example starts</span>' +
+        '<span class="futureroom-detail-note">' + resolvedCount + ' of ' + requirementSequence.length + ' real requirements are already resolved.</span>';
+    } else if (item.type === 'future') {
+      html = '<span class="futureroom-detail-eyebrow">The Real Goal</span>' +
+        '<span class="futureroom-detail-title">' + escapeHtml(goalTitle || 'This scenario’s goal') + '</span>' +
+        '<span class="futureroom-detail-note">' + requirementSequence.length + ' real requirements define the path to this goal in this example.</span>';
+    } else {
+      var tile = item.tile;
+      var resolved = isResolved(tile);
+      var isCurrent = tile.key === chosenKey;
+      var capNote = capabilityNote(tile);
+      html = '<span class="futureroom-detail-eyebrow">Requirement ' + item.__seq + ' of ' + requirementSequence.length + '</span>' +
+        '<span class="futureroom-detail-title">' + escapeHtml(tile.label) + '</span>' +
+        '<span class="futureroom-detail-note">' + (resolved ? 'Resolved — this condition is already met.' : (isCurrent ? 'CHEW’s real current focus — the next structural piece.' : escapeHtml(tile.actionIfUnmet || 'Not yet resolved.'))) + '</span>' +
+        (capNote ? '<span class="futureroom-detail-note">' + capNote + '</span>' : '');
+    }
+    detailEl.innerHTML = html;
+  }
+
+  function setFocus(index) {
+    focusedIndex = Math.max(0, Math.min(index, items.length - 1));
+    trackEl.querySelectorAll('[data-index]').forEach(function (el) {
+      el.classList.toggle('is-focused', parseInt(el.getAttribute('data-index'), 10) === focusedIndex);
+    });
+    scrubberEl.value = String(focusedIndex);
+    renderDetail(focusedIndex);
+    if (!reduceMotion) {
+      var el = trackEl.querySelector('[data-index="' + focusedIndex + '"]');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }
+
+  function clearPulseTimeouts() { pulseTimeouts.forEach(function (id) { clearTimeout(id); }); pulseTimeouts = []; }
+
+  function runPulse() {
+    clearPulseTimeouts();
+    var currentIndex = items.findIndex(function (it) { return it.type === 'segment' && it.tile.key === chosenKey; });
+    if (currentIndex === -1) currentIndex = items.length - 1; // everything resolved: land on the destination
+
+    if (reduceMotion) {
+      setFocus(currentIndex);
+      return;
+    }
+
+    sweepEl.classList.remove('is-active');
+    void sweepEl.offsetWidth;
+    sweepEl.classList.add('is-active');
+
+    var n = items.length;
+    for (var i = n - 1; i >= 0; i--) {
+      (function (idx) {
+        var delay = (n - 1 - idx) * 130;
+        pulseTimeouts.push(setTimeout(function () {
+          var el = trackEl.querySelector('[data-index="' + idx + '"]');
+          if (el) { el.classList.add('is-pulsing'); setTimeout(function () { el.classList.remove('is-pulsing'); }, 700); }
+        }, delay));
+      })(i);
+    }
+    pulseTimeouts.push(setTimeout(function () { setFocus(currentIndex); }, n * 130 + 150));
+  }
+
+  function runScenario(goal) {
+    pickerEl.querySelectorAll('.unlockroom-scenario-btn').forEach(function (b) {
+      b.classList.toggle('is-active', b.getAttribute('data-goal') === goal);
+    });
+    statusEl.textContent = 'CHEW is building the path…';
+    bodyEl.hidden = true;
+    clearPulseTimeouts();
+
+    fetch('/api/intelligence-demo?goal=' + encodeURIComponent(goal))
+      .then(function (res) {
+        if (!res.ok) return res.json().then(function (d) { throw new Error(d.error || 'Lookup failed'); });
+        return res.json();
+      })
+      .then(function (data) {
+        statusEl.textContent = '';
+        requirementSequence = data.requirementSequence || [];
+        basedOnFacts = data.recommendation.basedOnFacts;
+        chosenKey = data.recommendation.chosenRequirementKey;
+        goalTitle = data.goalTitle;
+        capabilityOverview = data.capabilityOverview || null;
+
+        buildItems();
+        items.forEach(function (it, i) { if (it.type === 'segment') it.__seq = i; });
+        renderTrack();
+        bodyEl.hidden = false;
+
+        var currentIndex = items.findIndex(function (it) { return it.type === 'segment' && it.tile.key === chosenKey; });
+        setFocus(currentIndex === -1 ? items.length - 1 : currentIndex);
+
+        if (!reduceMotion) bodyEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      })
+      .catch(function (err) {
+        statusEl.textContent = err.message || 'CHEW could not load this scenario right now.';
+      });
+  }
+
+  pickerEl.querySelectorAll('.unlockroom-scenario-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () { runScenario(btn.getAttribute('data-goal')); });
+  });
+
+  document.getElementById('futureroom-prev').addEventListener('click', function () { setFocus(focusedIndex - 1); });
+  document.getElementById('futureroom-next').addEventListener('click', function () { setFocus(focusedIndex + 1); });
+  document.getElementById('futureroom-jump-today').addEventListener('click', function () { setFocus(0); });
+  document.getElementById('futureroom-jump-future').addEventListener('click', function () { setFocus(items.length - 1); });
+  scrubberEl.addEventListener('input', function () { setFocus(parseInt(scrubberEl.value, 10)); });
+  pulseBtn.addEventListener('click', runPulse);
+})();
+</script>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-legal">
+      <span>&copy; 2026 CHEW LLC. All rights reserved.</span>
+      <span>CHEW LLC is a financial education and business-infrastructure company. CHEW does not provide credit repair services, does not promise or guarantee funding, approvals, score changes, or removal of information, and does not provide legal, tax, or investment advice. Results depend on individual circumstances, participation, and third-party decisions. See our <a href="disclaimer.html" style="color:inherit;">disclaimer</a>.</span>
+    </div>
+  </div>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>

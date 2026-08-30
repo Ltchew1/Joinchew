@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CHEW: The Lab | Get Your Money Organized</title>
-<meta name="description" content="You're not broke — you're unorganized. Step into CHEW: The Lab, the financial intelligence engine that puts your income in order: clarity, structure, and accountability. See if you qualify.">
+<meta name="description" content="You're not broke — you're unorganized. Step into CHEW: The Lab, the financial intelligence engine that puts your income in order: clarity, structure, and accountability. Come see what CHEW is building.">
 <link rel="canonical" href="https://www.joinchew.com/">
 <meta property="og:title" content="CHEW: The Lab | Get Your Money Organized">
-<meta property="og:description" content="You're not broke — you're unorganized. Step into CHEW: The Lab, the financial intelligence engine that puts your income in order: clarity, structure, and accountability. See if you qualify.">
+<meta property="og:description" content="You're not broke — you're unorganized. Step into CHEW: The Lab, the financial intelligence engine that puts your income in order: clarity, structure, and accountability. Come see what CHEW is building.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="CHEW">
 <meta name="twitter:card" content="summary">
@@ -17,6 +17,28 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<div id="chew-activation" class="chew-activation" aria-hidden="true">
+  <div class="activation-frame" aria-hidden="true">
+    <span class="corner corner--tl"></span><span class="corner corner--tr"></span>
+    <span class="corner corner--bl"></span><span class="corner corner--br"></span>
+  </div>
+  <div class="activation-topology" aria-hidden="true">
+    <svg viewBox="0 0 460 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path class="a-edge" d="M230,110 L90,60"/>
+      <path class="a-edge" d="M230,110 L370,50"/>
+      <path class="a-edge" d="M230,110 L100,175"/>
+      <path class="a-edge" d="M230,110 L360,170"/>
+      <circle class="a-node a-node--hub" cx="230" cy="110" r="7"/>
+      <circle class="a-node" cx="90" cy="60" r="5"/>
+      <circle class="a-node" cx="370" cy="50" r="5"/>
+      <circle class="a-node" cx="100" cy="175" r="5"/>
+      <circle class="a-node" cx="360" cy="170" r="5"/>
+    </svg>
+  </div>
+  <div class="activation-mark"><img src="assets/chew-icon-official.png" alt="" width="64" height="64"></div>
+  <div class="activation-label">CHEW</div>
+  <button type="button" class="activation-skip" id="activation-skip">Skip</button>
+</div>
 <header class="site-header">
   <div class="container">
     <a href="index.html" class="brand">
@@ -34,7 +56,7 @@
       <a href="contact.html">Contact</a>
     </nav>
     <div class="nav-cta">
-      <a href="apply.html" class="btn btn-gold btn-sm">See If You Qualify</a>
+      <a href="apply.html" class="btn btn-gold btn-sm">Enter CHEW</a>
     </div>
     <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="site-nav">
       <span></span><span></span><span></span>
@@ -44,73 +66,332 @@
 
 <main>
 
-  <section class="page-hero hero-home hero-cinematic">
-    <div class="hero-photo" aria-hidden="true"></div>
-    <div class="hero-glow" data-parallax="0.08"></div>
-    <div class="hero-focal-glow" aria-hidden="true" data-parallax="0.14"></div>
-    <div class="grid-lines"></div>
-    <div class="container" style="position:relative; z-index:2;">
-      <div class="hero-cinematic-content">
-        <div class="hero-eyebrow-line"><span class="rule-short"></span><span class="eyebrow" style="margin-bottom:0;">Welcome to CHEW: The Lab</span></div>
-        <h1 style="max-width:18ch;">You're making money.<br><em style="color:var(--gold-light); font-style:normal;">So why doesn't it</em><br>feel like it?</h1>
-        <p class="max-prose" style="font-size:1.14rem; margin-top:26px;">
-          You're not broke — you're unorganized. Income comes in, and somehow there's nothing
-          to show for it. CHEW builds the system that puts your money in order and keeps it
-          working. Not survival. Structure.
-          <br><br>
-          <span style="color:var(--text-faint); font-size:0.95rem;">That's the vision behind
-          <em style="color:var(--gold-light); font-style:normal;">CHEW: The Lab</em> &mdash; the
-          system we're building to run your whole financial life, one room at a time.</span>
-        </p>
-        <div class="btn-row" style="margin-top:40px;">
-          <a href="apply.html" class="btn btn-gold cta-glow">I'm Ready to Chew</a>
-          <a href="#the-lab" class="btn btn-outline">See What We're Building &darr;</a>
-        </div>
-      </div>
-    </div>
-    <div class="hero-visual-accent" aria-hidden="true">
-      <div class="visual-ring"></div>
-      <div class="visual-ring ring-2"></div>
-      <div class="dust" style="width:5px; height:5px; top:18%; left:22%;"></div>
-      <div class="dust" style="width:3px; height:3px; top:66%; left:74%; animation-delay:-2.5s;"></div>
-      <div class="dust" style="width:4px; height:4px; top:78%; left:30%; animation-delay:-5s;"></div>
-      <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="heroBarGold" x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0" stop-color="#8A6E1C"/>
-            <stop offset="1" stop-color="#E8CE7A"/>
-          </linearGradient>
-          <linearGradient id="heroBarAsh" x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0" stop-color="#3A362E"/>
-            <stop offset="1" stop-color="#8A857A"/>
-          </linearGradient>
-        </defs>
-        <rect class="bar" x="30" y="120" width="26" height="60" rx="3" fill="url(#heroBarAsh)" style="animation-delay:0.1s"/>
-        <rect class="bar" x="87" y="70" width="26" height="110" rx="3" fill="url(#heroBarGold)" style="animation-delay:0.3s"/>
-        <rect class="bar" x="144" y="95" width="26" height="85" rx="3" fill="url(#heroBarGold)" style="animation-delay:0.5s"/>
-      </svg>
-    </div>
-    <div class="hero-wave" aria-hidden="true">
-      <svg viewBox="0 0 1200 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M0,120 C150,180 300,40 450,90 C600,140 750,60 900,110 C1020,150 1120,80 1200,100 L1200,200 L0,200 Z" fill="url(#waveGold)"/>
-        <defs>
-          <linearGradient id="waveGold" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stop-color="#8A6E1C" stop-opacity="0.35"/>
-            <stop offset="0.5" stop-color="#E8CE7A" stop-opacity="0.5"/>
-            <stop offset="1" stop-color="#8A6E1C" stop-opacity="0.2"/>
-          </linearGradient>
-        </defs>
-      </svg>
+  <section class="cx-philosophy" id="cx-philosophy" data-reveal>
+    <svg class="cx-philosophy-route" aria-hidden="true" viewBox="0 0 1200 400" preserveAspectRatio="none">
+      <path class="cx-philosophy-route-path" pathLength="1400" d="M -40,80 C 220,80 260,260 520,260 S 780,140 1020,280 S 1160,340 1240,340" />
+      <path class="cx-philosophy-route-pulse" pathLength="1400" d="M -40,80 C 220,80 260,260 520,260 S 780,140 1020,280 S 1160,340 1240,340" />
+    </svg>
+    <div class="cx-philosophy-inner">
+      <span class="cx-philosophy-eyebrow"><span class="rule-short"></span>Before you scroll any further</span>
+      <p class="cx-philosophy-line">Money isn't the problem.</p>
+      <p class="cx-philosophy-line">Direction is.</p>
+      <p class="cx-philosophy-line cx-philosophy-line--final">CHEW finds <em>your</em> route &mdash; then shows you the one move that opens it.</p>
+      <p class="cx-philosophy-next"><a href="#tell-chew">Watch CHEW Think &darr;</a></p>
     </div>
   </section>
 
-  <section class="stat-strip">
-    <div class="container max-prose text-center" style="padding:48px 0;" data-reveal>
-      <span class="eyebrow">The Real Problem</span>
-      <p style="font-size:1.2rem; line-height:1.6; margin-top:12px;">
-        Broke means not enough coming in. Unorganized means plenty comes in &mdash; and leaves.
-        Most people who feel behind aren't earning too little; they're running real income with
-        no structure. That's not a flaw. It's a missing framework. CHEW builds the framework.
+  <div class="cx-awaken-bridge" aria-hidden="true"></div>
+
+  <section class="page-hero hero-home hx-hero">
+    <div class="hero-glow" data-parallax="0.08"></div>
+    <div class="hero-focal-glow" aria-hidden="true" data-parallax="0.14"></div>
+    <div class="grid-lines"></div>
+    <div class="hx-searchlight" aria-hidden="true"></div>
+    <svg class="hx-hero-trace" aria-hidden="true" viewBox="0 0 1200 640" preserveAspectRatio="none">
+      <path class="hx-hero-trace-path" d="M 40,560 C 300,560 320,320 600,320 S 900,120 1160,120" />
+      <path class="hx-hero-trace-pulse" d="M 40,560 C 300,560 320,320 600,320 S 900,120 1160,120" />
+    </svg>
+    <div class="container" style="position:relative; z-index:2;">
+      <div class="hx-hero-inner">
+        <div class="hx-copy">
+          <div class="hx-eyebrow-row"><span class="rule-short"></span><span class="eyebrow" style="margin-bottom:0;">Welcome to CHEW: The Lab</span></div>
+          <h1 class="hx-headline">You're making money.<br><em style="color:var(--gold-light); font-style:normal;">So why doesn't&nbsp;it</em><br>feel like it?</h1>
+          <p class="hx-sub">
+            You're not broke &mdash; you're unorganized. CHEW builds the system that puts your
+            money in order and keeps it working. Not survival. Structure.
+          </p>
+          <div class="hx-goal-row" id="tell-chew">
+            <span class="hx-goal-row-label">See how CHEW actually reasons &mdash; pick a real example goal</span>
+            <div class="goal-picker" role="group" aria-label="Choose an example goal">
+              <button type="button" class="goal-btn" data-goal="home" aria-pressed="false"><span class="goal-btn-check" aria-hidden="true"></span>Buy a home</button>
+              <button type="button" class="goal-btn" data-goal="funding" aria-pressed="false"><span class="goal-btn-check" aria-hidden="true"></span>Get business funding-ready</button>
+            </div>
+            <p class="reveal-status" id="reveal-status" role="status" aria-live="polite">This is CHEW's real reasoning engine, running on an illustrative example &mdash; select a goal to watch it think.</p>
+            <span class="tag tag--sample reveal-disclaimer" id="reveal-disclaimer" hidden></span>
+          </div>
+          <div class="btn-row" style="margin-top:28px;">
+            <a href="apply.html" class="btn btn-gold cta-glow btn-magnetic">Enter CHEW</a>
+            <a href="#the-lab" class="btn btn-outline">Explore The Lab &darr;</a>
+          </div>
+          <p style="margin-top:20px;">
+            <a href="contact.html" style="font-size:0.86rem; color:var(--text-faint); text-decoration:underline;">Have a question first? Ask CHEW directly &rarr;</a>
+          </p>
+        </div>
+        <div class="hx-field-wrap hx-field-frame" id="hx-field-wrap">
+          <span class="corner corner--tl" aria-hidden="true"></span>
+          <span class="corner corner--tr" aria-hidden="true"></span>
+          <span class="corner corner--bl" aria-hidden="true"></span>
+          <span class="corner corner--br" aria-hidden="true"></span>
+          <div class="hx-field-idle" aria-hidden="true">
+            <div class="hx-field-idle-dot"></div>
+            <p class="hx-field-idle-label">CHEW is idle, waiting on a real goal to reason through &mdash; pick one on the left.</p>
+          </div>
+          <div class="hx-field" id="hx-field" aria-hidden="true">
+            <svg class="hx-field-svg" id="hx-field-svg" viewBox="0 0 400 370" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+          <div class="hx-move-banner" id="hx-move-banner">
+            <span class="hx-move-eyebrow">The CHEW Move</span>
+            <p class="hx-move-action" id="hx-move-action"></p>
+            <p class="hx-move-rationale" id="hx-move-rationale"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="hx-move-recall" id="hx-move-recall" role="status" aria-live="off">
+    <span class="hx-move-recall-dot" aria-hidden="true"></span>
+    <span class="hx-move-recall-text" id="hx-move-recall-text"></span>
+    <button type="button" class="hx-move-recall-link" id="hx-move-recall-link">Back to the Move</button>
+  </div>
+
+  <section class="cx-worlds" id="cx-worlds">
+    <div class="container">
+      <div class="text-center max-prose mx-auto" data-reveal>
+        <span class="eyebrow">The Eight Worlds</span>
+        <h2>Every part of your life CHEW is built to eventually hold.</h2>
+        <p class="max-prose mx-auto">These are the member destinations the CHEW intelligence engine is built toward &mdash; illustrative previews of where it's headed, not services CHEW provides today.</p>
+      </div>
+      <div class="cx-worlds-field">
+        <div class="cx-worlds-grid" id="cx-worlds-grid" role="group" aria-label="The Eight CHEW Worlds &mdash; select a world to preview it">
+          <button type="button" class="cx-world" id="cx-world-home" data-world="home" data-asset-slot="CHEW_WORLD_HOME" aria-expanded="false" aria-controls="cx-world-panel">
+            <span class="cx-world-index">World 01</span>
+            <h3>Home</h3>
+            <p>Everyday money, finally in one place.</p>
+            <span class="cx-world-glyph" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="cx-world" id="cx-world-drive" data-world="drive" data-asset-slot="CHEW_WORLD_DRIVE" aria-expanded="false" aria-controls="cx-world-panel">
+            <span class="cx-world-index">World 02</span>
+            <h3>Drive</h3>
+            <p>A vehicle, without wrecking the rest of the plan.</p>
+            <span class="cx-world-glyph" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="cx-world" id="cx-world-build" data-world="build" data-asset-slot="CHEW_WORLD_BUILD" aria-expanded="false" aria-controls="cx-world-panel">
+            <span class="cx-world-index">World 03</span>
+            <h3>Build</h3>
+            <p>Turning a business idea into something fundable.</p>
+            <span class="cx-world-glyph" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="cx-world" id="cx-world-go" data-world="go" data-asset-slot="CHEW_WORLD_GO" aria-expanded="false" aria-controls="cx-world-panel">
+            <span class="cx-world-index">World 04</span>
+            <h3>Go</h3>
+            <p>The freedom to move, on your own terms.</p>
+            <span class="cx-world-glyph" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="cx-world" id="cx-world-celebrate" data-world="celebrate" data-asset-slot="CHEW_WORLD_CELEBRATE" aria-expanded="false" aria-controls="cx-world-panel">
+            <span class="cx-world-index">World 05</span>
+            <h3>Celebrate</h3>
+            <p>Milestones, without the money hangover after.</p>
+            <span class="cx-world-glyph" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="cx-world" id="cx-world-property" data-world="property" data-asset-slot="CHEW_WORLD_PROPERTY" aria-expanded="false" aria-controls="cx-world-panel">
+            <span class="cx-world-index">World 06</span>
+            <h3>Property</h3>
+            <p>Owning real estate, on purpose and on paper.</p>
+            <span class="cx-world-glyph" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="cx-world" id="cx-world-levelup" data-world="levelup" data-asset-slot="CHEW_WORLD_LEVELUP" aria-expanded="false" aria-controls="cx-world-panel">
+            <span class="cx-world-index">World 07</span>
+            <h3>Level Up</h3>
+            <p>Skills and income, moving the same direction.</p>
+            <span class="cx-world-glyph" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="cx-world" id="cx-world-protect" data-world="protect" data-asset-slot="CHEW_WORLD_PROTECT" aria-expanded="false" aria-controls="cx-world-panel">
+            <span class="cx-world-index">World 08</span>
+            <h3>Protect</h3>
+            <p>The plan for when life doesn't go to plan.</p>
+            <span class="cx-world-glyph" aria-hidden="true"></span>
+          </button>
+        </div>
+
+        <div class="cx-world-panel" id="cx-world-panel" role="region" aria-live="polite" hidden>
+          <button type="button" class="cx-world-panel-close" id="cx-world-panel-close" aria-label="Return to the Eight Worlds">&times;</button>
+          <div class="cx-world-panel-image" id="cx-world-panel-image" role="img" aria-label=""></div>
+          <h3 id="cx-world-panel-title"></h3>
+          <p class="cx-world-panel-aspiration" id="cx-world-panel-aspiration"></p>
+          <p class="cx-world-panel-role" id="cx-world-panel-role"></p>
+          <div class="cx-world-panel-actions">
+            <a href="contact.html" class="cx-world-panel-link">Ask CHEW about this world &rarr;</a>
+            <a href="services.html" class="cx-world-panel-link cx-world-panel-link--related" id="cx-world-panel-related" hidden>See CHEW Programs &rarr;</a>
+          </div>
+          <div class="cx-world-panel-truth">
+            <span class="cx-world-panel-tag">Preview</span>
+            <span class="cx-world-panel-note">Access and fulfillment depend on capabilities CHEW is still building &mdash; not a live service today.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hx-lifemap-section" id="hx-lifemap-section">
+    <div class="hx-lifemap-frame" aria-hidden="true">
+      <span class="corner corner--tl"></span><span class="corner corner--tr"></span>
+      <span class="corner corner--bl"></span><span class="corner corner--br"></span>
+    </div>
+    <div class="container">
+      <div class="text-center max-prose mx-auto" data-reveal>
+        <span class="eyebrow">The Worlds Are Connected</span>
+        <h2>Your economic life is not a collection of separate problems.</h2>
+        <p style="font-size:1.05rem;">
+          Credit. Business. Funding. Property. Insurance. Assets. Most people get one-off
+          advice for each piece, from a different person, with no view of how they connect.
+          CHEW builds around the whole board &mdash; because a move in one World almost always
+          shows up in another.
+        </p>
+      </div>
+      <div class="text-center" data-reveal>
+        <span class="tag tag--sample">Sample Life Map &mdash; illustrative relationships, not your accounts</span>
+      </div>
+
+      <div class="lifemap-wrap" id="lifemap-wrap">
+        <svg class="lifemap" viewBox="0 0 400 430" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+          <defs>
+            <radialGradient id="constGoldFill" cx="35%" cy="35%" r="70%">
+              <stop offset="0" stop-color="#E8CE7A"/>
+              <stop offset="1" stop-color="#8A6E1C"/>
+            </radialGradient>
+          </defs>
+          <circle class="lifemap-boundary" cx="200" cy="200" r="196"/>
+          <g class="lifemap-spokes">
+            <line class="lifemap-spoke" data-territory="credit" x1="200" y1="200" x2="200" y2="50"/>
+            <line class="lifemap-spoke" data-territory="capital" x1="200" y1="200" x2="306" y2="94"/>
+            <line class="lifemap-spoke" data-territory="business" x1="200" y1="200" x2="350" y2="200"/>
+            <line class="lifemap-spoke" data-territory="property" x1="200" y1="200" x2="306" y2="306"/>
+            <line class="lifemap-spoke" data-territory="insurance" x1="200" y1="200" x2="200" y2="350"/>
+            <line class="lifemap-spoke" data-territory="assets" x1="200" y1="200" x2="94" y2="306"/>
+            <line class="lifemap-spoke" data-territory="liquidity" x1="200" y1="200" x2="50" y2="200"/>
+            <line class="lifemap-spoke" data-territory="ownership" x1="200" y1="200" x2="94" y2="94"/>
+          </g>
+          <g class="lifemap-edges" id="lifemap-edges">
+            <line class="lifemap-edge" data-a="credit" data-b="capital" style="--edge-delay:0ms" x1="200" y1="50" x2="306" y2="94"/>
+            <line class="lifemap-edge" data-a="credit" data-b="property" style="--edge-delay:60ms" x1="200" y1="50" x2="306" y2="306"/>
+            <line class="lifemap-edge" data-a="credit" data-b="business" style="--edge-delay:120ms" x1="200" y1="50" x2="350" y2="200"/>
+            <line class="lifemap-edge" data-a="credit" data-b="liquidity" style="--edge-delay:180ms" x1="200" y1="50" x2="50" y2="200"/>
+            <line class="lifemap-edge" data-a="capital" data-b="business" style="--edge-delay:0ms" x1="306" y1="94" x2="350" y2="200"/>
+            <line class="lifemap-edge" data-a="capital" data-b="ownership" style="--edge-delay:60ms" x1="306" y1="94" x2="94" y2="94"/>
+            <line class="lifemap-edge" data-a="business" data-b="assets" style="--edge-delay:0ms" x1="350" y1="200" x2="94" y2="306"/>
+            <line class="lifemap-edge" data-a="business" data-b="insurance" style="--edge-delay:60ms" x1="350" y1="200" x2="200" y2="350"/>
+            <line class="lifemap-edge" data-a="property" data-b="ownership" style="--edge-delay:0ms" x1="306" y1="306" x2="94" y2="94"/>
+            <line class="lifemap-edge" data-a="property" data-b="insurance" style="--edge-delay:60ms" x1="306" y1="306" x2="200" y2="350"/>
+            <line class="lifemap-edge" data-a="insurance" data-b="assets" style="--edge-delay:0ms" x1="200" y1="350" x2="94" y2="306"/>
+            <line class="lifemap-edge" data-a="assets" data-b="liquidity" style="--edge-delay:0ms" x1="94" y1="306" x2="50" y2="200"/>
+            <line class="lifemap-edge" data-a="ownership" data-b="assets" style="--edge-delay:0ms" x1="94" y1="94" x2="94" y2="306"/>
+          </g>
+          <g class="node-center intelligence-pulse">
+            <circle cx="200" cy="200" r="38"/>
+            <text x="200" y="201">CHEW</text>
+          </g>
+          <g class="lifemap-node" data-territory="credit" style="--node-delay:60ms"><circle cx="200" cy="50" r="21"/></g>
+          <text x="200" y="86" class="lifemap-label" data-territory="credit" style="--node-delay:60ms">Credit</text>
+          <g class="lifemap-node" data-territory="capital" style="--node-delay:110ms"><circle cx="306" cy="94" r="21"/></g>
+          <text x="306" y="130" class="lifemap-label" data-territory="capital" style="--node-delay:110ms">Capital</text>
+          <g class="lifemap-node" data-territory="business" style="--node-delay:160ms"><circle cx="350" cy="200" r="21"/></g>
+          <text x="350" y="236" class="lifemap-label" data-territory="business" style="--node-delay:160ms">Business</text>
+          <g class="lifemap-node" data-territory="property" style="--node-delay:210ms"><circle cx="306" cy="306" r="21"/></g>
+          <text x="306" y="342" class="lifemap-label" data-territory="property" style="--node-delay:210ms">Property</text>
+          <g class="lifemap-node" data-territory="insurance" style="--node-delay:260ms"><circle cx="200" cy="350" r="21"/></g>
+          <text x="200" y="386" class="lifemap-label" data-territory="insurance" style="--node-delay:260ms">Insurance</text>
+          <g class="lifemap-node" data-territory="assets" style="--node-delay:310ms"><circle cx="94" cy="306" r="21"/></g>
+          <text x="94" y="342" class="lifemap-label" data-territory="assets" style="--node-delay:310ms">Assets</text>
+          <g class="lifemap-node" data-territory="liquidity" style="--node-delay:360ms"><circle cx="50" cy="200" r="21"/></g>
+          <text x="50" y="236" class="lifemap-label" data-territory="liquidity" style="--node-delay:360ms">Liquidity</text>
+          <g class="lifemap-node" data-territory="ownership" style="--node-delay:410ms"><circle cx="94" cy="94" r="21"/></g>
+          <text x="94" y="130" class="lifemap-label" data-territory="ownership" style="--node-delay:410ms">Ownership</text>
+        </svg>
+        <div class="lifemap-hit-layer" id="lifemap-hit-layer" role="group" aria-label="CHEW Life Map — select a territory to see what it's really connected to">
+          <button type="button" class="lifemap-hit" data-territory="credit" style="left:50%;top:11.63%;"><span class="sr-only">Credit</span></button>
+          <button type="button" class="lifemap-hit" data-territory="capital" style="left:76.5%;top:21.86%;"><span class="sr-only">Capital</span></button>
+          <button type="button" class="lifemap-hit" data-territory="business" style="left:87.5%;top:46.51%;"><span class="sr-only">Business</span></button>
+          <button type="button" class="lifemap-hit" data-territory="property" style="left:76.5%;top:71.16%;"><span class="sr-only">Property</span></button>
+          <button type="button" class="lifemap-hit" data-territory="insurance" style="left:50%;top:81.4%;"><span class="sr-only">Insurance</span></button>
+          <button type="button" class="lifemap-hit" data-territory="assets" style="left:23.5%;top:71.16%;"><span class="sr-only">Assets</span></button>
+          <button type="button" class="lifemap-hit" data-territory="liquidity" style="left:12.5%;top:46.51%;"><span class="sr-only">Liquidity</span></button>
+          <button type="button" class="lifemap-hit" data-territory="ownership" style="left:23.5%;top:21.86%;"><span class="sr-only">Ownership</span></button>
+        </div>
+
+        <div class="lifemap-mobile" id="lifemap-mobile" role="group" aria-label="CHEW Life Map territories — select one to see what it's really connected to"></div>
+      </div>
+
+      <p class="lifemap-signature" id="lifemap-signature" aria-live="polite">CHEW sees the connections.</p>
+      <p class="text-center lifemap-hint" id="lifemap-hint" style="font-size:0.82rem; color:var(--text-faint); margin-top:4px;">
+        Select a territory &mdash; CHEW will show you what it's actually connected to. A simplified view of how the pieces relate, not a map of your accounts.
+      </p>
+      <div class="lifemap-detail" id="lifemap-detail" hidden></div>
+      <p class="text-center" style="font-size:0.9rem; margin-top:18px;" data-reveal>
+        We're building the engine behind that Business node in the open &mdash;
+        <a href="business-pathfinder.html">see the first real, sourced path (early preview)</a>.
+      </p>
+      <p class="text-center" style="font-size:0.82rem; color:var(--text-faint); margin-top:10px;" data-reveal>
+        Some of what a client needs sits outside what CHEW does directly &mdash; insurance, property execution,
+        licensed accounting. CHEW is expanding the network of vetted capability available through the platform,
+        with any material relationship disclosed plainly when it applies &mdash;
+        <a href="network-room.html">step inside the real registry (early preview)</a>. Or see the
+        territories and the registry together, in one map &mdash;
+        <a href="wealth-world.html">Wealth World (early preview)</a>.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="hx-below-field" id="intelligence-reveal-result" hidden>
+        <span class="hx-below-field-label">What the Move above sets off, traced forward</span>
+        <div class="blind-spot" id="blind-spot" hidden>
+          <span class="blind-spot-glyph" aria-hidden="true">?</span>
+          <span class="blind-spot-eyebrow">Blind Spot Detected</span>
+          <p class="blind-spot-assumed">A common focus in this situation <span class="blind-spot-caveat">(not necessarily yours)</span>:<br><strong id="blind-spot-assumed-label"></strong></p>
+          <p class="blind-spot-actual"><strong id="blind-spot-actual-label"></strong><br><span id="blind-spot-actual-note"></span></p>
+          <span class="blind-spot-tie">This is the same real analysis behind THE CHEW MOVE above &mdash; not a separate guess.</span>
+        </div>
+        <div class="reveal-chain" id="reveal-chain"></div>
+        <div class="domino-section" id="domino-section" hidden>
+          <span class="domino-eyebrow">A Smart Move Changes What Becomes Possible</span>
+          <button type="button" class="btn btn-outline" id="domino-trigger">Watch This Move Open the Next Path &rarr;</button>
+          <p class="domino-caveat">Sample unlock sequence &mdash; CHEW modeling this example's real rules, in order. Nothing here is saved or completed for real, and this isn't a claim about what will happen for you.</p>
+          <div class="domino-chain" id="domino-row" role="list" aria-live="polite" hidden></div>
+          <div class="domino-explain" id="domino-explain" hidden></div>
+          <div class="domino-cta" id="domino-cta" hidden>
+            <a href="unlock-room.html" class="btn btn-gold" id="domino-unlock-link">See What Opens Next &rarr;</a>
+            <p class="domino-cta-note">Enter the Unlock Room to see why, with every real condition hand-toggleable.</p>
+          </div>
+        </div>
+        <div class="radar-section" id="radar-section" hidden>
+          <button type="button" class="btn btn-outline" id="radar-trigger">Scan the Opportunity Radar &rarr;</button>
+          <p class="radar-caveat">Every real capability in CHEW's registry, live &mdash; and whether it's connected to this example. Most show no active provider yet, honestly, because none are seeded.</p>
+          <div class="radar-wrap" id="radar-wrap" hidden>
+            <div class="radar-sweep" aria-hidden="true"></div>
+            <div class="radar-hub">This<br>Example</div>
+            <div class="radar-nodes" id="radar-nodes"></div>
+          </div>
+          <div class="radar-detail" id="radar-detail" hidden></div>
+        </div>
+        <div class="futureback-section" id="futureback-section" hidden>
+          <span class="futureback-eyebrow">Every Real Goal Is Reachable by a Real, Ordered Path</span>
+          <button type="button" class="btn btn-outline" id="futureback-trigger">Trace the Path Backward &rarr;</button>
+          <p class="futureback-caveat">Starting at this example's real goal and walking backward through CHEW's actual requirement order &mdash; not a prediction, a trace of the same logic run in reverse.</p>
+          <div class="futureback-chain" id="futureback-chain" role="list" aria-live="polite" hidden></div>
+        </div>
+        <p class="text-center" style="font-size:0.86rem; margin-top:32px;" data-reveal>
+          Want to put your hands on it? <a href="unlock-room.html">Try the Unlock Room</a> &mdash;
+          flip CHEW's real conditions yourself and watch each barrier respond. Or step back and
+          <a href="future-room.html">see the whole distance CHEW is building across</a>. Or run a
+          real what-if without touching your actual state in the
+          <a href="simulation-room.html">Simulation Room</a>. Curious what CHEW is building next?
+          Walk the floor of the <a href="chew-lab.html">CHEW Lab</a> &mdash; six experiment bays,
+          each honestly labeled for what's real today and what's still a research sketch.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="scene-statement" data-reveal>
+    <div class="container">
+      <span class="scene-statement-eyebrow">The Real Problem</span>
+      <p>
+        Broke means not enough coming in. <em>Unorganized</em> means plenty comes in &mdash; and
+        leaves. Most people who feel behind aren't earning too little; they're running real
+        income with no structure. That's not a flaw. It's a <em>missing framework</em>. CHEW
+        builds the framework.
       </p>
     </div>
   </section>
@@ -118,11 +399,10 @@
   <section class="text-center" style="padding:8px 0 48px;">
     <div class="container max-prose mx-auto" data-reveal>
       <p style="font-size:1.02rem; color:var(--text-muted);">
-        Most people don't avoid looking at their finances because they don't care. They avoid
-        it because looking feels like proof that something's wrong with them &mdash; even when
-        nothing is. There's a specific kind of quiet that comes with earning good money and
-        still not knowing where it went by the end of the month. If that's familiar: there's
-        nothing wrong with you. There's just no system yet.
+        There's a specific kind of quiet that comes with earning good money and still not
+        knowing where it went by the end of the month. Not a character problem &mdash; an
+        architecture problem. The money is real. The system underneath it isn't. CHEW is that
+        system.
       </p>
     </div>
   </section>
@@ -179,7 +459,12 @@
         </p>
       </div>
 
-      <div class="rooms-grid" style="margin-top:44px;">
+      <div class="room-grid-wrap" id="room-grid-wrap" style="margin-top:44px;">
+        <svg class="room-constellation" aria-hidden="true" viewBox="0 0 300 200" preserveAspectRatio="none">
+          <path class="room-constellation-line" d="M 50,50 L 150,50 L 250,50 L 250,150 L 150,150 L 50,150" />
+          <path class="room-constellation-pulse" d="M 50,50 L 150,50 L 250,50 L 250,150 L 150,150 L 50,150" />
+        </svg>
+      <div class="rooms-grid">
         <div class="glass card room-card" data-reveal style="--reveal-delay:0.03s;">
           <div class="room-icon" aria-hidden="true">
             <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="6" width="28" height="36" rx="3" stroke="url(#iconGold)" stroke-width="2"/><path d="M16 16h16M16 24h16M16 32h10" stroke="url(#iconGold)" stroke-width="2" stroke-linecap="round"/></svg>
@@ -222,6 +507,7 @@
           <h3>Money Systems</h3>
           <p>Quiet architecture, running underneath everything &mdash; so money has a job before it disappears.</p>
         </div>
+        </div>
       </div>
 
       <p class="text-center" style="font-size:0.85rem; color:var(--text-faint); margin-top:28px;" data-reveal>
@@ -231,8 +517,80 @@
       <div class="text-center" style="margin-top:28px;" data-reveal>
         <p class="max-prose mx-auto" style="font-size:1rem;">Qualifying is where your work with us begins &mdash; and this is the direction we're building it toward.</p>
         <div class="btn-row" style="justify-content:center; margin-top:16px;">
-          <a href="apply.html" class="btn btn-gold">I'm Ready to Chew</a>
+          <a href="apply.html" class="btn btn-gold">Enter CHEW</a>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="text-center max-prose mx-auto" data-reveal>
+        <span class="eyebrow">How CHEW Thinks</span>
+        <h2>Every plan starts the same way &mdash; with where you actually are.</h2>
+      </div>
+      <div class="path-flow">
+        <div class="path-step" data-reveal style="--reveal-delay:0.05s;">
+          <span class="path-dot"></span>
+          <h4>Where You Are</h4>
+          <p>An honest read on your credit, cash flow, and goals &mdash; no judgment, just the facts.</p>
+        </div>
+        <span class="path-arrow" aria-hidden="true">&rarr;</span>
+        <div class="path-step" data-reveal style="--reveal-delay:0.1s;">
+          <span class="path-dot"></span>
+          <h4>What Matters</h4>
+          <p>Not everything at once &mdash; the one or two things actually holding your next move back.</p>
+        </div>
+        <span class="path-arrow" aria-hidden="true">&rarr;</span>
+        <div class="path-step" data-reveal style="--reveal-delay:0.15s;">
+          <span class="path-dot"></span>
+          <h4>Next Move</h4>
+          <p>A specific, sequenced action &mdash; not a hundred tips you'll never get to.</p>
+        </div>
+        <span class="path-arrow" aria-hidden="true">&rarr;</span>
+        <div class="path-step" data-reveal style="--reveal-delay:0.2s;">
+          <span class="path-dot"></span>
+          <h4>Target</h4>
+          <p>The outcome you're actually building toward, kept in view the whole time.</p>
+        </div>
+      </div>
+
+      <div class="glass card intel-card" data-reveal>
+        <span class="intel-label">An illustrative example &mdash; not a live alert</span>
+        <blockquote>&ldquo;Your goal isn't limited by the thing you thought it was.&rdquo;</blockquote>
+        <p class="intel-explain">
+          Sometimes the real blocker isn't the one at the top of your mind. Part of what CHEW
+          is built to do is help you see the actual constraint &mdash; not just the obvious one.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reroute-scene">
+    <div class="container">
+      <div class="max-prose mx-auto" data-reveal>
+        <span class="reroute-scene-label">Path Reconstruction</span>
+        <h2>Plans change. Intelligence should too.</h2>
+        <p class="text-center" style="font-size:1.02rem;">
+          A denial, a new expense, an opportunity you didn't expect &mdash; real plans get
+          knocked off course. CHEW is built to notice and adjust the sequence, not leave you
+          holding a plan that no longer fits your situation.
+        </p>
+      </div>
+      <div class="reroute-wrap" data-reveal>
+        <svg class="reroute-visual" viewBox="0 0 540 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram showing a plan being interrupted partway and rerouting to a new path">
+          <path class="path-line" d="M40,100 L240,100"/>
+          <path class="path-line" d="M240,100 L500,100" style="opacity:0.3;"/>
+          <path class="path-line reroute" d="M240,100 C340,100 380,160 500,160"/>
+          <circle cx="40" cy="100" r="7" fill="var(--text-faint)"/>
+          <circle cx="500" cy="100" r="6" fill="var(--panel-border)" opacity="0.5"/>
+          <g class="node-disrupt"><circle cx="240" cy="100" r="10"/></g>
+          <circle class="intelligence-pulse" cx="500" cy="160" r="9" fill="var(--gold-light)"/>
+          <text x="40" y="128" style="font-family:var(--font-body); font-size:10.5px; fill:var(--text-muted); text-anchor:middle;">Start</text>
+          <text x="240" y="78" style="font-family:var(--font-body); font-size:10.5px; fill:var(--gold-light); text-anchor:middle;">Something changes</text>
+          <text x="500" y="128" style="font-family:var(--font-body); font-size:10.5px; fill:var(--text-faint); text-anchor:middle;">Old plan</text>
+          <text x="500" y="186" style="font-family:var(--font-body); font-size:10.5px; fill:var(--gold-light); text-anchor:middle;">New path</text>
+        </svg>
       </div>
     </div>
   </section>
@@ -323,14 +681,141 @@
     </div>
   </section>
 
+  <section class="section section--panel">
+    <div class="container">
+      <div class="text-center max-prose mx-auto" data-reveal>
+        <span class="eyebrow">For Clients</span>
+        <h2>Every serious builder needs a secret weapon.</h2>
+        <p style="font-size:1.02rem;">
+          Once CHEW understands where you are and where you're trying to go, the experience
+          gets personal. Your plan. Your blockers. Your opportunities. Your sequence. Your next
+          move. Your recovery route. Your advantage.
+        </p>
+      </div>
+      <div class="secret-grid">
+        <div class="glass card secret-tile" data-reveal style="--reveal-delay:0.02s;">
+          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" stroke="var(--gold-light)" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="var(--gold-light)" stroke-width="1.6"/></svg>
+          <h4>Your Mission</h4>
+        </div>
+        <div class="glass card secret-tile" data-reveal style="--reveal-delay:0.06s;">
+          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" stroke="var(--gold-light)" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="var(--gold-light)" stroke-width="1.6"/></svg>
+          <h4>Your Position</h4>
+        </div>
+        <div class="glass card secret-tile" data-reveal style="--reveal-delay:0.1s;">
+          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" stroke="var(--gold-light)" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="var(--gold-light)" stroke-width="1.6"/></svg>
+          <h4>Your Blind Spots</h4>
+        </div>
+        <div class="glass card secret-tile" data-reveal style="--reveal-delay:0.14s;">
+          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" stroke="var(--gold-light)" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="var(--gold-light)" stroke-width="1.6"/></svg>
+          <h4>Your Advantages</h4>
+        </div>
+        <div class="glass card secret-tile" data-reveal style="--reveal-delay:0.18s;">
+          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" stroke="var(--gold-light)" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="var(--gold-light)" stroke-width="1.6"/></svg>
+          <h4>Your Next Move</h4>
+        </div>
+        <div class="glass card secret-tile" data-reveal style="--reveal-delay:0.22s;">
+          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" stroke="var(--gold-light)" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="var(--gold-light)" stroke-width="1.6"/></svg>
+          <h4>Your Plan B</h4>
+        </div>
+        <div class="glass card secret-tile" data-reveal style="--reveal-delay:0.26s;">
+          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" stroke="var(--gold-light)" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="var(--gold-light)" stroke-width="1.6"/></svg>
+          <h4>What CHEW Is Watching</h4>
+        </div>
+      </div>
+      <p class="text-center" style="font-size:0.82rem; color:var(--text-faint); margin-top:28px;" data-reveal>
+        Built as you go &mdash; these deepen as your relationship with CHEW does.
+      </p>
+    </div>
+  </section>
+
+  <section class="section section--panel expansion-scene">
+    <div class="container">
+      <div class="text-center max-prose mx-auto" data-reveal>
+        <span class="eyebrow">What's Next</span>
+        <h2>The system is expanding.</h2>
+        <p style="font-size:1.02rem;">
+          CHEW is just getting started. More intelligence, more capabilities, more ways to
+          build &mdash; in active development now. We'd rather show you a locked door we're
+          honestly building toward than a fake room that isn't really there yet.
+        </p>
+      </div>
+      <div class="expansion-grid" id="expansion-grid" aria-live="polite" aria-busy="true"></div>
+      <noscript>
+        <div class="expansion-grid">
+          <div class="glass card coming-soon-card">
+            <h4>Business Intelligence</h4>
+            <p>Build, structure, launch, operate, and grow.</p>
+            <span class="status-badge">Coming Soon</span>
+          </div>
+          <div class="glass card coming-soon-card">
+            <h4>Education &amp; Careers</h4>
+            <p>From GED to credentials, college, careers, and opportunity paths.</p>
+            <span class="status-badge">Coming Soon</span>
+          </div>
+          <div class="glass card coming-soon-card">
+            <h4>Asset Intelligence</h4>
+            <p>Understand what you own and how it may fit into your larger strategy.</p>
+            <span class="status-badge">Coming Soon</span>
+          </div>
+          <div class="glass card coming-soon-card">
+            <h4>CHEW Connections</h4>
+            <p>Access specialized capabilities when your plan calls for them.</p>
+            <span class="status-badge">Coming Soon</span>
+          </div>
+        </div>
+      </noscript>
+      <p class="text-center" style="font-size:0.82rem; color:var(--text-faint); margin-top:28px;" data-reveal>
+        Nothing above is usable yet &mdash; we're not going to show you a dashboard that isn't real.
+        This is what's being built behind the scenes.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container grid grid--2" style="gap:48px; align-items:center;">
+      <div data-reveal>
+        <span class="eyebrow">What We Believe</span>
+        <h2>No fake guarantees. No empty hype. No dependency.</h2>
+        <p style="font-size:1.02rem;">
+          CHEW doesn't claim perfection, and we don't promise outcomes. What we commit to is
+          the process &mdash; clear expectations, real education, honest sequencing, and
+          getting better at this every year we're in it. Better understanding. Better
+          positioning. Better decisions.
+        </p>
+      </div>
+      <div class="glass card" data-reveal style="--reveal-delay:0.1s;">
+        <span class="eyebrow">From the Founder</span>
+        <p style="font-family:var(--font-display); font-size:1.15rem; color:var(--gold-light); font-style:italic; line-height:1.4;">
+          &ldquo;I had to self-educate because I did not receive the playbook. CHEW exists
+          because I do not believe the next person should have to figure out every piece
+          alone.&rdquo;
+        </p>
+        <a href="about.html" style="font-size:0.9rem;">Read the full story &rarr;</a>
+      </div>
+    </div>
+  </section>
+
   <section class="section legacy-close text-center">
     <div class="hero-glow"></div>
+    <div class="legacy-close-frame" aria-hidden="true">
+      <span class="corner corner--tl"></span><span class="corner corner--tr"></span>
+      <span class="corner corner--bl"></span><span class="corner corner--br"></span>
+    </div>
+    <div class="legacy-close-converge" aria-hidden="true">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+        <line x1="4" y1="4" x2="50" y2="50"/>
+        <line x1="96" y1="4" x2="50" y2="50"/>
+        <line x1="4" y1="96" x2="50" y2="50"/>
+        <line x1="96" y1="96" x2="50" y2="50"/>
+      </svg>
+    </div>
     <div class="container" style="position:relative;">
       <div class="chapter-label" style="justify-content:center;" data-reveal><span class="chapter-index">04</span> Chapter Four &mdash; Structure</div>
-      <h2 data-reveal>Ready to get your money in order?</h2>
+      <h2 data-reveal>An idea hit you. Get your money ready for it.</h2>
+      <p class="max-prose mx-auto" data-reveal style="margin-top:14px; font-size:0.95rem;">Your life. Your moves. Connected &mdash; that's what it means to enter CHEW.</p>
       <div class="btn-row" style="justify-content:center; margin-top:24px;" data-reveal>
-        <a href="apply.html" class="btn btn-gold">I'm Ready to Chew</a>
-        <a href="contact.html" class="btn btn-outline">Ask a question first</a>
+        <a href="apply.html" class="btn btn-gold btn-magnetic">Enter CHEW</a>
+        <a href="contact.html" class="btn btn-outline">Ask CHEW a question first</a>
       </div>
     </div>
   </section>

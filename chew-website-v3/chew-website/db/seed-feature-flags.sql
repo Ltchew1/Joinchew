@@ -1,0 +1,40 @@
+-- CHEW Feature Flags — initial state
+--
+-- path_engine and capability_network are 'preview' (not 'live') because
+-- that's an honest description of what's actually shipped: one Florida
+-- LLC path, a capability taxonomy with zero providers. Neither has a
+-- public teaser card — each already has its own honestly-scoped link
+-- elsewhere on the homepage, so a generic "Coming Soon"/"Explore" card
+-- would either duplicate or understate that existing, more specific
+-- copy. public_teaser_enabled stays FALSE for both.
+--
+-- The four "What's Next" capabilities are 'locked' (real API access is
+-- 404) but 'public_teaser_enabled = TRUE' — they're meant to be seen as
+-- honestly in-progress, matching the doctrine's own card copy.
+
+INSERT INTO feature_flags (slug, name, status, public_teaser_enabled, public_title, public_description, category, release_note) VALUES
+  ('path_engine', 'Business Path Engine (Florida LLC early preview)', 'preview', FALSE, NULL, NULL, 'business',
+   'Covers exactly one path: Florida LLC formation + federal EIN. See PATH_ENGINE.md.'),
+  ('capability_network', 'Capability Network routing', 'preview', FALSE, NULL, NULL, 'network',
+   'Taxonomy + routing engine live; zero providers seeded yet. See CAPABILITY_NETWORK.md.'),
+  ('business_intelligence_suite', 'Business Intelligence', 'locked', TRUE,
+   'Business Intelligence', 'Build, structure, launch, operate, and grow.', 'business', NULL),
+  ('education_careers', 'Education & Careers', 'locked', TRUE,
+   'Education & Careers', 'From GED to credentials, college, careers, and opportunity paths.', 'education', NULL),
+  ('asset_intelligence', 'Asset Intelligence', 'locked', TRUE,
+   'Asset Intelligence', 'Understand what you own and how it may fit into your larger strategy.', 'assets', NULL),
+  ('chew_connections_suite', 'CHEW Connections', 'locked', TRUE,
+   'CHEW Connections', 'Access specialized capabilities when your plan calls for them.', 'network', NULL),
+  ('intelligence_engine', 'CHEW Intelligence System (MVP recommendation slice)', 'internal', FALSE, NULL, NULL, 'intelligence',
+   'No real subject/user identity behind this yet (ARCHITECTURE.md Gap 1). Internal/test use only until that exists — do not flip to preview/beta/live without real identity in place first.'),
+  ('intelligence_demo', 'CHEW Intelligence Reveal (public, fixed-scenario demo)', 'live', FALSE, NULL, NULL, 'intelligence',
+   'Public and safe by construction: api/intelligence-demo.js only ever computes against the two pre-seeded illustrative scenarios (db/seed-intelligence.sql), never an arbitrary subjectId/goalId. Not the same flag as intelligence_engine, which stays internal.'),
+  ('scenario_modeling', 'CHEW Scenario Modeling Foundation (internal)', 'internal', FALSE, NULL, NULL, 'intelligence',
+   'No real member identity system exists yet (ARCHITECTURE.md Gap 1), so every scenario row is owned by the one seeded illustrative intel_subjects row, never a real person. Internal/test use only — do not flip to preview/beta/live, and do not relax the scenarios.subject_type CHECK, until a real authenticated member identity layer exists.'),
+  ('hidden_leverage_discovery', 'CHEW Hidden Leverage Foundation (internal)', 'internal', FALSE, NULL, NULL, 'intelligence',
+   'Evidence-only discovery engine (lib/leverageModel.js) — never brainstorms or infers an asset/relationship/program that has no real stored evidence. Same identity boundary as scenario_modeling: owned by the one seeded illustrative intel_subjects row until a real authenticated member identity layer exists. Do not flip to preview/beta/live, and do not relax the leverage_items.subject_type CHECK, before then.'),
+  ('economic_weather_foundation', 'CHEW Economic Weather Historical-State Foundation (internal)', 'internal', FALSE, NULL, NULL, 'intelligence',
+   'Real state-snapshot + signal engine (lib/weatherModel.js) — never reports a trend, momentum, or trajectory without enough real comparable snapshots to support it, and never estimates liquidity/income/credit/employment signals this schema has no data for. Same identity boundary as scenario_modeling: owned by the one seeded illustrative intel_subjects row until a real authenticated member identity layer exists. Do not flip to preview/beta/live, and do not relax the state_snapshots.subject_type CHECK, before then.'),
+  ('friction_detection', 'CHEW Friction Detection — historical-pattern foundation (internal)', 'internal', FALSE, NULL, NULL, 'intelligence',
+   'Pure derived-pattern engine (lib/frictionModel.js) reading only real state_snapshots rows — never scenarios, never a persisted friction table. Detects persistent_requirement/repeated_focus/readiness_stall/recurring_requirement only when real comparable history proves them, and never states a psychological cause (procrastination, motivation, avoidance). Same identity boundary as scenario_modeling: owned by the one seeded illustrative intel_subjects row until a real authenticated member identity layer exists. Do not flip to preview/beta/live before then.')
+ON CONFLICT (slug) DO NOTHING;

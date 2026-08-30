@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wealth World (Early Preview) | CHEW</title>
+<meta name="description" content="The real Life Map territories and CHEW's real capability registry, in one spatial view. Real curated relationships, real live provider status — and an honest look at what's connected today and what isn't yet.">
+<link rel="canonical" href="https://www.joinchew.com/wealth-world.html">
+<meta name="robots" content="noindex, follow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="brand">
+      <img src="assets/chew-icon-official.png" alt="" width="40" height="40">
+      CHEW
+    </a>
+    <nav class="nav" id="site-nav">
+      <a href="index.html">Home</a>
+      <a href="how-it-works.html">How It Works</a>
+      <a href="services.html">Programs</a>
+      <a href="blueprint.html">Blueprint</a>
+      <a href="philosophy.html">Philosophy</a>
+      <a href="education.html">Education</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="apply.html" class="btn btn-gold btn-sm">I'm Ready to Chew</a>
+    </div>
+    <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="site-nav">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="hero-glow"></div>
+    <div class="container" style="position:relative;">
+      <span class="eyebrow">Early Preview &middot; Not a Finished Product</span>
+      <h1 style="max-width:24ch;">The whole board, in one view.</h1>
+      <p class="max-prose" style="font-size:1.05rem; margin-top:16px;">
+        The inner ring is the real Life Map &mdash; the same 8 territories and curated relationships
+        from the homepage. The outer ring is CHEW's real capability registry, live, the same data
+        the Opportunity Radar reads. The dashed lines between them are CHEW's own editorial
+        grouping, not a database relationship &mdash; and three real capabilities don't fit
+        cleanly into any territory yet. That gap is shown honestly, not hidden.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0;">
+    <div class="container">
+      <p class="netroom-status" id="wealthworld-status" role="status" aria-live="polite"></p>
+
+      <div class="wealthworld-map-wrap" id="wealthworld-map-wrap" hidden>
+        <svg class="wealthworld-svg" viewBox="0 0 560 560" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+          <defs>
+            <radialGradient id="constGoldFill" cx="35%" cy="35%" r="70%">
+              <stop offset="0" stop-color="#E8CE7A"/>
+              <stop offset="1" stop-color="#8A6E1C"/>
+            </radialGradient>
+          </defs>
+
+          <g class="wealthworld-connectors" id="wealthworld-connectors"></g>
+
+          <g class="wealthworld-spokes">
+            <line class="wealthworld-spoke" data-territory="credit" x1="280" y1="280" x2="280" y2="130"/>
+            <line class="wealthworld-spoke" data-territory="capital" x1="280" y1="280" x2="386" y2="174"/>
+            <line class="wealthworld-spoke" data-territory="business" x1="280" y1="280" x2="430" y2="280"/>
+            <line class="wealthworld-spoke" data-territory="property" x1="280" y1="280" x2="386" y2="386"/>
+            <line class="wealthworld-spoke" data-territory="insurance" x1="280" y1="280" x2="280" y2="430"/>
+            <line class="wealthworld-spoke" data-territory="assets" x1="280" y1="280" x2="174" y2="386"/>
+            <line class="wealthworld-spoke" data-territory="liquidity" x1="280" y1="280" x2="130" y2="280"/>
+            <line class="wealthworld-spoke" data-territory="ownership" x1="280" y1="280" x2="174" y2="174"/>
+          </g>
+          <g class="wealthworld-edges" id="wealthworld-edges">
+            <line class="wealthworld-edge" data-a="credit" data-b="capital" x1="280" y1="130" x2="386" y2="174"/>
+            <line class="wealthworld-edge" data-a="credit" data-b="property" x1="280" y1="130" x2="386" y2="386"/>
+            <line class="wealthworld-edge" data-a="credit" data-b="business" x1="280" y1="130" x2="430" y2="280"/>
+            <line class="wealthworld-edge" data-a="credit" data-b="liquidity" x1="280" y1="130" x2="130" y2="280"/>
+            <line class="wealthworld-edge" data-a="capital" data-b="business" x1="386" y1="174" x2="430" y2="280"/>
+            <line class="wealthworld-edge" data-a="capital" data-b="ownership" x1="386" y1="174" x2="174" y2="174"/>
+            <line class="wealthworld-edge" data-a="business" data-b="assets" x1="430" y1="280" x2="174" y2="386"/>
+            <line class="wealthworld-edge" data-a="business" data-b="insurance" x1="430" y1="280" x2="280" y2="430"/>
+            <line class="wealthworld-edge" data-a="property" data-b="ownership" x1="386" y1="386" x2="174" y2="174"/>
+            <line class="wealthworld-edge" data-a="property" data-b="insurance" x1="386" y1="386" x2="280" y2="430"/>
+            <line class="wealthworld-edge" data-a="insurance" data-b="assets" x1="280" y1="430" x2="174" y2="386"/>
+            <line class="wealthworld-edge" data-a="assets" data-b="liquidity" x1="174" y1="386" x2="130" y2="280"/>
+            <line class="wealthworld-edge" data-a="ownership" data-b="assets" x1="174" y1="174" x2="174" y2="386"/>
+          </g>
+
+          <g class="node-center intelligence-pulse">
+            <circle cx="280" cy="280" r="38"/>
+            <text x="280" y="281">CHEW</text>
+          </g>
+
+          <g class="wealthworld-territory" data-territory="credit"><circle cx="280" cy="130" r="21"/></g>
+          <text x="280" y="102" class="wealthworld-territory-label" data-territory="credit">Credit</text>
+          <g class="wealthworld-territory" data-territory="capital"><circle cx="386" cy="174" r="21"/></g>
+          <text x="410" y="152" class="wealthworld-territory-label" data-territory="capital">Capital</text>
+          <g class="wealthworld-territory" data-territory="business"><circle cx="430" cy="280" r="21"/></g>
+          <text x="458" y="280" class="wealthworld-territory-label" data-territory="business">Business</text>
+          <g class="wealthworld-territory" data-territory="property"><circle cx="386" cy="386" r="21"/></g>
+          <text x="410" y="408" class="wealthworld-territory-label" data-territory="property">Property</text>
+          <g class="wealthworld-territory" data-territory="insurance"><circle cx="280" cy="430" r="21"/></g>
+          <text x="280" y="458" class="wealthworld-territory-label" data-territory="insurance">Insurance</text>
+          <g class="wealthworld-territory" data-territory="assets"><circle cx="174" cy="386" r="21"/></g>
+          <text x="150" y="408" class="wealthworld-territory-label" data-territory="assets">Assets</text>
+          <g class="wealthworld-territory" data-territory="liquidity"><circle cx="130" cy="280" r="21"/></g>
+          <text x="102" y="280" class="wealthworld-territory-label" data-territory="liquidity">Liquidity</text>
+          <g class="wealthworld-territory" data-territory="ownership"><circle cx="174" cy="174" r="21"/></g>
+          <text x="150" y="152" class="wealthworld-territory-label" data-territory="ownership">Ownership</text>
+
+          <g class="wealthworld-cap-node" data-cap="insurance_risk_review"><circle cx="343" cy="501" r="18"/></g>
+          <text x="343" y="530" class="wealthworld-cap-label" data-cap="insurance_risk_review">Insurance / Risk Review</text>
+          <g class="wealthworld-cap-node" data-cap="security_protection"><circle cx="217" cy="501" r="18"/></g>
+          <text x="217" y="530" class="wealthworld-cap-label" data-cap="security_protection">Security / Protection</text>
+          <g class="wealthworld-cap-node" data-cap="digital_business_infrastructure"><circle cx="510" cy="280" r="18"/></g>
+          <text x="510" y="306" class="wealthworld-cap-label" data-cap="digital_business_infrastructure">Digital Business Infra.</text>
+          <g class="wealthworld-cap-node" data-cap="accounting_tax"><circle cx="443" cy="117" r="18"/></g>
+          <text x="443" y="93" class="wealthworld-cap-label" data-cap="accounting_tax">Accounting / Tax</text>
+          <g class="wealthworld-cap-node" data-cap="real_asset_execution"><circle cx="477" cy="399" r="18"/></g>
+          <text x="500" y="416" class="wealthworld-cap-label" data-cap="real_asset_execution">Real-Asset Execution</text>
+          <g class="wealthworld-cap-node" data-cap="property_care"><circle cx="399" cy="477" r="18"/></g>
+          <text x="399" y="503" class="wealthworld-cap-label" data-cap="property_care">Property Care</text>
+        </svg>
+
+        <div class="wealthworld-hit-layer" id="wealthworld-hit-layer" role="group" aria-label="Wealth World — select a territory or capability to see how it connects">
+          <button type="button" class="wealthworld-hit" data-kind="territory" data-key="credit" style="left:50%;top:23.21%;width:46px;height:46px;"><span class="sr-only">Credit territory</span></button>
+          <button type="button" class="wealthworld-hit" data-kind="territory" data-key="capital" style="left:68.93%;top:31.07%;width:46px;height:46px;"><span class="sr-only">Capital territory</span></button>
+          <button type="button" class="wealthworld-hit" data-kind="territory" data-key="business" style="left:76.79%;top:50%;width:46px;height:46px;"><span class="sr-only">Business territory</span></button>
+          <button type="button" class="wealthworld-hit" data-kind="territory" data-key="property" style="left:68.93%;top:68.93%;width:46px;height:46px;"><span class="sr-only">Property territory</span></button>
+          <button type="button" class="wealthworld-hit" data-kind="territory" data-key="insurance" style="left:50%;top:76.79%;width:46px;height:46px;"><span class="sr-only">Insurance territory</span></button>
+          <button type="button" class="wealthworld-hit" data-kind="territory" data-key="assets" style="left:31.07%;top:68.93%;width:46px;height:46px;"><span class="sr-only">Assets territory</span></button>
+          <button type="button" class="wealthworld-hit" data-kind="territory" data-key="liquidity" style="left:23.21%;top:50%;width:46px;height:46px;"><span class="sr-only">Liquidity territory</span></button>
+          <button type="button" class="wealthworld-hit" data-kind="territory" data-key="ownership" style="left:31.07%;top:31.07%;width:46px;height:46px;"><span class="sr-only">Ownership territory</span></button>
+
+          <button type="button" class="wealthworld-hit" data-kind="capability" data-key="insurance_risk_review" style="left:61.25%;top:89.46%;width:40px;height:40px;"><span class="sr-only">Insurance / Risk Review capability</span></button>
+          <button type="button" class="wealthworld-hit" data-kind="capability" data-key="security_protection" style="left:38.75%;top:89.46%;width:40px;height:40px;"><span class="sr-only">Security / Protection capability</span></button>
+          <button type="button" class="wealthworld-hit" data-kind="capability" data-key="digital_business_infrastructure" style="left:91.07%;top:50%;width:40px;height:40px;"><span class="sr-only">Digital Business Infrastructure capability</span></button>
+          <button type="button" class="wealthworld-hit" data-kind="capability" data-key="accounting_tax" style="left:79.11%;top:20.89%;width:40px;height:40px;"><span class="sr-only">Accounting / Tax capability</span></button>
+          <button type="button" class="wealthworld-hit" data-kind="capability" data-key="real_asset_execution" style="left:85.18%;top:71.25%;width:40px;height:40px;"><span class="sr-only">Real-Asset Execution capability</span></button>
+          <button type="button" class="wealthworld-hit" data-kind="capability" data-key="property_care" style="left:71.25%;top:85.18%;width:40px;height:40px;"><span class="sr-only">Property Care capability</span></button>
+        </div>
+      </div>
+
+      <div class="wealthworld-unmapped" id="wealthworld-unmapped" hidden>
+        <span class="wealthworld-unmapped-label">Real capabilities not yet grouped with a territory in this view:</span>
+        <div class="wealthworld-unmapped-row" id="wealthworld-unmapped-row"></div>
+      </div>
+
+      <div class="wealthworld-detail" id="wealthworld-detail" hidden></div>
+    </div>
+  </section>
+
+  <section class="section section--panel">
+    <div class="container max-prose">
+      <span class="eyebrow">What This Actually Is</span>
+      <h2>Two real datasets, one honest map &mdash; the grouping between them is ours, not the database's.</h2>
+      <p>
+        The 8 territories and their 13 relationships are the exact same curated data as the
+        homepage Life Map. The 9 capabilities and their live provider counts are the exact same
+        registry data as the Opportunity Radar. What's new here is the grouping between the two
+        rings &mdash; CHEW's own editorial judgment about which capabilities generally serve which
+        territories, not a stored relationship in the schema. Three capabilities (Event Production,
+        Transportation / Logistics, Relocation / Storage) don't map cleanly onto any of the 8
+        financial territories, so they're shown separately rather than forced into a connection
+        that doesn't really exist.
+      </p>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var LABELS = {
+    credit: 'Credit', capital: 'Capital', business: 'Business', property: 'Property',
+    insurance: 'Insurance', assets: 'Assets', liquidity: 'Liquidity', ownership: 'Ownership',
+  };
+  var EDGES = [
+    { a: 'credit', b: 'capital', reason: 'Your credit profile shapes what capital you can access, and at what cost.' },
+    { a: 'credit', b: 'property', reason: 'Credit is usually the gating requirement standing between you and financing property.' },
+    { a: 'credit', b: 'business', reason: 'Personal credit often backs early business moves before business credit exists on its own.' },
+    { a: 'credit', b: 'liquidity', reason: 'When liquidity runs low, credit is frequently the bridge that gets used instead.' },
+    { a: 'capital', b: 'business', reason: 'Capital funds the business moves that go on to generate income and equity.' },
+    { a: 'capital', b: 'ownership', reason: 'Ownership stakes can themselves become a future source of capital.' },
+    { a: 'business', b: 'assets', reason: 'A business becomes an asset in its own right, and it can acquire assets of its own.' },
+    { a: 'business', b: 'insurance', reason: 'A business carries exposure that personal insurance was never built to cover.' },
+    { a: 'property', b: 'ownership', reason: 'Property is one of the clearest, most durable forms of ownership CHEW tracks.' },
+    { a: 'property', b: 'insurance', reason: 'Property creates real exposure — insurance is what protects it once it’s yours.' },
+    { a: 'insurance', b: 'assets', reason: 'Assets worth building are worth protecting; insurance guards what’s already been built.' },
+    { a: 'assets', b: 'liquidity', reason: 'Not everything you own is something you can use right now — CHEW tracks that gap.' },
+    { a: 'ownership', b: 'assets', reason: 'Ownership and assets tend to grow together — one is usually a sign the other is too.' },
+  ];
+  // Editorial grouping only — not a database relationship. Life-event
+  // capabilities (event_production, transportation_logistics,
+  // relocation_logistics) are deliberately left out: they don't map
+  // cleanly onto any of these 8 financial territories.
+  var CAP_TERRITORIES = {
+    insurance_risk_review: ['insurance'],
+    security_protection: ['insurance', 'assets'],
+    digital_business_infrastructure: ['business'],
+    accounting_tax: ['capital', 'business'],
+    real_asset_execution: ['property', 'ownership'],
+    property_care: ['property', 'assets'],
+  };
+
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var statusEl = document.getElementById('wealthworld-status');
+  var mapWrapEl = document.getElementById('wealthworld-map-wrap');
+  var detailEl = document.getElementById('wealthworld-detail');
+  var unmappedEl = document.getElementById('wealthworld-unmapped');
+  var unmappedRowEl = document.getElementById('wealthworld-unmapped-row');
+  var capabilityOverview = null;
+  var selected = null; // { kind: 'territory'|'capability', key }
+
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  }
+
+  function capByslug(slug) { return capabilityOverview ? capabilityOverview.filter(function (c) { return c.slug === slug; })[0] : null; }
+
+  function territoryEdgesFor(key) {
+    return EDGES.filter(function (e) { return e.a === key || e.b === key; })
+      .map(function (e) { return { other: e.a === key ? e.b : e.a, reason: e.reason }; });
+  }
+
+  function capsForTerritory(key) {
+    return Object.keys(CAP_TERRITORIES).filter(function (slug) { return CAP_TERRITORIES[slug].indexOf(key) !== -1; });
+  }
+
+  function clearHighlights() {
+    document.querySelectorAll('.wealthworld-territory, .wealthworld-cap-node, .wealthworld-territory-label, .wealthworld-cap-label').forEach(function (el) {
+      el.classList.remove('is-selected', 'is-connected');
+    });
+    document.querySelectorAll('.wealthworld-spoke, .wealthworld-edge, .wealthworld-connector').forEach(function (el) {
+      el.classList.remove('is-lit');
+    });
+    document.querySelectorAll('.wealthworld-hit, .wealthworld-unmapped-btn').forEach(function (el) { el.setAttribute('aria-pressed', 'false'); });
+  }
+
+  function mark(sel, cls) {
+    document.querySelectorAll('[data-territory="' + sel + '"], [data-cap="' + sel + '"]').forEach(function (el) { el.classList.add(cls); });
+  }
+
+  function deselect() {
+    selected = null;
+    mapWrapEl.classList.remove('has-selection');
+    clearHighlights();
+    detailEl.hidden = true;
+    detailEl.innerHTML = '';
+  }
+
+  function selectTerritory(key) {
+    if (selected && selected.kind === 'territory' && selected.key === key) { deselect(); return; }
+    selected = { kind: 'territory', key: key };
+    mapWrapEl.classList.add('has-selection');
+    clearHighlights();
+    mark(key, 'is-selected');
+    document.querySelectorAll('.wealthworld-spoke[data-territory="' + key + '"]').forEach(function (el) { el.classList.add('is-lit'); });
+
+    var connections = territoryEdgesFor(key);
+    connections.forEach(function (c) {
+      mark(c.other, 'is-connected');
+      document.querySelectorAll('.wealthworld-spoke[data-territory="' + c.other + '"]').forEach(function (el) { el.classList.add('is-lit'); });
+    });
+    document.querySelectorAll('.wealthworld-edge').forEach(function (el) {
+      var a = el.getAttribute('data-a'), b = el.getAttribute('data-b');
+      if (a === key || b === key) el.classList.add('is-lit');
+    });
+
+    var relatedCaps = capsForTerritory(key);
+    relatedCaps.forEach(function (slug) {
+      mark(slug, 'is-connected');
+      document.querySelectorAll('.wealthworld-connector[data-cap="' + slug + '"]').forEach(function (el) { el.classList.add('is-lit'); });
+    });
+
+    var hit = document.querySelector('.wealthworld-hit[data-kind="territory"][data-key="' + key + '"]');
+    if (hit) hit.setAttribute('aria-pressed', 'true');
+
+    var html = '<span class="wealthworld-detail-eyebrow">' + escapeHtml(LABELS[key]) + ' connects to</span><ul class="wealthworld-detail-list">';
+    connections.forEach(function (c) {
+      html += '<li><strong>' + escapeHtml(LABELS[c.other]) + '</strong> — ' + escapeHtml(c.reason) + '</li>';
+    });
+    if (relatedCaps.length) {
+      html += '<li><strong>Related real capabilities:</strong> ' + relatedCaps.map(function (slug) {
+        var cap = capByslug(slug);
+        return escapeHtml(cap ? cap.name : slug);
+      }).join(', ') + '.</li>';
+    } else {
+      html += '<li>No real capability is currently grouped with this territory.</li>';
+    }
+    html += '</ul><button type="button" class="wealthworld-detail-close" id="wealthworld-detail-close">Clear selection</button>';
+    detailEl.innerHTML = html;
+    detailEl.hidden = false;
+    bindClose();
+  }
+
+  function selectCapability(slug) {
+    if (selected && selected.kind === 'capability' && selected.key === slug) { deselect(); return; }
+    selected = { kind: 'capability', key: slug };
+    mapWrapEl.classList.add('has-selection');
+    clearHighlights();
+    mark(slug, 'is-selected');
+
+    var territories = CAP_TERRITORIES[slug] || [];
+    territories.forEach(function (t) {
+      mark(t, 'is-connected');
+      document.querySelectorAll('.wealthworld-spoke[data-territory="' + t + '"]').forEach(function (el) { el.classList.add('is-lit'); });
+    });
+    document.querySelectorAll('.wealthworld-connector[data-cap="' + slug + '"]').forEach(function (el) { el.classList.add('is-lit'); });
+
+    var hit = document.querySelector('.wealthworld-hit[data-kind="capability"][data-key="' + slug + '"]') ||
+      document.querySelector('.wealthworld-unmapped-btn[data-key="' + slug + '"]');
+    if (hit) hit.setAttribute('aria-pressed', 'true');
+
+    var cap = capByslug(slug);
+    var html = '<span class="wealthworld-detail-eyebrow">' + escapeHtml(cap ? cap.name : slug) + '</span><ul class="wealthworld-detail-list">';
+    html += '<li>' + (cap && cap.available
+      ? cap.activeProviderCount + ' active provider' + (cap.activeProviderCount === 1 ? '' : 's') + ' in the network right now.'
+      : 'No active provider in the network yet.') + '</li>';
+    if (territories.length) {
+      html += '<li><strong>Generally relevant to:</strong> ' + territories.map(function (t) { return escapeHtml(LABELS[t]); }).join(', ') + ' — CHEW\'s own grouping, not a stored relationship.</li>';
+    } else {
+      html += '<li>Not yet grouped with a specific territory in this view — it doesn\'t map cleanly onto one of these 8 financial domains.</li>';
+    }
+    html += '</ul><button type="button" class="wealthworld-detail-close" id="wealthworld-detail-close">Clear selection</button>';
+    detailEl.innerHTML = html;
+    detailEl.hidden = false;
+    bindClose();
+  }
+
+  function bindClose() {
+    var btn = document.getElementById('wealthworld-detail-close');
+    if (btn) btn.addEventListener('click', deselect);
+  }
+
+  function buildConnectors() {
+    var svgNS = 'http://www.w3.org/2000/svg';
+    var g = document.getElementById('wealthworld-connectors');
+    var territoryCoords = {
+      credit: [280, 130], capital: [386, 174], business: [430, 280], property: [386, 386],
+      insurance: [280, 430], assets: [174, 386], liquidity: [130, 280], ownership: [174, 174],
+    };
+    var capCoords = {
+      insurance_risk_review: [343, 501], security_protection: [217, 501],
+      digital_business_infrastructure: [510, 280], accounting_tax: [443, 117],
+      real_asset_execution: [477, 399], property_care: [399, 477],
+    };
+    Object.keys(CAP_TERRITORIES).forEach(function (slug) {
+      var capXY = capCoords[slug];
+      CAP_TERRITORIES[slug].forEach(function (t) {
+        var tXY = territoryCoords[t];
+        if (!tXY || !capXY) return;
+        var line = document.createElementNS(svgNS, 'line');
+        line.setAttribute('class', 'wealthworld-connector');
+        line.setAttribute('data-cap', slug);
+        line.setAttribute('data-territory', t);
+        line.setAttribute('x1', tXY[0]); line.setAttribute('y1', tXY[1]);
+        line.setAttribute('x2', capXY[0]); line.setAttribute('y2', capXY[1]);
+        line.setAttribute('stroke-dasharray', '4 3');
+        g.appendChild(line);
+      });
+    });
+  }
+
+  function renderUnmapped(allCapabilities) {
+    var mappedSlugs = Object.keys(CAP_TERRITORIES);
+    var unmapped = allCapabilities.filter(function (c) { return mappedSlugs.indexOf(c.slug) === -1; });
+    if (!unmapped.length) { unmappedEl.hidden = true; return; }
+    unmappedRowEl.innerHTML = unmapped.map(function (c) {
+      return '<button type="button" class="wealthworld-unmapped-btn' + (c.available ? ' is-available' : '') + '" data-key="' + c.slug + '">' + escapeHtml(c.name) + '</button>';
+    }).join('');
+    unmappedRowEl.querySelectorAll('.wealthworld-unmapped-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { selectCapability(btn.getAttribute('data-key')); });
+    });
+    unmappedEl.hidden = false;
+  }
+
+  buildConnectors();
+
+  document.querySelectorAll('.wealthworld-hit[data-kind="territory"]').forEach(function (btn) {
+    btn.setAttribute('aria-pressed', 'false');
+    btn.addEventListener('click', function () { selectTerritory(btn.getAttribute('data-key')); });
+  });
+  document.querySelectorAll('.wealthworld-hit[data-kind="capability"]').forEach(function (btn) {
+    btn.setAttribute('aria-pressed', 'false');
+    btn.addEventListener('click', function () { selectCapability(btn.getAttribute('data-key')); });
+  });
+
+  statusEl.textContent = 'CHEW is loading the registry…';
+  fetch('/api/intelligence-demo?goal=home')
+    .then(function (res) {
+      if (!res.ok) return res.json().then(function (d) { throw new Error(d.error || 'Lookup failed'); });
+      return res.json();
+    })
+    .then(function (data) {
+      statusEl.textContent = '';
+      capabilityOverview = data.capabilityOverview || [];
+      document.querySelectorAll('.wealthworld-cap-node').forEach(function (el) {
+        var cap = capByslug(el.getAttribute('data-cap'));
+        if (cap && cap.available) el.classList.add('is-available');
+      });
+      renderUnmapped(capabilityOverview);
+      mapWrapEl.hidden = false;
+    })
+    .catch(function (err) {
+      statusEl.textContent = err.message || 'CHEW could not load the registry right now.';
+    });
+})();
+</script>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-legal">
+      <span>&copy; 2026 CHEW LLC. All rights reserved.</span>
+      <span>CHEW LLC is a financial education and business-infrastructure company. CHEW does not provide credit repair services, does not promise or guarantee funding, approvals, score changes, or removal of information, and does not provide legal, tax, or investment advice. Results depend on individual circumstances, participation, and third-party decisions. See our <a href="disclaimer.html" style="color:inherit;">disclaimer</a>.</span>
+    </div>
+  </div>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Network Room (Early Preview) | CHEW</title>
+<meta name="description" content="Step inside CHEW's real capability registry. Pick a sample need and watch CHEW trace the actual route — capability match, qualification gates, provider status, consent boundary, and honest outcome. No fabricated providers, ever.">
+<link rel="canonical" href="https://www.joinchew.com/network-room.html">
+<meta name="robots" content="noindex, follow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="brand">
+      <img src="assets/chew-icon-official.png" alt="" width="40" height="40">
+      CHEW
+    </a>
+    <nav class="nav" id="site-nav">
+      <a href="index.html">Home</a>
+      <a href="how-it-works.html">How It Works</a>
+      <a href="services.html">Programs</a>
+      <a href="blueprint.html">Blueprint</a>
+      <a href="philosophy.html">Philosophy</a>
+      <a href="education.html">Education</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="apply.html" class="btn btn-gold btn-sm">I'm Ready to Chew</a>
+    </div>
+    <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="site-nav">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="hero-glow"></div>
+    <div class="container" style="position:relative;">
+      <span class="eyebrow">Early Preview &middot; Not a Finished Product</span>
+      <h1 style="max-width:26ch;">Step inside CHEW's real capability infrastructure.</h1>
+      <p class="max-prose" style="font-size:1.05rem; margin-top:16px;">
+        When CHEW detects a need, how does that need actually connect to a real capability? Pick a
+        sample need below and watch CHEW trace the real route through its own registry &mdash;
+        the same taxonomy and matching logic the Opportunity Radar reads from. If no verified
+        provider is connected yet, CHEW says so plainly instead of inventing one.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0;">
+    <div class="container">
+      <div class="netroom-legend" data-reveal>
+        <span><span class="netroom-legend-dot netroom-legend-dot--sample" aria-hidden="true"></span>Sample need (illustrative)</span>
+        <span><span class="netroom-legend-dot netroom-legend-dot--real" aria-hidden="true"></span>Real CHEW registry structure</span>
+      </div>
+
+      <div class="netroom-need-picker" id="netroom-need-picker" role="group" aria-label="Choose a sample need" data-reveal></div>
+      <p class="netroom-status" id="netroom-status" role="status" aria-live="polite"></p>
+
+      <div class="netroom-chain-wrap" id="netroom-chain-wrap" hidden>
+        <ol class="netroom-chain" id="netroom-chain" aria-label="The route CHEW traced for this need"></ol>
+      </div>
+
+      <div class="netroom-inspector" id="netroom-inspector" hidden></div>
+    </div>
+  </section>
+
+  <section class="section section--panel">
+    <div class="container max-prose">
+      <span class="eyebrow">What This Actually Is</span>
+      <h2>A real registry, traced live &mdash; consent always simulated.</h2>
+      <p>
+        Every capability, gate, provider status, and jurisdiction shown above comes from a live
+        query against CHEW's actual capability registry &mdash; the same read-only, public
+        endpoint (<code>/api/capability-routing</code>) that powers the homepage's Opportunity
+        Radar. Only the need itself is a sample: nine illustrative starting points, clearly
+        marked, standing in for what a real visitor might tell CHEW. As of today the registry has
+        zero active providers seeded for any capability, so honestly, every route here currently
+        ends at <strong>NO VERIFIED LIVE ROUTE YET</strong> &mdash; that's not a bug in the demo,
+        it's CHEW refusing to fabricate a referral that doesn't exist. The "Grant simulated
+        consent" step, when a route is available, never actually shares anything or writes
+        anything &mdash; nothing in this page calls CHEW's real consent-recording or
+        routing-event systems. This is a demonstration of how the machinery works, not a live
+        handoff.
+      </p>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var NEED_TEXT = {
+    insurance_risk_review: 'I think there’s a gap in my insurance coverage.',
+    digital_business_infrastructure: 'My business needs a real website and booking system.',
+    real_asset_execution: 'I’m buying property and need execution support.',
+    accounting_tax: 'My bookkeeping is behind and needs to get caught up.',
+    event_production: 'I’m planning a wedding and need coordination help.',
+    transportation_logistics: 'I need transportation coordinated for a big move.',
+    security_protection: 'My situation calls for real security support.',
+    property_care: 'I need upkeep help for a property I own.',
+    relocation_logistics: 'I’m relocating my household to a new city.'
+  };
+  var CATEGORY_LABELS = {
+    risk: 'Risk & Protection',
+    infrastructure: 'Business Infrastructure',
+    real_assets: 'Real Assets',
+    tax_accounting: 'Tax & Accounting',
+    life_events: 'Life Events'
+  };
+  var RELATIONSHIP_LABELS = {
+    chew_direct: 'CHEW Direct',
+    affiliated_enterprise: 'Affiliated Enterprise',
+    independent_professional: 'Independent Professional',
+    external_provider: 'External Provider',
+    future_managed_service: 'Future Managed Service'
+  };
+
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var pickerEl = document.getElementById('netroom-need-picker');
+  var statusEl = document.getElementById('netroom-status');
+  var chainWrapEl = document.getElementById('netroom-chain-wrap');
+  var chainEl = document.getElementById('netroom-chain');
+  var inspectorEl = document.getElementById('netroom-inspector');
+  var allCapabilities = null;
+  var timeouts = [];
+
+  function clearTimeouts() { timeouts.forEach(function (id) { clearTimeout(id); }); timeouts = []; }
+
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  }
+
+  function formatRelationship(r) { return RELATIONSHIP_LABELS[r] || r; }
+
+  function buildPicker() {
+    pickerEl.innerHTML = Object.keys(NEED_TEXT).map(function (slug) {
+      return '<button type="button" class="netroom-need-btn" data-need="' + slug + '">' + escapeHtml(NEED_TEXT[slug]) + '</button>';
+    }).join('');
+    pickerEl.querySelectorAll('.netroom-need-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { runNeed(btn.getAttribute('data-need')); });
+    });
+  }
+
+  function stageHtml(opts) {
+    var html = '<li class="netroom-stage ' + opts.cls + '" data-stage="' + opts.key + '">';
+    html += '<span class="netroom-stage-eyebrow">' + opts.eyebrowHtml + '</span>';
+    html += '<span class="netroom-stage-title">' + opts.titleHtml + '</span>';
+    (opts.notes || []).forEach(function (n) {
+      if (n) html += '<span class="netroom-stage-note">' + n + '</span>';
+    });
+    if (opts.extraHtml) html += opts.extraHtml;
+    html += '</li>';
+    return html;
+  }
+
+  function connectorHtml(key) {
+    return '<li class="netroom-connector" data-connector="' + key + '" aria-hidden="true">&rarr;</li>';
+  }
+
+  function runNeed(slug) {
+    clearTimeouts();
+    pickerEl.querySelectorAll('.netroom-need-btn').forEach(function (b) {
+      b.classList.toggle('is-active', b.getAttribute('data-need') === slug);
+    });
+    statusEl.textContent = 'CHEW is tracing the route…';
+    chainWrapEl.hidden = true;
+    inspectorEl.hidden = true;
+    inspectorEl.innerHTML = '';
+
+    fetch('/api/capability-routing?capability=' + encodeURIComponent(slug))
+      .then(function (res) {
+        if (!res.ok) return res.json().then(function (d) { throw new Error(d.error || 'Lookup failed'); });
+        return res.json();
+      })
+      .then(function (data) {
+        statusEl.textContent = '';
+        renderChain(slug, data);
+      })
+      .catch(function (err) {
+        statusEl.textContent = err.message || 'CHEW could not trace this route right now.';
+      });
+  }
+
+  function renderChain(needSlug, routing) {
+    var needText = NEED_TEXT[needSlug];
+    var cap = routing.capability;
+    var category = cap ? cap.category : null;
+    var categoryLabel = CATEGORY_LABELS[category] || category;
+    var candidates = category && allCapabilities ? allCapabilities.filter(function (c) { return c.category === category; }) : [];
+    var provider = routing.providers && routing.providers[0] ? routing.providers[0] : null;
+    var hasGate = !!(provider && (provider.eligibilityNotes || provider.prerequisiteNotes || (provider.documentsNeeded && provider.documentsNeeded.length)));
+
+    var html = '';
+
+    html += stageHtml({
+      key: 'need', cls: 'netroom-stage--need',
+      eyebrowHtml: 'Sample Need', titleHtml: escapeHtml(needText),
+      notes: ['Illustrative — not a real visitor submission.']
+    });
+    html += connectorHtml('need-cap');
+
+    var candidatesHtml = '';
+    if (candidates.length > 1) {
+      candidatesHtml = '<div class="netroom-candidates">' + candidates.map(function (c) {
+        return '<span class="netroom-candidate-chip" data-cap="' + c.slug + '">' + escapeHtml(c.name) + '</span>';
+      }).join('') + '</div>';
+    }
+    html += stageHtml({
+      key: 'capability', cls: 'netroom-stage--capability' + (cap ? ' is-real' : ''),
+      eyebrowHtml: 'Classified as ' + escapeHtml(categoryLabel),
+      titleHtml: cap ? escapeHtml(cap.name) : 'Not found in registry',
+      notes: [cap ? escapeHtml(cap.description) : null],
+      extraHtml: candidatesHtml
+    });
+    html += connectorHtml('cap-gate');
+
+    var gateNotes = [];
+    if (hasGate) {
+      if (provider.eligibilityNotes) gateNotes.push('<strong>Eligibility:</strong> ' + escapeHtml(provider.eligibilityNotes));
+      if (provider.prerequisiteNotes) gateNotes.push('<strong>Prerequisite:</strong> ' + escapeHtml(provider.prerequisiteNotes));
+      if (provider.documentsNeeded && provider.documentsNeeded.length) gateNotes.push('<strong>Documents:</strong> ' + provider.documentsNeeded.map(escapeHtml).join(', '));
+    } else {
+      gateNotes.push('No gate conditions defined yet — no provider is linked to this capability yet.');
+    }
+    html += stageHtml({
+      key: 'gate', cls: 'netroom-stage--gate ' + (hasGate ? 'has-gate' : 'no-gate'),
+      eyebrowHtml: 'Qualification Gate', titleHtml: hasGate ? 'Conditions apply' : 'No conditions on file',
+      notes: gateNotes
+    });
+    html += connectorHtml('gate-provider');
+
+    html += stageHtml({
+      key: 'provider', cls: 'netroom-stage--provider ' + (routing.available ? 'is-available' : 'is-blocked'),
+      eyebrowHtml: routing.available ? 'Verified Source' : 'Source Check',
+      titleHtml: routing.available ? escapeHtml(provider.name) : 'NO VERIFIED LIVE ROUTE YET',
+      notes: routing.available ? [
+        'Status: ' + escapeHtml(formatRelationship(provider.relationshipClassification)) + (provider.entityType ? ' · ' + escapeHtml(provider.entityType) : ''),
+        provider.jurisdictionLabel ? 'Jurisdiction: ' + escapeHtml(provider.jurisdictionLabel) : null,
+        provider.licensingNotes ? escapeHtml(provider.licensingNotes) : null
+      ] : [
+        'CHEW’s registry defines this capability, but no active, ready provider is connected to it yet.',
+        'CHEW does not fabricate a referral to fill the gap.'
+      ]
+    });
+    html += connectorHtml('provider-consent');
+
+    if (routing.available) {
+      html += stageHtml({
+        key: 'consent', cls: 'netroom-stage--consent is-live',
+        eyebrowHtml: 'Consent Boundary', titleHtml: 'Your permission is required',
+        notes: [provider.dataSharingNotes ? escapeHtml(provider.dataSharingNotes) : 'What would be shared with this source has not been documented yet.'],
+        extraHtml: '<button type="button" class="netroom-consent-btn" id="netroom-consent-btn">Grant simulated consent &rarr;</button>'
+      });
+    } else {
+      html += stageHtml({
+        key: 'consent', cls: 'netroom-stage--consent is-unreached',
+        eyebrowHtml: 'Consent Boundary', titleHtml: 'Not reached',
+        notes: ['No provider exists yet to request consent for.']
+      });
+    }
+    html += connectorHtml('consent-handoff');
+
+    html += stageHtml({
+      key: 'handoff', cls: 'netroom-stage--handoff is-unreached',
+      eyebrowHtml: 'Handoff', titleHtml: routing.available ? 'Awaiting your consent above' : 'Not reached',
+      notes: routing.available
+        ? [provider.contactMethod ? 'Would proceed via: ' + escapeHtml(provider.contactMethod) : null, 'DEMONSTRATION — network routing is not live. No message is actually sent.']
+        : ['No provider exists yet to hand off to.']
+    });
+    html += connectorHtml('handoff-outcome');
+
+    html += stageHtml({
+      key: 'outcome', cls: 'netroom-stage--outcome ' + (routing.available ? 'is-success' : 'is-none'),
+      eyebrowHtml: 'Outcome', titleHtml: routing.available ? 'VERIFIED ROUTE FOUND' : 'NO VERIFIED ROUTE YET',
+      notes: [routing.available ? 'This is a demonstration of the real registry structure — not a live handoff.' : 'Honest, not hidden: this need has no real route yet in this environment.']
+    });
+
+    chainEl.innerHTML = html;
+    chainWrapEl.hidden = false;
+
+    var stageEls = chainEl.querySelectorAll('.netroom-stage');
+    var connectorEls = chainEl.querySelectorAll('.netroom-connector');
+
+    var runStep = function (delay, fn) {
+      if (reduceMotion) { fn(); } else { timeouts.push(setTimeout(fn, delay)); }
+    };
+
+    stageEls.forEach(function (el, i) {
+      runStep(reduceMotion ? 0 : 200 + i * 220, function () { el.classList.add('is-visible'); });
+    });
+    connectorEls.forEach(function (el, i) {
+      runStep(reduceMotion ? 0 : 320 + i * 220, function () { el.classList.add('is-lit'); });
+    });
+
+    if (candidates.length > 1) {
+      var chipEls = chainEl.querySelectorAll('.netroom-candidate-chip');
+      runStep(reduceMotion ? 0 : 900, function () {
+        chipEls.forEach(function (chip) {
+          if (chip.getAttribute('data-cap') === needSlug) chip.classList.add('is-matched');
+          else chip.classList.add('is-ruled-out');
+        });
+      });
+    }
+
+    var consentBtn = document.getElementById('netroom-consent-btn');
+    if (consentBtn) {
+      consentBtn.addEventListener('click', function () {
+        // Simulated only — never calls a consent-recording or routing-event
+        // endpoint, never writes anywhere. See the explainer section below.
+        var consentStage = chainEl.querySelector('.netroom-stage--consent');
+        var handoffStage = chainEl.querySelector('.netroom-stage--handoff');
+        var consentHandoffConnector = chainEl.querySelector('[data-connector="consent-handoff"]');
+        consentStage.classList.add('is-granted');
+        consentBtn.disabled = true;
+        consentBtn.textContent = 'Simulated consent granted';
+        if (consentHandoffConnector) consentHandoffConnector.classList.add('is-lit');
+        handoffStage.classList.remove('is-unreached');
+        handoffStage.classList.add('is-live');
+        handoffStage.querySelector('.netroom-stage-title').textContent =
+          provider && provider.contactMethod ? 'Proceeding via ' + provider.contactMethod : 'Proceeding';
+      });
+    }
+
+    renderInspector(categoryLabel, cap, routing, provider, hasGate, candidates.length);
+    if (!reduceMotion) {
+      chainWrapEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function renderInspector(categoryLabel, cap, routing, provider, hasGate, candidateCount) {
+    var html = '<details><summary>Why this route?</summary><dl>';
+    html += '<dt>Capability match</dt><dd>' + (cap ? escapeHtml(cap.name) + ' (' + escapeHtml(categoryLabel) + ')' : 'None') + '</dd>';
+    if (candidateCount > 1) html += '<dt>Candidates considered</dt><dd>' + candidateCount + ' real capabilities share this category; this need matched exactly one.</dd>';
+    html += '<dt>Gate conditions</dt><dd>' + (hasGate ? 'Defined — see above' : 'None on file for this capability yet') + '</dd>';
+    html += '<dt>Provider status</dt><dd>' + (routing.available ? '1 active, ready provider connected' : '0 active, ready providers connected') + '</dd>';
+    if (routing.available && provider.jurisdictionLabel) html += '<dt>Jurisdiction</dt><dd>' + escapeHtml(provider.jurisdictionLabel) + '</dd>';
+    html += '<dt>Consent requirement</dt><dd>' + (routing.available ? 'Required before any handoff — simulated in this demo, never automatic' : 'Not applicable — no provider to request consent for') + '</dd>';
+    html += '</dl></details>';
+    inspectorEl.innerHTML = html;
+    inspectorEl.hidden = false;
+  }
+
+  fetch('/api/capability-routing')
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      allCapabilities = data.capabilities || [];
+      buildPicker();
+    })
+    .catch(function () {
+      statusEl.textContent = 'CHEW could not load the capability registry right now.';
+    });
+})();
+</script>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-legal">
+      <span>&copy; 2026 CHEW LLC. All rights reserved.</span>
+      <span>CHEW LLC is a financial education and business-infrastructure company. CHEW does not provide credit repair services, does not promise or guarantee funding, approvals, score changes, or removal of information, and does not provide legal, tax, or investment advice. Results depend on individual circumstances, participation, and third-party decisions. See our <a href="disclaimer.html" style="color:inherit;">disclaimer</a>.</span>
+    </div>
+  </div>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>
