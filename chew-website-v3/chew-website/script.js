@@ -657,7 +657,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var wtBackdrop = document.getElementById('wt-backdrop');
     var wtCloseBtn = document.getElementById('wt-close');
     var wtBackBtn = document.getElementById('wt-back');
-    var wtSeePlayBtn = document.getElementById('wt-see-play');
     if (worldTakeover && worldPanelTakeover) {
       var wtLastFocus = null;
       function openWorldTakeover() {
@@ -678,36 +677,25 @@ document.addEventListener('DOMContentLoaded', function () {
       worldPanelTakeover.addEventListener('click', openWorldTakeover);
       if (wtCloseBtn) wtCloseBtn.addEventListener('click', closeWorldTakeover);
       if (wtBackBtn) wtBackBtn.addEventListener('click', closeWorldTakeover);
-      if (wtSeePlayBtn) {
-        wtSeePlayBtn.addEventListener('click', function () {
-          closeWorldTakeover();
-          var homeGoalBtn = document.querySelector('.goal-btn[data-goal="home"]');
-          var tellChewEl = document.getElementById('tell-chew');
-          if (tellChewEl) tellChewEl.scrollIntoView({ block: 'center', behavior: worldReduceMotion ? 'auto' : 'smooth' });
-          if (homeGoalBtn) window.setTimeout(function () { homeGoalBtn.click(); }, worldReduceMotion ? 0 : 500);
-        });
-      }
+      // "See The Home Play" is a real link to chew-lab.html#tell-chew now
+      // (Worlds and The Lab are separate pages) — plain navigation, no
+      // same-page scroll/auto-click choreography needed.
       document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && !worldTakeover.hidden) closeWorldTakeover();
       });
     }
   }
 
-  // Four-door "click the door, the room opens" behavior — a shared
-  // cinematic beat before the destination reveals itself, whether
-  // that destination is an in-page room takeover (Worlds, Playbook —
-  // both already carry full real content) or a real page (The Lab).
-  // My Position intentionally keeps its normal scroll-to-#tell-chew
-  // behavior rather than becoming a fixed-position takeover: that
-  // section feeds the Blind Spot / Domino / Radar / Future-Back
-  // cascade sections that follow it in normal document flow, and a
-  // fixed overlay would hide that real, working sequence instead of
-  // opening into it.
+  // Four-door "click the door" behavior — a shared cinematic beat
+  // (the artifact glows, a brief gold flash plays) before each door
+  // navigates to its real destination page. Worlds, Playbook, My
+  // Position, and The Lab are all now dedicated pages (the homepage
+  // itself ends at the four doors), so every door behaves the same
+  // way — no in-page overlay/takeover state to manage.
   (function () {
     var portalCards = document.querySelectorAll('.cx-portal-card');
     var launchFlash = document.getElementById('cx-portal-launch-flash');
     var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var roomLastFocus = null;
 
     function playLaunchFlash(card) {
       if (card) {
@@ -721,64 +709,15 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
 
-    function openRoom(section) {
-      if (!section) return;
-      roomLastFocus = document.activeElement;
-      section.classList.add('is-room-open');
-      document.body.classList.add('has-room-open');
-      var closeBtn = section.querySelector('[data-room-close]');
-      if (closeBtn) closeBtn.hidden = false;
-      section.focus({ preventScroll: true });
-      if (!history.state || history.state.cxRoom !== section.id) {
-        history.pushState({ cxRoom: section.id }, '', '#' + section.id);
-      }
-    }
-    function closeRoom(section) {
-      if (!section || !section.classList.contains('is-room-open')) return;
-      section.classList.remove('is-room-open');
-      document.body.classList.remove('has-room-open');
-      var closeBtn = section.querySelector('[data-room-close]');
-      if (closeBtn) closeBtn.hidden = true;
-      if (roomLastFocus && roomLastFocus.focus) roomLastFocus.focus();
-      if (history.state && history.state.cxRoom === section.id) history.back();
-    }
-    function closeAnyOpenRoom() {
-      document.querySelectorAll('.is-room-open').forEach(closeRoom);
-    }
-
     portalCards.forEach(function (card) {
       var href = card.getAttribute('href') || '';
-      if (href === '#cx-worlds' || href === '#playbook') {
-        card.addEventListener('click', function (e) {
-          e.preventDefault();
-          playLaunchFlash(card);
-          var target = document.getElementById(href.slice(1));
-          window.setTimeout(function () { openRoom(target); }, reduceMotion ? 0 : 220);
-        });
-      } else if (href === 'chew-lab.html') {
-        card.addEventListener('click', function (e) {
-          e.preventDefault();
-          playLaunchFlash(card);
-          window.setTimeout(function () { window.location.href = href; }, reduceMotion ? 0 : 320);
-        });
-      } else if (href === '#tell-chew') {
-        card.addEventListener('click', function () { playLaunchFlash(card); });
-      }
+      if (!href || href.charAt(0) === '#') return;
+      card.addEventListener('click', function (e) {
+        e.preventDefault();
+        playLaunchFlash(card);
+        window.setTimeout(function () { window.location.href = href; }, reduceMotion ? 0 : 320);
+      });
     });
-
-    document.querySelectorAll('[data-room-close]').forEach(function (btn) {
-      btn.addEventListener('click', function () { closeRoom(btn.closest('.cx-worlds, .pb2')); });
-    });
-
-    window.addEventListener('popstate', closeAnyOpenRoom);
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') closeAnyOpenRoom();
-    });
-
-    if (location.hash === '#cx-worlds' || location.hash === '#playbook') {
-      var initialTarget = document.getElementById(location.hash.slice(1));
-      if (initialTarget) window.setTimeout(function () { openRoom(initialTarget); }, 50);
-    }
   })();
 
   // The Playbook — a radial "board" of eight real decision frameworks
