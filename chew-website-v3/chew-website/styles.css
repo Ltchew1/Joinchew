@@ -87,6 +87,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 }
 
 img { max-width: 100%; display: block; }
+img[hidden] { display: none; }
 
 .container { max-width: var(--max-width); margin: 0 auto; padding: 0 24px; }
 .section { padding: 116px 0; position: relative; }
@@ -1994,27 +1995,19 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   position: absolute; inset: 0; pointer-events: none;
   background: radial-gradient(ellipse 50% 40% at 50% 38%, rgba(232,206,122,0.10), transparent 70%);
 }
-.cx-monument-globe {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  width: min(920px, 130vw); height: auto; opacity: 0.55; pointer-events: none;
+/* Reserved production asset slot: the supplied globe/monument render.
+   Sits full-bleed behind the phrase; object-fit:cover lets one master
+   image crop sensibly across breakpoints if per-breakpoint crops
+   (via the <picture> sources in index.html) aren't supplied. Until
+   the file exists, it 404s silently and script.js reveals
+   #cx-monument-fallback (the plain logo/wordmark) in its place —
+   not a design substitute, just no broken-image icon while waiting. */
+.cx-monument-scene {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; object-fit: cover; object-position: center 38%;
+  pointer-events: none;
 }
-.cxm-globe-ring { fill: none; stroke: rgba(232,206,122,0.14); stroke-width: 1; }
-.cxm-globe-path { fill: none; stroke: rgba(232,206,122,0.18); stroke-width: 1; }
-.cxm-globe-pulse {
-  stroke: var(--gold-light); stroke-width: 1.4; stroke-linecap: round;
-  stroke-dasharray: 90 1000;
-  filter: drop-shadow(0 0 5px rgba(232,206,122,0.6));
-  animation: cxm-globe-travel 9s linear infinite;
-}
-.cxm-globe-pulse--b { animation-duration: 12s; animation-delay: 2s; }
-@keyframes cxm-globe-travel { to { stroke-dashoffset: -1400; } }
-.cxm-globe-lights circle { fill: var(--gold-light); opacity: 0.7; animation: cxm-light-twinkle 4s ease-in-out infinite; }
-.cxm-globe-lights circle:nth-child(2n) { animation-delay: 1.2s; }
-.cxm-globe-lights circle:nth-child(3n) { animation-delay: 2.4s; }
-@keyframes cxm-light-twinkle { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.9; } }
 @media (prefers-reduced-motion: reduce) {
-  .cxm-globe-pulse { animation: none; opacity: 0.5; }
-  .cxm-globe-lights circle { animation: none; opacity: 0.6; }
   .cx-monument-scroll { animation: none; opacity: 1; }
 }
 
@@ -2030,6 +2023,7 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 }
 @media (prefers-reduced-motion: reduce) { .cxm-enter { animation: none; opacity: 1; } }
 .cx-monument-mark { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.cx-monument-mark[hidden] { display: none; }
 .cx-monument-logo {
   width: 108px; height: 108px;
   filter: drop-shadow(0 0 46px rgba(201,162,39,0.4)) drop-shadow(0 10px 30px rgba(0,0,0,0.6));
@@ -2093,6 +2087,12 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 }
 .cx-portal-icon svg { width: 26px; height: 26px; stroke: var(--gold-light); stroke-width: 1.5; }
 .cx-portal-icon .cxp-dot { fill: var(--gold-light); stroke: none; }
+/* Reserved production asset slots: the supplied portal renders (glass
+   globe, gold knight, glowing pin, flask). Until each file exists it
+   404s silently and script.js reveals the adjacent line-art .svg —
+   not a design substitute, just no broken-image icon while waiting. */
+.cx-portal-icon-img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
+.cx-portal-icon-fallback { width: 26px; height: 26px; stroke: var(--gold-light); stroke-width: 1.5; }
 .cx-portal-body { display: flex; flex-direction: column; gap: 6px; }
 .cx-portal-card h3 { font-family: var(--font-display); font-size: 1.2rem; margin: 4px 0 0; color: var(--text); }
 .cx-portal-card p { font-size: 0.88rem; color: var(--text-muted); margin: 0; }

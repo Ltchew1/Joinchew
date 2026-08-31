@@ -1,6 +1,28 @@
 // CHEW — shared site behavior
 
 document.addEventListener('DOMContentLoaded', function () {
+  // Reserved production asset slots (monument hero scene + the four
+  // portal renders): until the real files are supplied, each 404s
+  // silently and this reveals the adjacent placeholder instead of a
+  // broken-image icon. Not a design substitute — the moment the real
+  // files land at these paths, this code path never fires again.
+  // The browser starts fetching an <img> as soon as the parser sees it,
+  // independent of script execution — so a 404 can already have fired
+  // its error event before this listener attaches (DOMContentLoaded
+  // runs after parsing). Handle that already-failed state synchronously
+  // via .complete/.naturalWidth, and still listen for a later failure
+  // (e.g. a slow/interrupted load) via the event.
+  function wireImageFallback(img, fallback) {
+    if (!img || !fallback) return;
+    function onFail() { img.hidden = true; fallback.hidden = false; }
+    if (img.complete && img.naturalWidth === 0) onFail();
+    else img.addEventListener('error', onFail);
+  }
+  wireImageFallback(document.getElementById('cx-monument-scene'), document.getElementById('cx-monument-fallback'));
+  document.querySelectorAll('.cx-portal-icon-img').forEach(function (img) {
+    wireImageFallback(img, img.nextElementSibling);
+  });
+
   // CHEW Activation: a brief, skippable opening sequence on the homepage
   // only, shown once per browser session. Pure opacity/transform CSS
   // animation (GPU-friendly), never blocks interaction, and is a no-op
