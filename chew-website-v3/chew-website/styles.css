@@ -2416,44 +2416,26 @@ body.has-room-open { overflow: hidden; }
 }
 @media (max-width: 1120px) { .cx-portal-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) {
-  /* Same monumental-artifact philosophy as desktop/tablet: near-full-
-     width horizontal chambers, not shrunken nav icons. Cards are
-     allowed to grow taller to keep the artifact substantial. */
-  .cx-portals { padding: 56px 0 56px; }
-  .cx-portal-grid { grid-template-columns: 1fr; gap: 16px; }
-  .cx-portal-card { flex-direction: row; align-items: center; gap: 18px; padding: 20px; }
-  .cx-portal-icon {
-    width: 118px; height: 118px; aspect-ratio: 1 / 1; border-bottom: none; padding: 0; flex: 0 0 118px;
-    background: radial-gradient(circle at 50% 42%, rgba(232,206,122,0.18), transparent 72%);
-  }
-  .cx-portal-icon svg { width: 50px; height: 50px; }
-  .cx-portal-icon-img { filter: drop-shadow(0 6px 14px rgba(0,0,0,0.5)); }
-  .cx-portal-body {
-    display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 14px;
-    grid-template-areas: "title cta" "desc cta";
-    padding: 0; flex: 1 1 auto; min-width: 0;
-  }
-  .cx-portal-card h3 { grid-area: title; font-size: 1.14rem; }
-  .cx-portal-card p { grid-area: desc; font-size: 0.86rem; line-height: 1.42; }
-  .cx-portal-index { display: none; }
+  /* Reference-locked: the 2x2 vertical-card composition (image on
+     top, title/description/arrow below) carries all the way down to
+     phone widths — mobile does NOT switch to a horizontal icon+text
+     row. Same card anatomy as tablet/desktop, just tightened. */
+  .cx-portals { padding: 48px 0 48px; }
+  .cx-portals .container { padding: 0 16px; }
+  .cx-portal-grid { gap: 14px; margin-top: 28px; }
+  .cx-portal-card { border-radius: 12px; padding: 0 0 16px; }
+  .cx-portal-icon { aspect-ratio: 1 / 1; padding: 10px; }
+  .cx-portal-icon svg { width: 26%; height: 26%; }
+  .cx-portal-body { padding: 12px 14px 0; gap: 4px; }
+  .cx-portal-card h3 { font-size: 1rem; }
+  .cx-portal-card p { font-size: 0.76rem; line-height: 1.35; }
+  .cx-portal-cta { margin-top: 8px; padding-top: 8px; font-size: 0.78rem; }
   .cx-portal-cta-label { display: none; }
-  .cx-portal-cta {
-    grid-area: cta;
-    margin: 0; padding: 0; border-top: none;
-    width: 46px; height: 46px; border-radius: 50%;
-    justify-content: center;
-    border: 1px solid rgba(232,206,122,0.4);
-    background: rgba(232,206,122,0.05);
-    transition: border-color 0.25s ease, background 0.25s ease;
-  }
-  .cx-portal-cta span[aria-hidden] { font-size: 1.15rem; }
-  .cx-portal-card:hover .cx-portal-cta, .cx-portal-card:focus-visible .cx-portal-cta {
-    border-color: var(--gold-light); background: rgba(232,206,122,0.12);
-  }
-  .cx-portal-tagline { margin-top: 40px; }
+  .cx-portal-index { font-size: 0.6rem; padding: 3px 7px; top: 10px; right: 10px; }
+  .cx-portal-tagline { margin-top: 32px; font-size: 0.74rem; }
   .cx-portal-tagline-break { display: block; }
-  .cx-portals-eyebrow { font-size: 0.68rem; letter-spacing: 0.14em; padding: 0 18px; }
-  .cx-portals-eyebrow::before, .cx-portals-eyebrow::after { width: 10px; }
+  .cx-portals-eyebrow { font-size: 0.64rem; letter-spacing: 0.12em; padding: 0 16px; }
+  .cx-portals-eyebrow::before, .cx-portals-eyebrow::after { width: 8px; }
 }
 
 /* ---- The demoted reasoning-demo section heading (no longer the
