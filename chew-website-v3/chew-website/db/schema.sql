@@ -984,3 +984,35 @@ ALTER TABLE state_snapshots ADD COLUMN IF NOT EXISTS active_opportunity_ids JSON
 -- material state change worth its own snapshot.
 ALTER TABLE state_snapshots ADD COLUMN IF NOT EXISTS active_opportunity_link_type TEXT
   CHECK (active_opportunity_link_type IS NULL OR active_opportunity_link_type IN ('requirement', 'goal_relevance'));
+
+-- ============================================================
+-- Complaint Intelligence — foundation only
+-- ============================================================
+-- Smallest clean architecture for categorizing member complaints/support
+-- issues consistently, per the CHEW Shield no-drift directive. No public
+-- submission form is wired to this table yet — contact.html's mailto:
+-- link remains the actual current intake path. This exists so a future
+-- intake surface (or manual admin logging of an email complaint) has a
+-- real schema to land in, rather than being invented ad hoc later.
+-- application_id is nullable because not every complaint originates from
+-- someone with an application on file.
+CREATE TABLE IF NOT EXISTS complaints (
+  id              SERIAL PRIMARY KEY,
+  application_id  INTEGER REFERENCES applications (id),
+  email           TEXT,
+  category        TEXT NOT NULL CHECK (category IN (
+                    'billing_confusion', 'expectation_mismatch', 'service_delay',
+                    'access_issue', 'data_concern', 'privacy_concern',
+                    'product_malfunction', 'refund_request',
+                    'credit_intelligence_concern', 'third_party_issue',
+                    'communication_issue', 'other'
+                  )),
+  description     TEXT NOT NULL,
+  status          TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_review', 'resolved', 'closed')),
+  resolution_note TEXT,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  resolved_at     TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_complaints_status ON complaints (status);
+CREATE INDEX IF NOT EXISTS idx_complaints_category ON complaints (category);

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Legal &amp; Permissions | CHEW</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Your CHEW agreements, permissions, and billing authorizations — the real record, nothing fabricated.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="pt-shell">
+  <aside class="pt-sidebar" id="pt-sidebar">
+    <script>document.currentScript.parentElement.classList.toggle('is-collapsed', (function () { try { return localStorage.getItem('chewPortalSidebarCollapsed') === '1'; } catch (e) { return false; } })());</script>
+    <div class="pt-brand-row">
+      <a href="portal-worlds.html" class="pt-brand">
+        <img src="assets/chew-logo-sidebar-expanded.png" alt="CHEW" class="pt-brand-mark pt-brand-mark--full">
+        <img src="assets/chew-logo-sidebar-collapsed.png" alt="CHEW" class="pt-brand-mark pt-brand-mark--icon">
+      </a>
+      <button type="button" class="pt-sidebar-toggle" id="pt-sidebar-toggle" aria-label="Collapse sidebar" aria-expanded="true">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+    </div>
+    <nav class="pt-nav">
+      <a href="portal-worlds.html" class="pt-nav-item">
+        <span class="pt-nav-icon"><img src="assets/icon-worlds-globe.png" alt=""></span>
+        <span class="pt-nav-label"><strong>Worlds</strong><small>8 Possible Futures</small></span>
+      </a>
+      <a href="index.html#playbook" class="pt-nav-item">
+        <span class="pt-nav-icon"><img src="assets/icon-playbook-knight.png" alt=""></span>
+        <span class="pt-nav-label"><strong>Playbook</strong><small>Master the strategy</small></span>
+      </a>
+      <a href="index.html#tell-chew" class="pt-nav-item">
+        <span class="pt-nav-icon"><img src="assets/icon-my-position-pin.png" alt=""></span>
+        <span class="pt-nav-label"><strong>My Position</strong><small>See your stand</small></span>
+      </a>
+      <a href="chew-lab.html" class="pt-nav-item">
+        <span class="pt-nav-icon"><img src="assets/icon-the-lab-flask.png" alt=""></span>
+        <span class="pt-nav-label"><strong>The Lab</strong><small>Test. Simulate. Create.</small></span>
+      </a>
+      <a href="legal-vault.html" class="pt-nav-item is-active">
+        <span class="pt-nav-icon"><img src="assets/chew-logo-sidebar-collapsed.png" alt=""></span>
+        <span class="pt-nav-label"><strong>Legal &amp; Permissions</strong><small>Your real record</small></span>
+      </a>
+    </nav>
+    <div class="pt-sidebar-foot">
+      <p class="pt-quote">&ldquo;Don't just eat.<br>Keep CHEW'n.&rdquo;</p>
+      <a href="index.html" class="pt-exit">&larr; <span class="pt-exit-text">Back to joinchew.com</span></a>
+    </div>
+  </aside>
+
+  <main class="pt-main">
+    <div class="pt-page-head" data-reveal>
+      <span class="eyebrow">Legal &amp; Permissions</span>
+      <h1>Your record with CHEW.</h1>
+      <p id="pt-vault-intro">What CHEW actually has on file for you — agreements, permissions, and billing authorizations. Nothing here is fabricated: a category with nothing on file says so plainly.</p>
+    </div>
+
+    <div id="vault-status" class="status-note" style="margin:0 48px 32px; display:none;"></div>
+
+    <div class="pt-world-body" id="vault-body" hidden>
+      <div class="pt-world-main">
+        <div class="pt-panel" data-reveal>
+          <h2>Agreements</h2>
+          <p class="pt-panel-sub">Every CHEW agreement tied to your record, with the exact version you signed.</p>
+          <div id="vault-agreements"></div>
+        </div>
+
+        <div class="pt-panel" data-reveal>
+          <h2>Billing Authorizations</h2>
+          <p class="pt-panel-sub">What CHEW is authorized to charge, and what's already been paid.</p>
+          <div id="vault-billing"></div>
+        </div>
+      </div>
+
+      <div class="pt-side-panel">
+        <div class="pt-panel" data-reveal>
+          <h2>Permissions</h2>
+          <p class="pt-panel-sub">What CHEW currently has permission to do. A permission never shown as granted here has not been granted.</p>
+          <div id="vault-permissions"></div>
+        </div>
+
+        <div class="pt-panel" data-reveal>
+          <h2>Disclosures</h2>
+          <ul class="vault-disclosure-list" id="vault-disclosures"></ul>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var token = params.get('token') || '';
+  var statusEl = document.getElementById('vault-status');
+  var body = document.getElementById('vault-body');
+
+  function showStatus(message) {
+    statusEl.textContent = message;
+    statusEl.style.display = 'block';
+  }
+
+  function tagFor(status) {
+    var cls = status === 'ACTIVE' ? 'pt-tag--active' : (status === 'REVOKED' ? 'pt-tag--revoked' : 'pt-tag--not-authorized');
+    var label = status === 'ACTIVE' ? 'Active' : (status === 'REVOKED' ? 'Revoked' : (status === 'EXPIRED' ? 'Expired' : (status === 'REQUIRES_REAUTHORIZATION' ? 'Requires re-authorization' : 'Not authorized')));
+    return '<span class="pt-tag ' + cls + '">' + label + '</span>';
+  }
+
+  function formatDate(iso) {
+    if (!iso) return null;
+    try { return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }); }
+    catch (e) { return null; }
+  }
+
+  function formatMoney(n) {
+    if (n == null) return null;
+    return '$' + n.toLocaleString('en-US', { minimumFractionDigits: (n % 1 === 0 ? 0 : 2), maximumFractionDigits: 2 });
+  }
+
+  if (!token) {
+    showStatus('This page requires a valid link from your CHEW email.');
+    return;
+  }
+
+  fetch('/api/legal-vault?token=' + encodeURIComponent(token))
+    .then(function (res) {
+      if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to load your Legal & Permissions record.'); });
+      return res.json();
+    })
+    .then(function (data) {
+      body.hidden = false;
+
+      var agreementsEl = document.getElementById('vault-agreements');
+      if (!data.agreements.length) {
+        agreementsEl.innerHTML = '<p class="vault-empty">No agreement is on file yet.</p>';
+      } else {
+        agreementsEl.innerHTML = data.agreements.map(function (a) {
+          return '<div class="vault-record">'
+            + '<div class="vault-record-head"><span class="vault-record-title">' + a.agreementLabel + '</span>' + tagFor(a.status) + '</div>'
+            + '<p class="vault-record-detail">' + a.tierLabel + ' &middot; Version ' + a.agreementVersion + '</p>'
+            + (formatDate(a.signedAt) ? '<p class="vault-record-meta">Signed ' + formatDate(a.signedAt) + '</p>' : '')
+            + '</div>';
+        }).join('');
+      }
+
+      var billingEl = document.getElementById('vault-billing');
+      if (!data.billing.length) {
+        billingEl.innerHTML = '<p class="vault-empty">No billing authorization is on file yet.</p>';
+      } else {
+        billingEl.innerHTML = data.billing.map(function (b) {
+          var lines = [];
+          if (b.entryPaidAt) lines.push('Entry fee (' + formatMoney(b.entryAmount) + ') paid ' + formatDate(b.entryPaidAt));
+          else lines.push('Entry fee (' + formatMoney(b.entryAmount) + ') not yet paid');
+          if (b.remainderAmount != null) {
+            lines.push(b.remainderPaidAt ? 'Remainder (' + formatMoney(b.remainderAmount) + ') paid ' + formatDate(b.remainderPaidAt) : 'Remainder (' + formatMoney(b.remainderAmount) + ') outstanding');
+          }
+          if (b.membershipStatus) lines.push('Membership: ' + b.membershipStatus);
+          return '<div class="vault-record">'
+            + '<div class="vault-record-head"><span class="vault-record-title">' + b.tierLabel + '</span>' + tagFor(b.status) + '</div>'
+            + lines.map(function (l) { return '<p class="vault-record-detail">' + l + '</p>'; }).join('')
+            + '</div>';
+        }).join('');
+      }
+
+      var permsEl = document.getElementById('vault-permissions');
+      permsEl.innerHTML = data.permissions.map(function (p) {
+        return '<div class="vault-record">'
+          + '<div class="vault-record-head"><span class="vault-record-title">' + p.label + '</span>' + tagFor(p.status) + '</div>'
+          + '<p class="vault-record-detail">' + p.detail + '</p>'
+          + '</div>';
+      }).join('');
+
+      var discEl = document.getElementById('vault-disclosures');
+      discEl.innerHTML = data.disclosures.map(function (d) { return '<li>' + d + '</li>'; }).join('');
+    })
+    .catch(function (err) {
+      showStatus(err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.');
+    });
+})();
+</script>
+<script src="script.js"></script>
+</body>
+</html>

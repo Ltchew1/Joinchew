@@ -126,6 +126,26 @@
         </form>
       </div>
 
+      <div class="deal-sheet" id="deal-sheet" hidden>
+        <div class="deal-sheet-eyebrow">Know the deal before you pay.</div>
+        <div class="deal-sheet-grid">
+          <div class="deal-sheet-row"><span class="ds-label">You're buying</span><span class="ds-value" id="ds-product"></span></div>
+          <div class="deal-sheet-row"><span class="ds-label">You're paying</span><span class="ds-value ds-value--price" id="ds-price"></span></div>
+          <div class="deal-sheet-row"><span class="ds-label">Billing</span><span class="ds-value" id="ds-billing"></span></div>
+          <div class="deal-sheet-row"><span class="ds-label">CHEW provides</span><span class="ds-value" id="ds-provides"></span></div>
+          <div class="deal-sheet-row"><span class="ds-label">CHEW does not promise</span><span class="ds-value" id="ds-not-promise"></span></div>
+          <div class="deal-sheet-row"><span class="ds-label">Cancellation</span><span class="ds-value" id="ds-cancel"></span></div>
+          <div class="deal-sheet-row"><span class="ds-label">Refund</span><span class="ds-value" id="ds-refund"></span></div>
+          <div class="deal-sheet-row"><span class="ds-label">What happens next</span><span class="ds-value" id="ds-next"></span></div>
+        </div>
+        <p class="deal-sheet-note">If this isn't what you thought you were buying, don't pay yet.</p>
+        <div id="deal-sheet-status" class="status-note" style="display:none; margin-top:20px;"></div>
+        <div class="deal-sheet-actions">
+          <button type="button" class="btn btn-outline" id="deal-sheet-back">&larr; Review the agreement again</button>
+          <button type="button" class="btn btn-gold" id="deal-sheet-pay">Proceed to Payment</button>
+        </div>
+      </div>
+
     </div>
   </section>
 </main>
@@ -144,6 +164,11 @@
   var signBtn = document.getElementById('sign-btn');
   var form = document.getElementById('sign-form');
   var nameInput = document.getElementById('signed-name');
+  var dealSheet = document.getElementById('deal-sheet');
+  var dealSheetStatus = document.getElementById('deal-sheet-status');
+  var dealSheetBack = document.getElementById('deal-sheet-back');
+  var dealSheetPay = document.getElementById('deal-sheet-pay');
+  var pendingSignatureId = null;
 
   function showLoadError(message) {
     loadStatus.textContent = message;
@@ -185,13 +210,61 @@
         return res.json();
       })
       .then(function (data) {
-        signBtn.textContent = 'Redirecting to secure checkout...';
-        return fetch('/api/create-program-checkout-session', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ token: token, tier: tier, signatureId: data.signatureId }),
-        });
+        pendingSignatureId = data.signatureId;
+        return fetch('/api/deal-sheet?tier=' + encodeURIComponent(tier));
       })
+      .then(function (res) {
+        if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to load your deal sheet.'); });
+        return res.json();
+      })
+      .then(function (deal) {
+        var priceLine = chewFormatCents(deal.entryAmountCents) + ' entry';
+        if (deal.fullFeeCents) priceLine += ', credited toward ' + chewFormatCents(deal.fullFeeCents) + ' total';
+        var billingLine = deal.transactionType === 'recurring_subscription'
+          ? 'One-time entry fee today, then ' + chewFormatCents(deal.recurringAmountCents) + '/month after a ' + deal.trialPeriodDays + '-day trial'
+          : (deal.hasRemainder ? 'One-time entry fee today; remainder balance billed separately later' : 'One-time payment');
+        chewRenderDealSheet(dealSheet, {
+          product: deal.label,
+          price: priceLine,
+          billing: billingLine,
+          provides: deal.scope,
+          notPromise: deal.doesNotPromise,
+          cancellation: deal.cancellation,
+          refund: deal.refund,
+          next: deal.whatHappensNext,
+        });
+        content.style.display = 'none';
+        dealSheet.hidden = false;
+        dealSheet.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      })
+      .catch(function (err) {
+        signStatus.textContent = err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.';
+        signStatus.style.display = 'block';
+        signBtn.disabled = false;
+        signBtn.textContent = 'Sign & Continue to Payment';
+      });
+  });
+
+  dealSheetBack.addEventListener('click', function () {
+    dealSheet.hidden = true;
+    content.style.display = 'block';
+    signBtn.disabled = false;
+    signBtn.textContent = 'Sign & Continue to Payment';
+    content.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  dealSheetPay.addEventListener('click', function () {
+    if (!pendingSignatureId) return;
+    dealSheetStatus.style.display = 'none';
+    dealSheetPay.disabled = true;
+    dealSheetBack.disabled = true;
+    dealSheetPay.textContent = 'Redirecting to secure checkout...';
+
+    fetch('/api/create-program-checkout-session', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ token: token, tier: tier, signatureId: pendingSignatureId }),
+    })
       .then(function (res) {
         if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Checkout failed'); });
         return res.json();
@@ -200,10 +273,11 @@
         window.location = data.url;
       })
       .catch(function (err) {
-        signStatus.textContent = err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.';
-        signStatus.style.display = 'block';
-        signBtn.disabled = false;
-        signBtn.textContent = 'Sign & Continue to Payment';
+        dealSheetStatus.textContent = err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.';
+        dealSheetStatus.style.display = 'block';
+        dealSheetPay.disabled = false;
+        dealSheetBack.disabled = false;
+        dealSheetPay.textContent = 'Proceed to Payment';
       });
   });
 })();

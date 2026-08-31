@@ -1703,3 +1703,34 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 });
+
+// ---------- CHEW Deal Sheet — shared render helper ----------
+// Used by sign-agreement.html and pay-remainder.html. Pure rendering: the
+// caller fetches real data (from /api/deal-sheet, or a real program_purchases
+// row for the remainder-balance case) and passes it in — this function never
+// invents a value itself, it only writes whatever string it's given into the
+// matching field.
+function chewRenderDealSheet(root, fields) {
+  if (!root) return;
+  var map = {
+    'ds-product': fields.product,
+    'ds-price': fields.price,
+    'ds-billing': fields.billing,
+    'ds-provides': fields.provides,
+    'ds-not-promise': fields.notPromise,
+    'ds-cancel': fields.cancellation,
+    'ds-refund': fields.refund,
+    'ds-next': fields.next,
+  };
+  Object.keys(map).forEach(function (id) {
+    var el = root.querySelector('#' + id);
+    if (el && map[id] != null) el.textContent = map[id];
+  });
+}
+
+function chewFormatCents(cents) {
+  if (cents == null) return '';
+  var dollars = cents / 100;
+  var hasCents = cents % 100 !== 0;
+  return '$' + dollars.toLocaleString('en-US', { minimumFractionDigits: hasCents ? 2 : 0, maximumFractionDigits: 2 });
+}

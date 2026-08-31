@@ -37,19 +37,19 @@
       <div class="grid grid--3">
         <div class="glass card">
           <h3>Infrastructure Program</h3>
-          <p style="color:var(--gold-light); font-weight:700; margin:10px 0;">$297 entry &middot; credited toward $1,997</p>
+          <p style="color:var(--gold-light); font-weight:700; margin:10px 0;" id="price-infrastructure">&nbsp;</p>
           <p>Core program: education, strategy, and implementation accountability.</p>
           <button type="button" class="btn btn-gold program-select" data-tier="infrastructure" style="margin-top:16px; width:100%; justify-content:center;">Select</button>
         </div>
         <div class="glass card">
           <h3>Executive Advisory</h3>
-          <p style="color:var(--gold-light); font-weight:700; margin:10px 0;">$597 entry &middot; credited toward $4,997</p>
+          <p style="color:var(--gold-light); font-weight:700; margin:10px 0;" id="price-executive">&nbsp;</p>
           <p>Premium 1:1 advisory for more complex personal or business situations.</p>
           <button type="button" class="btn btn-gold program-select" data-tier="executive" style="margin-top:16px; width:100%; justify-content:center;">Select</button>
         </div>
         <div class="glass card">
           <h3>Membership</h3>
-          <p style="color:var(--gold-light); font-weight:700; margin:10px 0;">$147 entry &middot; then $97/month</p>
+          <p style="color:var(--gold-light); font-weight:700; margin:10px 0;" id="price-membership">&nbsp;</p>
           <p>Ongoing support after your program. Your first monthly charge begins 30 days after enrollment.</p>
           <button type="button" class="btn btn-gold program-select" data-tier="membership" style="margin-top:16px; width:100%; justify-content:center;">Select</button>
         </div>
@@ -76,6 +76,25 @@
   if (!token) {
     showStatus('This page requires a valid invitation link from your acceptance email.');
   }
+
+  // Pull real pricing from the same source api/create-program-checkout-session.js
+  // reads (lib/programs.js, via lib/agreementRegistry.js) instead of keeping a
+  // second hardcoded copy of these numbers.
+  ['infrastructure', 'executive', 'membership'].forEach(function (tier) {
+    var el = document.getElementById('price-' + tier);
+    fetch('/api/deal-sheet?tier=' + tier)
+      .then(function (res) { return res.json(); })
+      .then(function (deal) {
+        if (deal.tier === 'membership') {
+          el.textContent = chewFormatCents(deal.entryAmountCents) + ' entry · then ' + chewFormatCents(deal.recurringAmountCents) + '/month';
+        } else {
+          el.textContent = chewFormatCents(deal.entryAmountCents) + ' entry · credited toward ' + chewFormatCents(deal.fullFeeCents);
+        }
+      })
+      .catch(function () {
+        el.textContent = 'See pricing in your agreement';
+      });
+  });
 
   document.querySelectorAll('.program-select').forEach(function (btn) {
     btn.addEventListener('click', function () {

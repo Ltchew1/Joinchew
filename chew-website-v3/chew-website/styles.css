@@ -18,6 +18,8 @@
   --titanium: #8B8D90;     /* structure/architecture — never decorative gold */
   --titanium-light: #C9CBCE;
   --gunmetal: #2A2B2E;
+  --verified-green: #5FA37A;  /* legitimately verified/connected/cleared states only — never a financial judgment color */
+  --verified-green-soft: rgba(95,163,122,0.14);
 
   --text: #F2EEE4;         /* Bone — never pure white */
   --text-muted: #8A857A;   /* Ash — secondary text */
@@ -330,6 +332,40 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   border-left: 3px solid var(--gold-light);
   background: rgba(201,162,39,0.08);
   padding: 16px 20px; border-radius: 0 8px 8px 0; font-size: 0.94rem; color: var(--text-muted);
+}
+
+/* ---------- CHEW Deal Sheet — pre-payment transaction summary ---------- */
+.deal-sheet {
+  border: 1px solid var(--panel-border-soft); border-radius: 14px;
+  background: linear-gradient(165deg, rgba(232,206,122,0.05), rgba(255,255,255,0.01));
+  padding: 32px 30px;
+}
+.deal-sheet-eyebrow {
+  font-family: var(--font-display); font-style: italic; font-size: 1.3rem;
+  color: var(--gold-light); margin-bottom: 22px;
+}
+.deal-sheet-grid { display: flex; flex-direction: column; }
+.deal-sheet-row {
+  display: grid; grid-template-columns: 180px 1fr; gap: 20px;
+  padding: 16px 0; border-top: 1px solid rgba(255,255,255,0.07);
+}
+.deal-sheet-row:first-child { border-top: none; }
+.ds-label {
+  font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--titanium-light); padding-top: 2px;
+}
+.ds-value { font-size: 0.96rem; color: var(--text); line-height: 1.55; }
+.ds-value.ds-value--price { font-family: var(--font-display); font-size: 1.3rem; color: var(--gold-light); }
+.deal-sheet-note {
+  margin: 26px 0 0; padding: 14px 18px; border-radius: 8px;
+  border: 1px dashed var(--panel-border-soft); background: rgba(255,255,255,0.02);
+  font-size: 0.86rem; color: var(--text-faint); text-align: center;
+}
+.deal-sheet-actions { display: flex; gap: 14px; margin-top: 24px; flex-wrap: wrap; }
+.deal-sheet-actions .btn { flex: 1 1 200px; justify-content: center; }
+@media (max-width: 560px) {
+  .deal-sheet { padding: 24px 20px; }
+  .deal-sheet-row { grid-template-columns: 1fr; gap: 4px; }
 }
 
 .text-center { text-align: center; }
@@ -3839,6 +3875,22 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   border: 1px solid var(--panel-border-soft); color: var(--text-faint);
 }
 .pt-tag--preview { color: var(--gold-light); border-color: rgba(232,206,122,0.4); }
+/* Gray/green/gold state lock: ACTIVE is the only state that ever reads
+   green, and only when backed by a real row — never a financial judgment
+   color, never used for readiness scoring. */
+.pt-tag--active { color: var(--verified-green); border-color: rgba(95,163,122,0.4); background: var(--verified-green-soft); }
+.pt-tag--not-authorized { color: var(--text-faint); border-color: var(--panel-border); }
+.pt-tag--revoked { color: var(--titanium-light); border-color: var(--panel-border); }
+
+/* ---------- Legal & Permissions Vault ---------- */
+.vault-record { padding: 16px 0; border-top: 1px solid rgba(255,255,255,0.07); }
+.vault-record:first-child { border-top: none; }
+.vault-record-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.vault-record-title { font-size: 0.94rem; color: var(--text); font-weight: 600; }
+.vault-record-detail { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin: 0; }
+.vault-record-meta { font-size: 0.72rem; color: var(--text-faint); margin-top: 6px; }
+.vault-empty { font-size: 0.86rem; color: var(--text-faint); font-style: italic; padding: 8px 0; }
+.vault-disclosure-list { margin: 0; padding-left: 1.2em; font-size: 0.84rem; color: var(--text-muted); line-height: 1.6; }
 
 .pt-side-panel { display: flex; flex-direction: column; gap: 20px; position: sticky; top: 28px; }
 .pt-cta-block { display: flex; flex-direction: column; gap: 10px; }

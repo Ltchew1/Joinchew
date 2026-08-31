@@ -22,10 +22,29 @@
 
 <main>
   <section class="page-hero">
-    <div class="container" style="position:relative;">
+    <div class="container" style="position:relative; max-width:780px;">
       <span class="eyebrow">Remaining Balance</span>
       <h1 style="max-width:20ch;">Pay in full, or split with Klarna/Afterpay.</h1>
-      <div id="pay-status" class="status-note" style="margin-top:20px;">Preparing secure checkout...</div>
+      <div id="pay-status" class="status-note" style="margin-top:20px; display:none;"></div>
+
+      <div class="deal-sheet" id="deal-sheet" hidden style="margin-top:28px;">
+        <div class="deal-sheet-eyebrow">Know the deal before you pay.</div>
+        <div class="deal-sheet-grid">
+          <div class="deal-sheet-row"><span class="ds-label">You're buying</span><span class="ds-value" id="ds-product"></span></div>
+          <div class="deal-sheet-row"><span class="ds-label">You're paying</span><span class="ds-value ds-value--price" id="ds-price"></span></div>
+          <div class="deal-sheet-row"><span class="ds-label">Billing</span><span class="ds-value" id="ds-billing"></span></div>
+          <div class="deal-sheet-row"><span class="ds-label">CHEW provides</span><span class="ds-value" id="ds-provides"></span></div>
+          <div class="deal-sheet-row"><span class="ds-label">CHEW does not promise</span><span class="ds-value" id="ds-not-promise"></span></div>
+          <div class="deal-sheet-row"><span class="ds-label">Refund</span><span class="ds-value" id="ds-refund"></span></div>
+          <div class="deal-sheet-row"><span class="ds-label">What happens next</span><span class="ds-value" id="ds-next"></span></div>
+        </div>
+        <p class="deal-sheet-note">If this isn't what you thought you were buying, don't pay yet.</p>
+        <div id="deal-sheet-status" class="status-note" style="display:none; margin-top:20px;"></div>
+        <div class="deal-sheet-actions">
+          <button type="button" class="btn btn-gold" id="deal-sheet-pay">Proceed to Payment</button>
+        </div>
+      </div>
+
       <button type="button" id="pay-retry" class="btn btn-gold" style="display:none; margin-top:16px;">Try again</button>
     </div>
   </section>
@@ -37,14 +56,50 @@
   var token = params.get('token') || '';
   var statusEl = document.getElementById('pay-status');
   var retryBtn = document.getElementById('pay-retry');
+  var dealSheet = document.getElementById('deal-sheet');
+  var dealSheetStatus = document.getElementById('deal-sheet-status');
+  var dealSheetPay = document.getElementById('deal-sheet-pay');
 
-  function startCheckout() {
+  function showStatus(message) {
+    statusEl.textContent = message;
+    statusEl.style.display = 'block';
+  }
+
+  function loadSummary() {
     if (!token) {
-      statusEl.textContent = 'This page requires a valid payment link from your confirmation email.';
+      showStatus('This page requires a valid payment link from your confirmation email.');
       return;
     }
-    statusEl.textContent = 'Preparing secure checkout...';
-    retryBtn.style.display = 'none';
+    fetch('/api/purchase-summary?token=' + encodeURIComponent(token))
+      .then(function (res) {
+        if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to load your balance.'); });
+        return res.json();
+      })
+      .then(function (data) {
+        if (data.alreadyPaid) {
+          showStatus('The remainder balance has already been paid.');
+          return;
+        }
+        chewRenderDealSheet(dealSheet, {
+          product: data.label + ' — Remaining Balance',
+          price: chewFormatCents(data.remainderAmountCents),
+          billing: 'One-time payment',
+          provides: 'The remainder of your program fee, completing full payment for your selected program.',
+          notPromise: data.doesNotPromise,
+          refund: data.refund,
+          next: 'You’ll be redirected to Stripe’s secure checkout to pay your remaining balance. Card, Klarna, and Afterpay/Clearpay are all offered there.',
+        });
+        dealSheet.hidden = false;
+      })
+      .catch(function (err) {
+        showStatus(err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.');
+      });
+  }
+
+  dealSheetPay.addEventListener('click', function () {
+    dealSheetStatus.style.display = 'none';
+    dealSheetPay.disabled = true;
+    dealSheetPay.textContent = 'Redirecting to secure checkout...';
 
     fetch('/api/create-remainder-checkout-session', {
       method: 'POST',
@@ -59,13 +114,15 @@
         window.location = data.url;
       })
       .catch(function (err) {
-        statusEl.textContent = err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.';
-        retryBtn.style.display = 'inline-flex';
+        dealSheetStatus.textContent = err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.';
+        dealSheetStatus.style.display = 'block';
+        dealSheetPay.disabled = false;
+        dealSheetPay.textContent = 'Proceed to Payment';
       });
-  }
+  });
 
-  retryBtn.addEventListener('click', startCheckout);
-  startCheckout();
+  retryBtn.addEventListener('click', loadSummary);
+  loadSummary();
 })();
 </script>
 
