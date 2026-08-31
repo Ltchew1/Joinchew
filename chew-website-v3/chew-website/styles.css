@@ -191,6 +191,20 @@ svg[hidden] { display: none; }
   .nav-cta { display: none; }
 }
 
+/* ---- Homepage-only nav optical-presence increase (precision pass) ----
+   .site-header/.nav/.brand/.btn are shared sitewide; scoping under
+   .is-home (set only on index.html's <body>) keeps every other page
+   byte-identical. */
+.is-home .site-header .container { height: 92px; }
+.is-home .site-header .brand img { width: 46px; height: 46px; }
+.is-home .nav { gap: 36px; }
+.is-home .nav a { font-size: 0.98rem; }
+.is-home .nav-cta .btn { padding: 13px 26px; font-size: 0.92rem; }
+@media (max-width: 920px) {
+  .is-home .site-header .container { height: 78px; }
+  .is-home .site-header .brand img { width: 40px; height: 40px; }
+}
+
 /* ---------- Buttons ---------- */
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
@@ -2050,6 +2064,16 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   aspect-ratio: 1672 / 941;
   pointer-events: none;
 }
+/* Precision pass: dissolve the photo into the page instead of cutting
+   hard into it — layout/gradient only, the hero asset itself is
+   untouched. Sits over the image's own bottom edge. */
+.cx-monument picture { display: block; position: relative; }
+.cx-monument picture::after {
+  content: '';
+  position: absolute; left: 0; right: 0; bottom: -1px; height: 26%;
+  background: linear-gradient(to bottom, transparent, var(--black) 92%);
+  pointer-events: none;
+}
 /* Matches the <picture> sources' media queries so the reserved layout
    space (and thus CLS) is correct for whichever crop actually loads. */
 @media (max-width: 1100px) { .cx-monument-scene { aspect-ratio: 1448 / 1086; } }
@@ -2111,40 +2135,67 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 }
 
 /* ---- Portals: the four flagship destinations ---- */
-.cx-portals { position: relative; padding: 96px 0 88px; background: var(--black-soft); }
-.cx-portal-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 44px; }
+.cx-portals { position: relative; padding: 96px 0 96px; background: var(--black-soft); }
+.cx-portals .text-center { margin-bottom: 6px; }
+.cx-portals-eyebrow {
+  position: relative; padding: 0 28px;
+  font-size: 0.82rem; letter-spacing: 0.32em;
+}
+.cx-portals-eyebrow::before, .cx-portals-eyebrow::after {
+  content: ''; position: absolute; top: 52%; width: 18px; height: 1px;
+  background: var(--gold-deep);
+}
+.cx-portals-eyebrow::before { left: 0; }
+.cx-portals-eyebrow::after { right: 0; }
+.cx-portal-grid { display: grid; grid-template-columns: repeat(4, 1fr); align-items: start; gap: 20px; margin-top: 52px; }
 .cx-portal-card {
   position: relative;
   display: flex; flex-direction: column; gap: 0;
-  padding: 0 0 24px;
+  padding: 0 0 22px;
   border: 1px solid var(--panel-border);
   border-radius: 14px;
-  background: linear-gradient(160deg, rgba(255,255,255,0.035), rgba(255,255,255,0.006) 50%, rgba(0,0,0,0.15));
+  background: linear-gradient(160deg, rgba(255,250,240,0.04), rgba(255,250,240,0.005) 50%, rgba(10,8,4,0.18));
+  box-shadow: inset 0 0 0 1px rgba(232,206,122,0.05), inset 0 1px 0 rgba(255,255,255,0.04);
   overflow: hidden;
   text-decoration: none; color: var(--text);
-  transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  transition: border-color 0.35s ease, transform 0.35s ease, box-shadow 0.35s ease;
+}
+.cx-portal-card::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse 90% 55% at 50% 0%, rgba(232,206,122,0.06), transparent 65%);
+  opacity: 0.75;
+  transition: opacity 0.35s ease;
 }
 .cx-portal-card:hover, .cx-portal-card:focus-visible {
-  border-color: var(--panel-border-soft);
+  text-decoration: none;
+  border-color: rgba(232,206,122,0.4);
   transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(232,206,122,0.15);
+  box-shadow: inset 0 0 0 1px rgba(232,206,122,0.18), inset 0 1px 0 rgba(255,255,255,0.06), 0 20px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(232,206,122,0.12);
 }
+.cx-portal-card:hover::before, .cx-portal-card:focus-visible::before { opacity: 1; }
 .cx-portal-card:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; }
 .cx-portal-index {
-  position: absolute; top: 14px; right: 14px; z-index: 1;
+  position: absolute; top: 14px; right: 14px; z-index: 2;
   font-size: 0.64rem; letter-spacing: 0.1em; color: var(--gold-light);
   background: rgba(10,10,11,0.55); border: 1px solid var(--panel-border-soft);
   border-radius: 999px; padding: 3px 8px; backdrop-filter: blur(4px);
 }
 /* The artifact fills the card's own object slot — the same approved
    render used everywhere else this icon appears, just given real
-   visual weight here instead of a small nav-scale badge. */
+   visual weight here instead of a small nav-scale badge. Positioned
+   above .cx-portal-card::before's glow layer. */
 .cx-portal-icon {
+  position: relative; z-index: 1;
   width: 100%; aspect-ratio: 1 / 0.92; flex: 0 0 auto;
   display: flex; align-items: center; justify-content: center;
   border: none; border-bottom: 1px solid var(--panel-border-soft);
-  background: radial-gradient(circle at 50% 38%, rgba(232,206,122,0.14), rgba(0,0,0,0.32) 74%);
+  background: radial-gradient(circle at 50% 38%, rgba(232,206,122,0.14), rgba(12,9,4,0.34) 74%);
   padding: 20px;
+  transition: background 0.35s ease;
+}
+.cx-portal-card:hover .cx-portal-icon, .cx-portal-card:focus-visible .cx-portal-icon {
+  background: radial-gradient(circle at 50% 38%, rgba(232,206,122,0.22), rgba(12,9,4,0.34) 74%);
 }
 .cx-portal-icon svg { width: 30% ; height: 30%; stroke: var(--gold-light); stroke-width: 1.5; }
 .cx-portal-icon .cxp-dot { fill: var(--gold-light); stroke: none; }
@@ -2154,32 +2205,73 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
    not a design substitute, just no broken-image icon while waiting. */
 .cx-portal-icon-img { width: 100%; height: 100%; object-fit: contain; border-radius: 0; filter: drop-shadow(0 12px 26px rgba(0,0,0,0.55)); }
 .cx-portal-icon-fallback { width: 30%; height: 30%; stroke: var(--gold-light); stroke-width: 1.5; }
-.cx-portal-body { display: flex; flex-direction: column; gap: 6px; padding: 18px 22px 0; }
+/* Optical weight normalization: the approved renders don't share the
+   same baked-in padding, so the same box size reads uneven — the
+   knight dominates, the pin/flask read small. Scale only, same asset,
+   same box. Values tuned by screenshot, not by math. */
+.cx-icon--globe { transform: scale(1.04); }
+.cx-icon--knight { transform: scale(0.8); }
+.cx-icon--pin { transform: scale(0.98); }
+.cx-icon--flask { transform: scale(1.1); }
+.cx-portal-body { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 6px; padding: 18px 22px 0; }
 .cx-portal-card h3 { font-family: var(--font-display); font-size: 1.2rem; margin: 0; color: var(--text); }
 .cx-portal-card p { font-size: 0.88rem; color: var(--text-muted); margin: 0; }
 .cx-portal-cta {
-  margin-top: auto; padding-top: 14px; font-size: 0.82rem; color: var(--gold-light);
+  margin-top: 14px; padding-top: 14px; font-size: 0.82rem; color: var(--gold-light);
   display: inline-flex; align-items: center; gap: 6px;
+  border-top: 1px solid rgba(232,206,122,0.08);
 }
-.cx-portal-cta span { transition: transform 0.25s ease; }
-.cx-portal-card:hover .cx-portal-cta span, .cx-portal-card:focus-visible .cx-portal-cta span { transform: translateX(4px); }
+.cx-portal-cta span[aria-hidden] { transition: transform 0.25s ease; }
+.cx-portal-card:hover .cx-portal-cta span[aria-hidden], .cx-portal-card:focus-visible .cx-portal-cta span[aria-hidden] { transform: translateX(4px); }
 .cx-portal-tagline {
-  margin: 56px 0 0; text-align: center;
+  margin: 60px 0 0; text-align: center;
   font-size: 0.82rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint);
 }
 .cx-portal-tagline span { color: var(--gold); }
+.cx-portal-tagline-break { display: none; }
+@media (max-width: 1120px) and (min-width: 641px) {
+  .cx-portals { padding: 64px 0 76px; }
+  .cx-portal-grid { margin-top: 36px; gap: 24px; }
+  .cx-portal-icon { aspect-ratio: 1 / 0.72; padding: 16px; }
+  .cx-portal-body { padding: 16px 20px 0; }
+}
 @media (max-width: 1120px) { .cx-portal-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) {
-  .cx-portals { padding: 72px 0 64px; }
+  .cx-portals { padding: 64px 0 60px; }
   .cx-portal-grid { grid-template-columns: 1fr; gap: 14px; }
-  .cx-portal-card { flex-direction: row; align-items: center; gap: 16px; padding: 18px 20px; }
-  .cx-portal-icon { width: 46px; height: 46px; aspect-ratio: 1 / 1; border-bottom: none; padding: 0; background: none; }
-  .cx-portal-icon svg { width: 22px; height: 22px; }
+  .cx-portal-card { flex-direction: row; align-items: center; gap: 16px; padding: 18px 18px; }
+  .cx-portal-icon {
+    width: 80px; height: 80px; aspect-ratio: 1 / 1; border-bottom: none; padding: 0;
+    background: radial-gradient(circle at 50% 42%, rgba(232,206,122,0.16), transparent 72%);
+  }
+  .cx-portal-icon svg { width: 34px; height: 34px; }
   .cx-portal-icon-img { filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); }
-  .cx-portal-body { padding: 0; }
+  .cx-portal-body {
+    display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 12px;
+    grid-template-areas: "title cta" "desc cta";
+    padding: 0; flex: 1 1 auto; min-width: 0;
+  }
+  .cx-portal-card h3 { grid-area: title; font-size: 1.04rem; }
+  .cx-portal-card p { grid-area: desc; font-size: 0.82rem; line-height: 1.4; }
   .cx-portal-index { display: none; }
-  .cx-portal-cta { margin-top: 4px; padding-top: 0; }
+  .cx-portal-cta-label { display: none; }
+  .cx-portal-cta {
+    grid-area: cta;
+    margin: 0; padding: 0; border-top: none;
+    width: 40px; height: 40px; border-radius: 50%;
+    justify-content: center;
+    border: 1px solid rgba(232,206,122,0.4);
+    background: rgba(232,206,122,0.05);
+    transition: border-color 0.25s ease, background 0.25s ease;
+  }
+  .cx-portal-cta span[aria-hidden] { font-size: 1.05rem; }
+  .cx-portal-card:hover .cx-portal-cta, .cx-portal-card:focus-visible .cx-portal-cta {
+    border-color: var(--gold-light); background: rgba(232,206,122,0.12);
+  }
   .cx-portal-tagline { margin-top: 40px; }
+  .cx-portal-tagline-break { display: block; }
+  .cx-portals-eyebrow { font-size: 0.68rem; letter-spacing: 0.14em; padding: 0 18px; }
+  .cx-portals-eyebrow::before, .cx-portals-eyebrow::after { width: 10px; }
 }
 
 /* ---- The demoted reasoning-demo section heading (no longer the
