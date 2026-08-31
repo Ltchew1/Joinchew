@@ -45,10 +45,14 @@
       <img src="assets/chew-logo-monument.png" alt="CHEW" width="40" height="40">
     </a>
     <nav class="nav" id="site-nav">
-      <a href="#cx-worlds">Worlds</a>
-      <a href="#playbook">Playbook</a>
-      <a href="#tell-chew">My Position</a>
-      <a href="#the-lab">The Lab</a>
+      <a href="index.html" class="current" aria-current="page">Home</a>
+      <a href="how-it-works.html">How It Works</a>
+      <a href="services.html">Programs</a>
+      <a href="blueprint.html">Blueprint</a>
+      <a href="philosophy.html">Philosophy</a>
+      <a href="education.html">Education</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
     </nav>
     <div class="nav-cta">
       <a href="apply.html" class="btn btn-gold btn-sm">Make Your Move</a>
@@ -175,6 +179,7 @@
           <div class="hx-eyebrow-row"><span class="rule-short"></span><span class="eyebrow" style="margin-bottom:0;">Watch CHEW Think</span></div>
           <h1 class="hx-headline hx-headline--demo">This is CHEW's real reasoning engine &mdash; not a mockup.</h1>
           <p class="hx-sub">CHEW turns financial literacy into financial position. Pick a real example goal below and watch the same logic run, every time.</p>
+          <p class="hx-position-dims">How CHEW thinks about position: <span>Credit</span><span>Capital</span><span>Business</span><span>Property</span><span>Insurance</span><span>Assets</span><span>Liquidity</span><span>Ownership</span></p>
           <div class="hx-goal-row" id="tell-chew">
             <span class="hx-goal-row-label">See how CHEW actually reasons &mdash; pick a real example goal</span>
             <div class="goal-picker" role="group" aria-label="Choose an example goal">
@@ -219,7 +224,10 @@
     <button type="button" class="hx-move-recall-link" id="hx-move-recall-link">Back to the Move</button>
   </div>
 
-  <section class="cx-worlds" id="cx-worlds">
+  <section class="cx-worlds" id="cx-worlds" tabindex="-1">
+    <button type="button" class="cx-room-close" data-room-close hidden>
+      <span aria-hidden="true">&larr;</span> Back to the Board
+    </button>
     <div class="container">
       <div class="text-center max-prose mx-auto" data-reveal>
         <span class="eyebrow">The Eight Worlds</span>
@@ -407,7 +415,10 @@
     </div>
   </section>
 
-  <section class="pb2" id="playbook">
+  <section class="pb2" id="playbook" tabindex="-1">
+    <button type="button" class="cx-room-close" data-room-close hidden>
+      <span aria-hidden="true">&larr;</span> Back to the Board
+    </button>
     <div class="pb2-atmosphere" aria-hidden="true"></div>
     <div class="container">
       <div class="text-center max-prose mx-auto" data-reveal>
@@ -1006,6 +1017,8 @@
   </section>
 
 </main>
+
+<div class="cx-portal-launch-flash" id="cx-portal-launch-flash" aria-hidden="true"></div>
 
 <div class="world-takeover" id="world-takeover" hidden role="dialog" aria-modal="true" aria-labelledby="wt-statement">
   <div class="wt-backdrop" id="wt-backdrop" aria-hidden="true"></div>

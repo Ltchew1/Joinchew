@@ -197,9 +197,12 @@ svg[hidden] { display: none; }
    byte-identical. */
 .is-home .site-header .container { height: 92px; }
 .is-home .site-header .brand img { width: 46px; height: 46px; }
-.is-home .nav { gap: 36px; }
-.is-home .nav a { font-size: 0.98rem; }
+.is-home .nav { gap: 22px; }
+.is-home .nav a { font-size: 0.92rem; }
 .is-home .nav-cta .btn { padding: 13px 26px; font-size: 0.92rem; }
+@media (max-width: 1180px) {
+  .is-home .nav { gap: 16px; }
+}
 @media (max-width: 920px) {
   .is-home .site-header .container { height: 78px; }
   .is-home .site-header .brand img { width: 40px; height: 40px; }
@@ -2237,6 +2240,70 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   .cx-monument-scroll { margin-top: 40px; }
 }
 
+/* ---- Portal door launch: a brief shared cinematic flash that plays
+   on every door click, before the room opens or the page navigates —
+   the same beat whether the door leads to an in-page room takeover
+   (Worlds/Playbook) or a real page (The Lab). ---- */
+.cx-portal-launch-flash {
+  position: fixed; inset: 0; z-index: 500;
+  pointer-events: none; opacity: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(232,206,122,0.22), rgba(10,10,11,0.55) 60%, rgba(10,10,11,0.92) 100%);
+}
+.cx-portal-launch-flash.is-active {
+  animation: cx-launch-flash 0.55s ease-out both;
+}
+@keyframes cx-launch-flash {
+  0% { opacity: 0; }
+  35% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cx-portal-launch-flash.is-active { animation: none; }
+}
+.cx-portal-card.is-launching {
+  border-color: rgba(232,206,122,0.55);
+  box-shadow: inset 0 0 0 1px rgba(232,206,122,0.25), 0 0 30px rgba(232,206,122,0.2);
+}
+.cx-portal-card.is-launching .cx-portal-icon {
+  background: radial-gradient(circle at 50% 38%, rgba(232,206,122,0.32), rgba(12,9,4,0.34) 74%);
+}
+
+/* ---- Portal room takeover: Worlds and Playbook already carry full
+   real content (the Eight Worlds grid, the eight-play radial board) —
+   this stages that same content as a full-viewport room instead of an
+   in-page scroll target. No new content, just a staged presentation. */
+.cx-worlds.is-room-open,
+.pb2.is-room-open {
+  position: fixed; inset: 0; z-index: 400;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding-top: 84px;
+  animation: cx-room-in 0.5s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes cx-room-in {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cx-worlds.is-room-open, .pb2.is-room-open { animation: none; }
+}
+body.has-room-open { overflow: hidden; }
+.cx-room-close {
+  position: sticky; top: 16px; left: 24px; z-index: 5;
+  display: inline-flex; align-items: center; gap: 8px;
+  margin: 0 0 0 24px;
+  padding: 10px 18px;
+  border: 1px solid var(--panel-border-soft);
+  border-radius: 999px;
+  background: rgba(10,10,11,0.65);
+  backdrop-filter: blur(6px);
+  color: var(--text-muted);
+  font-size: 0.82rem; letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.cx-room-close:hover, .cx-room-close:focus-visible { color: var(--gold-light); border-color: rgba(232,206,122,0.4); }
+.cx-room-close[hidden] { display: none; }
+
 /* ---- Portals: the four flagship destinations ----
    Screen-filling portal doctrine: these are four monumental doors,
    not a grid of small feature cards. The artifact leads; copy and
@@ -2403,6 +2470,14 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   .hx-hero-inner { grid-template-columns: 1fr; gap: 8px; }
 }
 
+.hx-position-dims {
+  margin: 18px 0 0;
+  font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-faint);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px;
+}
+.hx-position-dims span { color: var(--gold-light); }
+.hx-position-dims span:not(:last-child)::after { content: '\00b7'; margin-left: 10px; color: var(--text-faint); }
 .hx-eyebrow-row { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
 .hx-eyebrow-row .rule-short { display: inline-block; width: 30px; height: 1px; background: var(--gold-deep); }
 
