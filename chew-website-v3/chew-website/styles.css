@@ -951,7 +951,7 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   opacity: 0; transform: scale(0.7); animation: activation-mark-in 0.6s ease-out forwards; animation-delay: 1.3s;
   position: relative;
 }
-.activation-mark img { display: block; filter: drop-shadow(0 0 0 rgba(232,206,122,0)); }
+.activation-mark img { display: block; object-fit: contain; filter: drop-shadow(0 0 0 rgba(232,206,122,0)); }
 @keyframes activation-mark-in {
   to { opacity: 1; transform: scale(1); }
 }
@@ -2039,7 +2039,7 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 .cx-monument-mark { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .cx-monument-mark[hidden] { display: none; }
 .cx-monument-logo {
-  width: 108px; height: 108px;
+  width: 130px; height: 108px; object-fit: contain;
   filter: drop-shadow(0 0 46px rgba(201,162,39,0.4)) drop-shadow(0 10px 30px rgba(0,0,0,0.6));
 }
 .cx-monument-wordmark {
@@ -2067,7 +2067,7 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 @keyframes cxm-scroll-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
 @media (max-width: 760px) {
   .cx-monument { min-height: 86vh; padding: 40px 0; }
-  .cx-monument-logo { width: 84px; height: 84px; }
+  .cx-monument-logo { width: 104px; height: 84px; }
   .cx-monument-wordmark { font-size: 2rem; }
   .cx-monument-phrase { font-size: clamp(1.3rem, 6vw, 1.8rem); margin-top: 32px; }
   .cx-monument-scroll { margin-top: 40px; }
