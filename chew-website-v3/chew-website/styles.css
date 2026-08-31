@@ -343,6 +343,109 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 /* ---------- Page hero ---------- */
 .page-hero { position: relative; padding: 72px 0 60px; overflow: hidden; }
 
+/* ---------- Focused-flow header exit (apply.html) ----------
+   The intake flow drops the sitewide long-form nav (out of place
+   mid-conversion) but a page must never be a dead end — a plain,
+   accessible way back to the main site replaces it. */
+.ep-header-exit {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 0.88rem; color: var(--text-muted);
+}
+.ep-header-exit:hover { color: var(--gold-light); text-decoration: none; }
+
+/* ============================================================
+   CHEW Starting Position — the assessment/entry environment.
+   Composes the locked headline with the approved My Position
+   marker language and a connected route (not four generic cards):
+   Current Position -> What Matters -> What's In The Way -> Next
+   Move. Route line = CHEW's system (gold, real and consistent).
+   Nodes = this visitor's specific facts, genuinely unknown until
+   they answer — titanium/unresolved, never a fabricated state.
+   ============================================================ */
+.ep-intro-inner { text-align: center; max-width: 760px; }
+.ep-intro-inner .eyebrow { display: block; }
+
+.ep-position-mark {
+  position: relative;
+  width: 68px; height: 68px;
+  margin: 28px auto 22px;
+  display: flex; align-items: center; justify-content: center;
+}
+.ep-position-icon {
+  position: relative; z-index: 1;
+  width: 100%; height: 100%; object-fit: contain;
+  filter: drop-shadow(0 0 22px rgba(201,162,39,0.4)) drop-shadow(0 8px 20px rgba(0,0,0,0.5));
+}
+.ep-position-ring {
+  position: absolute; inset: -16px; border-radius: 50%;
+  border: 1px solid rgba(201,162,39,0.32);
+  animation: ep-position-ping 3.2s ease-out infinite;
+}
+.ep-position-ring--2 { animation-delay: 1.6s; }
+@keyframes ep-position-ping {
+  0% { transform: scale(0.55); opacity: 0.85; }
+  75%, 100% { transform: scale(1.7); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ep-position-ring { animation: none; opacity: 0.22; }
+}
+
+.ep-headline {
+  margin: 0 auto; max-width: 38ch;
+  font-size: clamp(1.9rem, 3.6vw, 2.9rem); line-height: 1.3;
+}
+.ep-lede { margin: 18px auto 0; }
+
+.ep-intro-cta { justify-content: center; margin-top: 28px; }
+
+.ep-route {
+  position: relative;
+  display: flex; justify-content: space-between;
+  list-style: none; margin: 64px 0 0; padding: 0;
+}
+.ep-route::before {
+  content: '';
+  position: absolute; left: 5%; right: 5%; top: 7px; height: 1px;
+  background: linear-gradient(90deg, rgba(201,162,39,0.3), rgba(201,162,39,0.3) 100%);
+  opacity: 0.4;
+}
+.ep-route::after {
+  content: '';
+  position: absolute; top: 7px; height: 1px; left: 5%; width: 10%;
+  background: var(--gold-light);
+  filter: drop-shadow(0 0 6px rgba(232,206,122,0.6));
+  animation: ep-route-sweep 4s cubic-bezier(0.65,0,0.35,1) infinite;
+}
+@keyframes ep-route-sweep {
+  0% { left: 5%; width: 6%; opacity: 0; }
+  10% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { left: 84%; width: 14%; opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ep-route::after { animation: none; left: 5%; width: 90%; opacity: 0.45; }
+}
+.ep-node {
+  position: relative; z-index: 1; flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 0 4px;
+}
+.ep-node-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--black-soft);
+  border: 1.5px solid var(--titanium);
+  box-shadow: 0 0 0 4px rgba(139,141,144,0.08);
+}
+.ep-node-label {
+  font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-faint); line-height: 1.5;
+}
+@media (max-width: 640px) {
+  .ep-route { margin-top: 48px; }
+  .ep-node-label { font-size: 0.62rem; letter-spacing: 0.06em; }
+  .ep-position-mark { width: 56px; height: 56px; margin-top: 20px; }
+}
+
 .status-note {
   border-left: 3px solid var(--gold-light);
   background: rgba(201,162,39,0.08);
