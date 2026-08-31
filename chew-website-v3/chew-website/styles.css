@@ -1986,32 +1986,40 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
    ============================================================ */
 .cx-monument {
   position: relative;
-  min-height: 92vh;
-  display: flex; align-items: center; justify-content: center;
   overflow: hidden;
-  background: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(201,162,39,0.07), transparent 65%), var(--black);
-}
-.cx-monument-glow {
-  position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(ellipse 50% 40% at 50% 38%, rgba(232,206,122,0.10), transparent 70%);
+  background: var(--black);
 }
 /* Reserved production asset slot: the supplied globe/monument render.
-   Sits full-bleed behind the phrase; object-fit:cover lets one master
-   image crop sensibly across breakpoints if per-breakpoint crops
-   (via the <picture> sources in index.html) aren't supplied. Until
-   the file exists, it 404s silently and script.js reveals
-   #cx-monument-fallback (the plain logo/wordmark) in its place —
-   not a design substitute, just no broken-image icon while waiting. */
+   A normal block element sized to its own aspect ratio — NOT a
+   full-bleed cover background — because the render already bakes in
+   the CHEW mark, wordmark, and tagline at its own vertical position;
+   covering the full section height and centering live text over it
+   caused the "See the board / Understand the play / Make your move"
+   copy to overlap the rendered wordmark. The live phrase sits in
+   .cx-monument-inner, in genuinely empty space below the image, in
+   normal document flow. Until the file exists, it 404s silently and
+   script.js reveals #cx-monument-fallback (the plain logo/wordmark)
+   in its place — not a design substitute, just no broken-image icon
+   while waiting. */
 .cx-monument-scene {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%; object-fit: cover; object-position: center 38%;
+  display: block;
+  width: 100%; height: auto;
+  aspect-ratio: 1672 / 941;
   pointer-events: none;
 }
+/* Matches the <picture> sources' media queries so the reserved layout
+   space (and thus CLS) is correct for whichever crop actually loads. */
+@media (max-width: 1100px) { .cx-monument-scene { aspect-ratio: 1448 / 1086; } }
+@media (max-width: 640px) { .cx-monument-scene { aspect-ratio: 864 / 1821; } }
 @media (prefers-reduced-motion: reduce) {
   .cx-monument-scroll { animation: none; opacity: 1; }
 }
 
-.cx-monument-inner { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.cx-monument-inner {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: 40px 0 64px;
+}
 @keyframes cxm-fade-rise {
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
