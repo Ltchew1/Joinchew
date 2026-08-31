@@ -654,6 +654,225 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // The Playbook — a radial "board" of eight real decision frameworks
+  // around a central hub. Selecting a marker drives one shared stage:
+  // a hook line, a hand-built SVG "signature" for that Play's shape,
+  // and progressive disclosure for the deeper explanation. The content
+  // (all eight frameworks, and the two real links out to Domino/
+  // Future-Back) is unchanged from the original build — only the
+  // presentation is new.
+  var pb2Board = document.getElementById('pb2-board');
+  var pb2Ring = document.getElementById('pb2-ring');
+  var pb2Stage = document.getElementById('pb2-stage');
+  if (pb2Board && pb2Ring && pb2Stage) {
+    var pb2ReduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var pb2Markers = Array.prototype.slice.call(pb2Ring.querySelectorAll('.pb2-marker'));
+    var pb2Spokes = Array.prototype.slice.call(pb2Ring.querySelectorAll('.pb2-spoke'));
+    var pb2StageIndex = document.getElementById('pb2-stage-index');
+    var pb2StageName = document.getElementById('pb2-stage-name');
+    var pb2StageHook = document.getElementById('pb2-stage-hook');
+    var pb2Sig = document.getElementById('pb2-sig');
+    var pb2RunBtn = document.getElementById('pb2-run');
+    var pb2ConnectBtn = document.getElementById('pb2-connect');
+    var pb2Deep = document.getElementById('pb2-deep');
+    var pb2DeepText = document.getElementById('pb2-deep-text');
+    var pb2DeepLink = document.getElementById('pb2-deep-link');
+    var pb2ConnectPanel = document.getElementById('pb2-connect-panel');
+    var pb2ConnectLabel = document.getElementById('pb2-connect-label');
+    var pb2ConnectChips = document.getElementById('pb2-connect-chips');
+    var pb2PrevBtn = document.getElementById('pb2-prev');
+    var pb2NextBtn = document.getElementById('pb2-next');
+    var pb2Dots = document.getElementById('pb2-dots');
+
+    var PB2_PLAYS = [
+      {
+        key: 'wait', name: 'The Wait Play',
+        hook: 'Sometimes the strongest move<br>is the one you don&rsquo;t make yet.',
+        deep: 'Not every open door should be walked through immediately. Sometimes the strongest move is holding position until a requirement resolves on its own — a document ages into validity, a balance clears, a season passes.',
+        connectChips: ['Home', 'Property', 'Build'],
+        sig: '<path class="pb2-sig-path" d="M20,45 H280"/>'
+          + '<path class="pb2-sig-pulse pb2-wait-pulse" d="M20,45 H280" stroke-dasharray="46 480"/>'
+          + '<rect class="pb2-sig-node" x="140" y="33" width="6" height="24" rx="1.5"/>'
+          + '<rect class="pb2-sig-node" x="152" y="33" width="6" height="24" rx="1.5"/>'
+          + '<circle class="pb2-sig-node" cx="20" cy="45" r="5"/>'
+          + '<circle class="pb2-sig-node is-lit" cx="280" cy="45" r="5"/>'
+      },
+      {
+        key: 'stack', name: 'The Stack Play',
+        hook: 'No single move clears it.<br>Three small ones, in order, do.',
+        deep: "No single move clears the barrier, but three small ones in the right order do. CHEW's job is finding the order, not just the moves.",
+        connectChips: ['Build', 'Level Up', 'Protect'],
+        sig: '<path class="pb2-sig-path" d="M20,15 L150,45 M20,45 H150 M20,75 L150,45 M150,45 H280"/>'
+          + '<path class="pb2-sig-pulse pb2-stack-a" d="M20,15 L150,45" stroke-dasharray="24 200"/>'
+          + '<path class="pb2-sig-pulse pb2-stack-b" d="M20,45 H150" stroke-dasharray="24 200"/>'
+          + '<path class="pb2-sig-pulse pb2-stack-c" d="M20,75 L150,45" stroke-dasharray="24 200"/>'
+          + '<circle class="pb2-sig-node pb2-stack-hub" cx="150" cy="45" r="5"/>'
+          + '<path class="pb2-sig-pulse pb2-stack-out" d="M150,45 H280" stroke-dasharray="38 300"/>'
+          + '<circle class="pb2-sig-node is-lit" cx="280" cy="45" r="5"/>'
+      },
+      {
+        key: 'switch', name: 'The Switch Play',
+        hook: 'The destination stays the same.<br>The route changes.',
+        deep: "When the first path is blocked, the goal doesn't have to change — the requirement sequence does. Same finish line, different first step.",
+        connectChips: ['Drive', 'Go', 'Build'],
+        sig: '<circle class="pb2-sig-node" cx="20" cy="45" r="5"/>'
+          + '<path class="pb2-sig-path" d="M20,45 C70,20 90,20 130,20"/>'
+          + '<line x1="130" y1="8" x2="130" y2="34" stroke="var(--text-faint)" stroke-width="2"/>'
+          + '<path class="pb2-sig-path" d="M20,45 C70,70 200,70 280,45"/>'
+          + '<path class="pb2-sig-pulse" d="M20,45 C70,70 200,70 280,45" stroke-dasharray="48 480"/>'
+          + '<circle class="pb2-sig-node is-lit" cx="280" cy="45" r="5"/>'
+      },
+      {
+        key: 'buffer', name: 'The Buffer Play',
+        hook: 'Speed isn&rsquo;t always the win.<br>Slack is a position too.',
+        deep: 'Speed is not always the win. Sometimes the correct move is building slack into the position before committing it anywhere.',
+        connectChips: ['Protect', 'Home', 'Celebrate'],
+        sig: '<circle class="pb2-sig-node is-lit" cx="30" cy="45" r="5"/>'
+          + '<path class="pb2-sig-pulse" d="M30,45 H60" stroke-dasharray="18 40"/>'
+          + '<rect class="pb2-sig-node pb2-buffer-band" x="60" y="20" width="140" height="50" rx="6"/>'
+          + '<path class="pb2-sig-path" d="M220,45 L235,25 L250,55 L265,30 L280,45"/>'
+      },
+      {
+        key: 'leverage', name: 'The Leverage Play',
+        hook: 'Something already yours<br>can move the next thing.',
+        deep: 'Not everything has to be built from zero. Sometimes the leverage already exists in the position — it just has not been pointed at anything yet.',
+        connectChips: ['Build', 'Property', 'Go'],
+        sig: '<circle class="pb2-sig-node is-lit" cx="40" cy="45" r="6"/>'
+          + '<path class="pb2-sig-path" d="M40,45 H180"/>'
+          + '<path class="pb2-sig-pulse" d="M40,45 H180" stroke-dasharray="32 300"/>'
+          + '<circle class="pb2-sig-node pb2-leverage-target" cx="180" cy="45" r="6"/>'
+          + '<path class="pb2-sig-path" d="M180,45 H280"/>'
+          + '<circle class="pb2-sig-node is-lit" cx="280" cy="45" r="5"/>'
+      },
+      {
+        key: 'domino', name: 'The Domino Play',
+        hook: 'One move.<br>Multiple Worlds react.',
+        deep: 'Nothing in the Eight Worlds sits in isolation. A move made for one goal can quietly change the requirements for another.',
+        connectHref: '#cx-worlds', connectLabel: 'See a real domino run above →',
+        sig: '<line class="pb2-sig-path" x1="20" y1="60" x2="280" y2="60"/>'
+          + '<rect class="pb2-sig-node pb2-domino-tile" x="40" y="30" width="10" height="30" style="animation-delay:0s"/>'
+          + '<rect class="pb2-sig-node pb2-domino-tile" x="85" y="30" width="10" height="30" style="animation-delay:0.16s"/>'
+          + '<rect class="pb2-sig-node pb2-domino-tile" x="130" y="30" width="10" height="30" style="animation-delay:0.32s"/>'
+          + '<rect class="pb2-sig-node pb2-domino-tile" x="175" y="30" width="10" height="30" style="animation-delay:0.48s"/>'
+          + '<rect class="pb2-sig-node pb2-domino-tile" x="220" y="30" width="10" height="30" style="animation-delay:0.64s"/>'
+      },
+      {
+        key: 'cleanup', name: 'The Cleanup Play',
+        hook: 'Remove friction<br>before adding complexity.',
+        deep: "Before stacking a new goal on top of the position, CHEW checks what's already dragging on the current one. Cleanup first, then build.",
+        connectChips: ['Protect', 'Home', 'Level Up'],
+        sig: '<path class="pb2-sig-path" d="M20,45 H280"/>'
+          + '<path class="pb2-sig-pulse" d="M20,45 H280" stroke-dasharray="56 480"/>'
+          + '<g class="pb2-cleanup-ticks">'
+          + '<line x1="70" y1="35" x2="76" y2="55" style="animation-delay:0s"/>'
+          + '<line x1="110" y1="55" x2="116" y2="35" style="animation-delay:0.15s"/>'
+          + '<line x1="150" y1="35" x2="156" y2="55" style="animation-delay:0.3s"/>'
+          + '<line x1="190" y1="55" x2="196" y2="35" style="animation-delay:0.45s"/>'
+          + '</g>'
+          + '<circle class="pb2-sig-node is-lit" cx="280" cy="45" r="5"/>'
+      },
+      {
+        key: 'futureback', name: 'The Future-Back Play',
+        hook: 'The destination comes first.<br>The path builds backward.',
+        deep: 'Instead of asking "what can I do today," start from the goal and walk backward to today, requirement by requirement.',
+        connectHref: 'future-room.html', connectLabel: 'Walk a real one backward (early preview) →',
+        sig: '<circle class="pb2-sig-node is-lit" cx="280" cy="45" r="6"/>'
+          + '<path class="pb2-sig-path" d="M20,45 H280"/>'
+          + '<path class="pb2-sig-pulse" d="M280,45 H20" stroke-dasharray="46 480"/>'
+          + '<circle class="pb2-sig-node pb2-fb-start" cx="20" cy="45" r="6"/>'
+      }
+    ];
+
+    pb2Dots.innerHTML = PB2_PLAYS.map(function () { return '<span class="pb2-dot"></span>'; }).join('');
+    var pb2DotEls = Array.prototype.slice.call(pb2Dots.querySelectorAll('.pb2-dot'));
+    var pb2ActiveIndex = 0;
+
+    function pb2Select(index, focusMarker) {
+      pb2ActiveIndex = (index + PB2_PLAYS.length) % PB2_PLAYS.length;
+      var play = PB2_PLAYS[pb2ActiveIndex];
+
+      pb2Ring.classList.add('has-selection');
+      pb2Markers.forEach(function (m, i) {
+        var active = i === pb2ActiveIndex;
+        m.classList.toggle('is-active', active);
+        m.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      pb2Spokes.forEach(function (s, i) { s.classList.toggle('is-active-line', i === pb2ActiveIndex); });
+      pb2DotEls.forEach(function (d, i) { d.classList.toggle('is-active', i === pb2ActiveIndex); });
+
+      pb2StageIndex.textContent = 'Play ' + String(pb2ActiveIndex + 1).padStart(2, '0');
+      pb2StageName.textContent = play.name;
+      pb2StageHook.innerHTML = play.hook;
+      pb2Sig.innerHTML = play.sig;
+
+      pb2DeepText.textContent = play.deep;
+      if (play.connectHref) {
+        pb2DeepLink.href = play.connectHref;
+        pb2DeepLink.textContent = play.connectLabel;
+        pb2DeepLink.hidden = false;
+      } else {
+        pb2DeepLink.hidden = true;
+      }
+      pb2Deep.hidden = true;
+      pb2Deep.classList.remove('is-visible');
+      pb2RunBtn.setAttribute('aria-expanded', 'false');
+      pb2RunBtn.textContent = 'Run This Play →';
+      pb2ConnectPanel.hidden = true;
+      pb2ConnectPanel.classList.remove('is-visible');
+      pb2ConnectChips.innerHTML = '';
+
+      if (focusMarker) pb2Markers[pb2ActiveIndex].focus();
+    }
+
+    pb2Markers.forEach(function (marker, i) {
+      marker.addEventListener('click', function () { pb2Select(i, false); });
+    });
+
+    pb2Ring.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); pb2Select(pb2ActiveIndex + 1, true); }
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); pb2Select(pb2ActiveIndex - 1, true); }
+    });
+
+    pb2PrevBtn.addEventListener('click', function () { pb2Select(pb2ActiveIndex - 1, false); });
+    pb2NextBtn.addEventListener('click', function () { pb2Select(pb2ActiveIndex + 1, false); });
+
+    pb2RunBtn.addEventListener('click', function () {
+      var open = pb2Deep.hidden;
+      pb2Deep.hidden = !open;
+      pb2RunBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      pb2RunBtn.textContent = open ? 'Hide This Play' : 'Run This Play →';
+      if (open) requestAnimationFrame(function () { pb2Deep.classList.add('is-visible'); });
+      else pb2Deep.classList.remove('is-visible');
+    });
+
+    pb2ConnectBtn.addEventListener('click', function () {
+      var play = PB2_PLAYS[pb2ActiveIndex];
+      if (play.connectHref) {
+        if (play.connectHref.charAt(0) === '#') {
+          var target = document.querySelector(play.connectHref);
+          if (target) target.scrollIntoView({ block: 'center', behavior: pb2ReduceMotion ? 'auto' : 'smooth' });
+        } else {
+          window.location.href = play.connectHref;
+        }
+        return;
+      }
+      var isOpen = !pb2ConnectPanel.hidden;
+      if (isOpen) {
+        pb2ConnectPanel.hidden = true;
+        pb2ConnectPanel.classList.remove('is-visible');
+        return;
+      }
+      pb2ConnectLabel.textContent = 'Where a play like this tends to show up — illustrative, not a live calculation for your position.';
+      pb2ConnectChips.innerHTML = (play.connectChips || []).map(function (name, i) {
+        return '<span class="pb2-chip" style="animation-delay:' + (i * 0.08) + 's">' + name + '</span>';
+      }).join('');
+      pb2ConnectPanel.hidden = false;
+      requestAnimationFrame(function () { pb2ConnectPanel.classList.add('is-visible'); });
+    });
+
+    pb2Select(0, false);
+  }
+
   // "Tell CHEW where you're trying to go" — a real, working call to
   // CHEW's intelligence engine (see ARCHITECTURE.md), run against a
   // fixed illustrative example, never the visitor's own data. Every

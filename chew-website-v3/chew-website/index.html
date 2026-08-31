@@ -334,46 +334,97 @@
     </div>
   </section>
 
-  <section class="playbook" id="playbook">
+  <section class="pb2" id="playbook">
+    <div class="pb2-atmosphere" aria-hidden="true"></div>
     <div class="container">
       <div class="text-center max-prose mx-auto" data-reveal>
         <span class="eyebrow">The Playbook</span>
         <h2>Every good move follows a shape.</h2>
-        <p class="max-prose mx-auto">These are decision frameworks, not predictions &mdash; the shapes CHEW looks for when it's weighing what to do next. Not financial advice. Not a guarantee of any outcome.</p>
+        <p class="pb2-disclaimer">Eight decision frameworks &mdash; not predictions, not financial advice, not a guarantee of any outcome.</p>
       </div>
-      <div class="playbook-grid">
-        <details class="play-card" data-reveal style="--reveal-delay:0.02s;">
-          <summary><span class="play-name">The Wait Play</span><span class="play-line">When waiting strengthens the position.</span><span class="play-glyph" aria-hidden="true"></span></summary>
-          <p>Not every open door should be walked through immediately. Sometimes the strongest move is holding position until a requirement resolves on its own &mdash; a document ages into validity, a balance clears, a season passes.</p>
-        </details>
-        <details class="play-card" data-reveal style="--reveal-delay:0.06s;">
-          <summary><span class="play-name">The Stack Play</span><span class="play-line">Several smaller moves combine to unlock something larger.</span><span class="play-glyph" aria-hidden="true"></span></summary>
-          <p>No single move clears the barrier, but three small ones in the right order do. CHEW's job is finding the order, not just the moves.</p>
-        </details>
-        <details class="play-card" data-reveal style="--reveal-delay:0.10s;">
-          <summary><span class="play-name">The Switch Play</span><span class="play-line">The destination stays the same. The route changes.</span><span class="play-glyph" aria-hidden="true"></span></summary>
-          <p>When the first path is blocked, the goal doesn't have to change &mdash; the requirement sequence does. Same finish line, different first step.</p>
-        </details>
-        <details class="play-card" data-reveal style="--reveal-delay:0.14s;">
-          <summary><span class="play-name">The Buffer Play</span><span class="play-line">Protecting flexibility matters more than moving immediately.</span><span class="play-glyph" aria-hidden="true"></span></summary>
-          <p>Speed isn't always the win. Sometimes the correct move is building slack into the position before committing it anywhere.</p>
-        </details>
-        <details class="play-card" data-reveal style="--reveal-delay:0.02s;">
-          <summary><span class="play-name">The Leverage Play</span><span class="play-line">Something already available can strengthen the next move.</span><span class="play-glyph" aria-hidden="true"></span></summary>
-          <p>Not everything has to be built from zero. Sometimes the leverage already exists in the position &mdash; it just hasn't been pointed at anything yet.</p>
-        </details>
-        <details class="play-card" data-reveal style="--reveal-delay:0.06s;">
-          <summary><span class="play-name">The Domino Play</span><span class="play-line">One move changes multiple Worlds.</span><span class="play-glyph" aria-hidden="true"></span></summary>
-          <p>Nothing in the Eight Worlds sits in isolation. A move made for one goal can quietly change the requirements for another. <a href="#cx-worlds">See a real domino run above &rarr;</a></p>
-        </details>
-        <details class="play-card" data-reveal style="--reveal-delay:0.10s;">
-          <summary><span class="play-name">The Cleanup Play</span><span class="play-line">Remove friction before adding complexity.</span><span class="play-glyph" aria-hidden="true"></span></summary>
-          <p>Before stacking a new goal on top of the position, CHEW checks what's already dragging on the current one. Cleanup first, then build.</p>
-        </details>
-        <details class="play-card" data-reveal style="--reveal-delay:0.14s;">
-          <summary><span class="play-name">The Future-Back Play</span><span class="play-line">Start with the destination and determine what must become true first.</span><span class="play-glyph" aria-hidden="true"></span></summary>
-          <p>Instead of asking "what can I do today," start from the goal and walk backward to today, requirement by requirement. <a href="future-room.html">Walk a real one backward (early preview) &rarr;</a></p>
-        </details>
+      <div class="pb2-room" id="pb2-room" data-reveal>
+        <div class="pb2-board" id="pb2-board">
+          <div class="pb2-hub">
+            <img src="assets/chew-icon-official.png" alt="" width="40" height="40" loading="lazy">
+            <span class="pb2-hub-label">The Board</span>
+          </div>
+          <div class="pb2-ring" id="pb2-ring" role="listbox" aria-label="The eight CHEW Plays">
+            <div class="pb2-spoke" style="--i:0">
+              <span class="pb2-spoke-line" aria-hidden="true"></span>
+              <button type="button" class="pb2-marker is-active" id="pb2-marker-wait" data-play="wait" role="option" aria-selected="true">
+                <span class="pb2-marker-index">01</span><span class="pb2-marker-name">Wait</span>
+              </button>
+            </div>
+            <div class="pb2-spoke" style="--i:1">
+              <span class="pb2-spoke-line" aria-hidden="true"></span>
+              <button type="button" class="pb2-marker" id="pb2-marker-stack" data-play="stack" role="option" aria-selected="false">
+                <span class="pb2-marker-index">02</span><span class="pb2-marker-name">Stack</span>
+              </button>
+            </div>
+            <div class="pb2-spoke" style="--i:2">
+              <span class="pb2-spoke-line" aria-hidden="true"></span>
+              <button type="button" class="pb2-marker" id="pb2-marker-switch" data-play="switch" role="option" aria-selected="false">
+                <span class="pb2-marker-index">03</span><span class="pb2-marker-name">Switch</span>
+              </button>
+            </div>
+            <div class="pb2-spoke" style="--i:3">
+              <span class="pb2-spoke-line" aria-hidden="true"></span>
+              <button type="button" class="pb2-marker" id="pb2-marker-buffer" data-play="buffer" role="option" aria-selected="false">
+                <span class="pb2-marker-index">04</span><span class="pb2-marker-name">Buffer</span>
+              </button>
+            </div>
+            <div class="pb2-spoke" style="--i:4">
+              <span class="pb2-spoke-line" aria-hidden="true"></span>
+              <button type="button" class="pb2-marker" id="pb2-marker-leverage" data-play="leverage" role="option" aria-selected="false">
+                <span class="pb2-marker-index">05</span><span class="pb2-marker-name">Leverage</span>
+              </button>
+            </div>
+            <div class="pb2-spoke" style="--i:5">
+              <span class="pb2-spoke-line" aria-hidden="true"></span>
+              <button type="button" class="pb2-marker" id="pb2-marker-domino" data-play="domino" role="option" aria-selected="false">
+                <span class="pb2-marker-index">06</span><span class="pb2-marker-name">Domino</span>
+              </button>
+            </div>
+            <div class="pb2-spoke" style="--i:6">
+              <span class="pb2-spoke-line" aria-hidden="true"></span>
+              <button type="button" class="pb2-marker" id="pb2-marker-cleanup" data-play="cleanup" role="option" aria-selected="false">
+                <span class="pb2-marker-index">07</span><span class="pb2-marker-name">Cleanup</span>
+              </button>
+            </div>
+            <div class="pb2-spoke" style="--i:7">
+              <span class="pb2-spoke-line" aria-hidden="true"></span>
+              <button type="button" class="pb2-marker" id="pb2-marker-futureback" data-play="futureback" role="option" aria-selected="false">
+                <span class="pb2-marker-index">08</span><span class="pb2-marker-name">Future-Back</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pb2-stage" id="pb2-stage">
+          <div class="pb2-stage-head">
+            <span class="pb2-stage-index" id="pb2-stage-index">Play 01</span>
+            <h3 class="pb2-stage-name" id="pb2-stage-name">The Wait Play</h3>
+          </div>
+          <p class="pb2-stage-hook" id="pb2-stage-hook">Sometimes the strongest move<br>is the one you don't make yet.</p>
+          <svg class="pb2-sig" id="pb2-sig" viewBox="0 0 300 90" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <div class="pb2-stage-actions">
+            <button type="button" class="btn btn-gold pb2-run" id="pb2-run" aria-expanded="false">Run This Play &rarr;</button>
+            <button type="button" class="btn btn-outline pb2-connect" id="pb2-connect">See How It Connects &rarr;</button>
+          </div>
+          <div class="pb2-deep" id="pb2-deep" hidden>
+            <p id="pb2-deep-text"></p>
+            <a href="#" class="pb2-deep-link" id="pb2-deep-link" hidden></a>
+          </div>
+          <div class="pb2-connect-panel" id="pb2-connect-panel" hidden>
+            <span class="pb2-connect-label" id="pb2-connect-label"></span>
+            <div class="pb2-connect-chips" id="pb2-connect-chips"></div>
+          </div>
+          <div class="pb2-nav">
+            <button type="button" class="pb2-prev" id="pb2-prev" aria-label="Previous Play">&larr; Previous</button>
+            <div class="pb2-dots" id="pb2-dots" aria-hidden="true"></div>
+            <button type="button" class="pb2-next" id="pb2-next" aria-label="Next Play">Next &rarr;</button>
+          </div>
+        </div>
       </div>
     </div>
   </section>
