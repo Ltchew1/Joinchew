@@ -13,12 +13,17 @@
 </head>
 <body>
 <div class="pt-shell">
-  <aside class="pt-sidebar">
-    <a href="portal-worlds.html" class="pt-brand">
-      <img src="assets/chew-icon-official.png" alt="CHEW" width="34" height="34">
-      <span class="pt-brand-word">CHEW</span>
-      <span class="pt-brand-tag">Creating Honest Economic Wealth</span>
-    </a>
+  <aside class="pt-sidebar" id="pt-sidebar">
+    <script>document.currentScript.parentElement.classList.toggle('is-collapsed', (function () { try { return localStorage.getItem('chewPortalSidebarCollapsed') === '1'; } catch (e) { return false; } })());</script>
+    <div class="pt-brand-row">
+      <a href="portal-worlds.html" class="pt-brand">
+        <img src="assets/chew-logo-sidebar-expanded.png" alt="CHEW" class="pt-brand-mark pt-brand-mark--full">
+        <img src="assets/chew-logo-sidebar-collapsed.png" alt="CHEW" class="pt-brand-mark pt-brand-mark--icon">
+      </a>
+      <button type="button" class="pt-sidebar-toggle" id="pt-sidebar-toggle" aria-label="Collapse sidebar" aria-expanded="true">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+    </div>
     <nav class="pt-nav">
       <a href="portal-worlds.html" class="pt-nav-item is-active">
         <span class="pt-nav-icon"><img src="assets/icon-worlds-globe.png" alt=""></span>
@@ -39,7 +44,7 @@
     </nav>
     <div class="pt-sidebar-foot">
       <p class="pt-quote">&ldquo;Don't just eat.<br>Keep CHEW'n.&rdquo;</p>
-      <a href="index.html" class="pt-exit">&larr; Back to joinchew.com</a>
+      <a href="index.html" class="pt-exit">&larr; <span class="pt-exit-text">Back to joinchew.com</span></a>
     </div>
   </aside>
 

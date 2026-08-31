@@ -23,6 +23,23 @@ document.addEventListener('DOMContentLoaded', function () {
     wireImageFallback(img, img.nextElementSibling);
   });
 
+  // Portal sidebar collapse/expand — desktop rail only (see the
+  // matching @media (min-width: 901px) block in styles.css). State is
+  // applied synchronously by an inline script in the sidebar markup
+  // itself before this handler attaches, so there's no expanded-then-
+  // collapsed flash on load; this just wires the toggle button.
+  var ptSidebar = document.getElementById('pt-sidebar');
+  var ptSidebarToggle = document.getElementById('pt-sidebar-toggle');
+  if (ptSidebar && ptSidebarToggle) {
+    ptSidebarToggle.setAttribute('aria-expanded', String(!ptSidebar.classList.contains('is-collapsed')));
+    ptSidebarToggle.addEventListener('click', function () {
+      var collapsed = ptSidebar.classList.toggle('is-collapsed');
+      ptSidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+      ptSidebarToggle.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+      try { localStorage.setItem('chewPortalSidebarCollapsed', collapsed ? '1' : '0'); } catch (e) { /* private browsing, etc */ }
+    });
+  }
+
   // CHEW Activation: a brief, skippable opening sequence on the homepage
   // only, shown once per browser session. Pure opacity/transform CSS
   // animation (GPU-friendly), never blocks interaction, and is a no-op
