@@ -317,6 +317,11 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   font-size: 0.82rem; color: var(--text-faint);
   display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
 }
+/* Minimal footer brand mark — used only on pages whose footer has no
+   full .footer-grid (e.g. chew-lab.html), so the approved logo still
+   appears once rather than the footer going brand-mark-free. */
+.footer-mini-brand { display: inline-flex; margin-bottom: 24px; }
+.footer-mini-brand img { width: 48px; height: 48px; object-fit: contain; display: block; }
 
 /* ---------- Page hero ---------- */
 .page-hero { position: relative; padding: 72px 0 60px; overflow: hidden; }
