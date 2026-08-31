@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Worlds | CHEW</title>
+<meta name="description" content="Eight member destinations the CHEW intelligence engine is built toward — a preview of where it's headed, not services CHEW provides today.">
+<link rel="canonical" href="https://www.joinchew.com/portal-worlds.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="pt-shell">
+  <aside class="pt-sidebar">
+    <a href="portal-worlds.html" class="pt-brand">
+      <img src="assets/chew-icon-official.png" alt="CHEW" width="34" height="34">
+      <span class="pt-brand-word">CHEW</span>
+      <span class="pt-brand-tag">Creating Honest Economic Wealth</span>
+    </a>
+    <nav class="pt-nav">
+      <a href="portal-worlds.html" class="pt-nav-item is-active">
+        <span class="pt-nav-icon"><img src="assets/icon-worlds-globe.png" alt=""></span>
+        <span class="pt-nav-label"><strong>Worlds</strong><small>8 Possible Futures</small></span>
+      </a>
+      <a href="index.html#playbook" class="pt-nav-item">
+        <span class="pt-nav-icon"><img src="assets/icon-playbook-knight.png" alt=""></span>
+        <span class="pt-nav-label"><strong>Playbook</strong><small>Master the strategy</small></span>
+      </a>
+      <a href="index.html#tell-chew" class="pt-nav-item">
+        <span class="pt-nav-icon"><img src="assets/icon-my-position-pin.png" alt=""></span>
+        <span class="pt-nav-label"><strong>My Position</strong><small>See your stand</small></span>
+      </a>
+      <a href="chew-lab.html" class="pt-nav-item">
+        <span class="pt-nav-icon"><img src="assets/icon-the-lab-flask.png" alt=""></span>
+        <span class="pt-nav-label"><strong>The Lab</strong><small>Test. Simulate. Create.</small></span>
+      </a>
+    </nav>
+    <div class="pt-sidebar-foot">
+      <p class="pt-quote">&ldquo;Don't just eat.<br>Keep CHEW'n.&rdquo;</p>
+      <a href="index.html" class="pt-exit">&larr; Back to joinchew.com</a>
+    </div>
+  </aside>
+
+  <main class="pt-main">
+    <div class="pt-page-head" data-reveal>
+      <span class="eyebrow">Worlds</span>
+      <h1>Explore eight possible futures.</h1>
+      <p>These are the member destinations the CHEW intelligence engine is built toward — illustrative previews of where it's headed, not services CHEW provides today. The imagery communicates the aspiration; CHEW communicates the planning, readiness, and next moves underneath it.</p>
+    </div>
+    <div class="pt-worlds-grid" data-reveal id="pt-worlds-grid"></div>
+  </main>
+</div>
+
+<script>
+var WORLDS = [
+  { key: 'home', title: 'Home', aspiration: 'Build toward the place you want to call yours.', img: 'assets/worlds/home.webp' },
+  { key: 'drive', title: 'Drive', aspiration: 'A vehicle that fits the life you’re building, not just the payment.', img: 'assets/worlds/drive.webp' },
+  { key: 'build', title: 'Build', aspiration: 'Turn the idea into something a lender can actually say yes to.', img: 'assets/worlds/build.webp' },
+  { key: 'go', title: 'Go', aspiration: 'The freedom to move, on your own terms.', img: 'assets/worlds/go.webp' },
+  { key: 'celebrate', title: 'Celebrate', aspiration: 'Milestones, without the money hangover after.', img: 'assets/worlds/celebrate.webp' },
+  { key: 'property', title: 'Property', aspiration: 'Real assets, owned on purpose.', img: 'assets/worlds/property.webp' },
+  { key: 'levelup', title: 'Level Up', aspiration: 'Skills and income, moving in the same direction.', img: 'assets/worlds/levelup.webp' },
+  { key: 'protect', title: 'Protect', aspiration: 'The plan for when life doesn’t go to plan.', img: 'assets/worlds/protect.webp' }
+];
+var grid = document.getElementById('pt-worlds-grid');
+grid.innerHTML = WORLDS.map(function (w) {
+  return '<a href="portal-world.html?world=' + w.key + '" class="pt-world-card" style="background-image:url(' + w.img + ')">'
+    + '<div class="pt-world-card-body">'
+    + '<h3>' + w.title + '</h3>'
+    + '<p>' + w.aspiration + '</p>'
+    + '</div></a>';
+}).join('');
+</script>
+<script src="script.js"></script>
+</body>
+</html>

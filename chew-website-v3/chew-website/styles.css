@@ -3631,3 +3631,196 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   text-decoration: underline;
   padding: 0;
 }
+
+/* ============================================================
+   FLAGSHIP PREVIEW — Portal Shell
+   The first installment of the authenticated-CHEW-portal visual
+   system described in the reference mockups: a persistent sidebar
+   (Worlds/Playbook/My Position/The Lab) wrapping page content. There
+   is no real authentication/account backend in this codebase, so no
+   avatar, name, or account-scoped utility bar is rendered — those
+   would be fabricated identity, not real state. Nav items that don't
+   yet have a dedicated portal page point at the closest real existing
+   destination (the live Playbook, the real reasoning-engine demo, the
+   real CHEW Lab) rather than a dead link or a stub.
+   ============================================================ */
+.pt-shell { display: flex; min-height: 100vh; background: var(--black); }
+.pt-sidebar {
+  flex: 0 0 232px;
+  display: flex; flex-direction: column;
+  padding: 28px 20px 24px;
+  background: linear-gradient(180deg, #0d0d0f, #08080a);
+  border-right: 1px solid var(--panel-border);
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.pt-brand {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  text-decoration: none; color: var(--text); margin-bottom: 34px;
+}
+.pt-brand img { width: 34px; height: 34px; }
+.pt-brand-word { font-family: var(--font-display); font-size: 1.15rem; letter-spacing: 0.04em; }
+.pt-brand-tag { font-size: 0.62rem; letter-spacing: 0.08em; color: var(--text-faint); text-transform: uppercase; line-height: 1.4; }
+.pt-nav { display: flex; flex-direction: column; gap: 4px; }
+.pt-nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: 10px;
+  text-decoration: none; color: var(--text-muted);
+  border: 1px solid transparent;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.pt-nav-item:hover { background: rgba(255,255,255,0.03); color: var(--text); }
+.pt-nav-item.is-active {
+  background: linear-gradient(160deg, rgba(232,206,122,0.1), rgba(232,206,122,0.02));
+  border-color: var(--panel-border-soft);
+  color: var(--gold-light);
+}
+.pt-nav-icon { width: 26px; height: 26px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
+.pt-nav-icon img { width: 100%; height: 100%; object-fit: contain; }
+.pt-nav-label { display: flex; flex-direction: column; line-height: 1.35; }
+.pt-nav-label strong { font-size: 0.86rem; font-weight: 600; }
+.pt-nav-label small { font-size: 0.68rem; color: var(--text-faint); }
+.pt-nav-item.is-active .pt-nav-label small { color: rgba(232,206,122,0.6); }
+.pt-sidebar-foot { margin-top: auto; padding-top: 24px; }
+.pt-quote {
+  font-family: var(--font-display); font-style: italic; font-size: 0.82rem;
+  color: var(--text-faint); line-height: 1.5; margin: 0 0 16px;
+}
+.pt-exit { font-size: 0.78rem; color: var(--text-faint); text-decoration: none; }
+.pt-exit:hover { color: var(--gold-light); }
+.pt-main { flex: 1 1 auto; min-width: 0; }
+
+@media (max-width: 900px) {
+  .pt-shell { flex-direction: column; }
+  .pt-sidebar {
+    position: static; height: auto; width: 100%; flex: 0 0 auto;
+    flex-direction: row; align-items: center; padding: 16px 18px; overflow-x: auto;
+    border-right: none; border-bottom: 1px solid var(--panel-border);
+  }
+  .pt-brand { flex-direction: row; align-items: center; margin-bottom: 0; margin-right: 20px; gap: 10px; flex: 0 0 auto; }
+  .pt-brand-tag { display: none; }
+  .pt-nav { flex-direction: row; gap: 6px; flex: 1 1 auto; }
+  .pt-nav-item { flex: 0 0 auto; padding: 8px 10px; }
+  .pt-nav-label small { display: none; }
+  .pt-sidebar-foot { display: none; }
+}
+
+/* ---- Worlds selector page ---- */
+.pt-page-head { padding: 56px 48px 8px; }
+.pt-page-head .eyebrow { display: block; }
+.pt-page-head h1 { font-size: clamp(2.2rem, 4vw, 3.2rem); margin: 6px 0 14px; }
+.pt-page-head p { max-width: 62ch; color: var(--text-muted); }
+.pt-worlds-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
+  padding: 24px 48px 56px;
+}
+.pt-world-card {
+  position: relative; border-radius: 14px; overflow: hidden;
+  aspect-ratio: 4 / 5; text-decoration: none; color: var(--text);
+  border: 1px solid var(--panel-border);
+  background-size: cover; background-position: center;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  transition: border-color 0.3s ease, transform 0.3s ease;
+}
+.pt-world-card::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(0deg, rgba(6,6,7,0.92) 0%, rgba(6,6,7,0.35) 55%, rgba(6,6,7,0.05) 100%);
+}
+.pt-world-card:hover, .pt-world-card:focus-visible { border-color: var(--panel-border-soft); transform: translateY(-3px); }
+.pt-world-card-body { position: relative; z-index: 1; padding: 18px; }
+.pt-world-icon {
+  width: 40px; height: 40px; border-radius: 50%; margin-bottom: 10px;
+  border: 1px solid rgba(232,206,122,0.35); background: rgba(6,6,7,0.55); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center;
+}
+.pt-world-icon img { width: 22px; height: 22px; object-fit: contain; }
+.pt-world-card h3 { font-family: var(--font-display); font-size: 1.15rem; margin: 0 0 4px; }
+.pt-world-card p { font-size: 0.8rem; color: var(--text-faint); margin: 0; }
+@media (max-width: 1100px) { .pt-worlds-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) {
+  .pt-page-head { padding: 36px 20px 4px; }
+  .pt-worlds-grid { grid-template-columns: 1fr; padding: 18px 20px 40px; gap: 14px; }
+  .pt-world-card { aspect-ratio: 16 / 10; }
+}
+
+/* ---- Individual World page ---- */
+.pt-world-hero {
+  position: relative; min-height: 46vh; display: flex; align-items: flex-end;
+  background-size: cover; background-position: center;
+  padding: 0 48px 40px;
+}
+.pt-world-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(0deg, rgba(6,6,7,0.95) 8%, rgba(6,6,7,0.55) 50%, rgba(6,6,7,0.1) 100%);
+}
+.pt-world-hero-inner { position: relative; z-index: 1; max-width: 640px; }
+.pt-world-back { display: inline-flex; align-items: center; gap: 6px; color: var(--text-faint); text-decoration: none; font-size: 0.82rem; margin-bottom: 18px; }
+.pt-world-back:hover { color: var(--gold-light); }
+.pt-world-hero-inner h1 { font-size: clamp(2.4rem, 5vw, 4rem); margin: 0 0 14px; }
+.pt-world-hero-inner .pt-aspiration { font-size: 1.1rem; color: var(--text-muted); margin: 0; }
+
+.pt-world-body { padding: 44px 48px 64px; display: grid; grid-template-columns: 1fr 320px; gap: 32px; align-items: start; }
+.pt-world-main { display: flex; flex-direction: column; gap: 28px; }
+.pt-panel {
+  border: 1px solid var(--panel-border); border-radius: 14px;
+  background: linear-gradient(160deg, rgba(255,255,255,0.03), rgba(255,255,255,0.005));
+  padding: 26px 28px;
+}
+.pt-panel h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 0 0 6px; }
+.pt-panel .pt-panel-sub { font-size: 0.86rem; color: var(--text-muted); margin: 0 0 20px; }
+
+/* Honest "no real data yet" status ring — never a fabricated score */
+.pt-status-ring {
+  width: 96px; height: 96px; border-radius: 50%;
+  border: 2px dashed var(--panel-border-soft);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; margin: 0 auto 14px;
+}
+.pt-status-ring strong { font-size: 1.4rem; color: var(--text-faint); font-family: var(--font-display); }
+.pt-status-ring span { font-size: 0.58rem; letter-spacing: 0.08em; color: var(--text-faint); text-transform: uppercase; }
+.pt-status-note { text-align: center; font-size: 0.84rem; color: var(--text-muted); max-width: 34ch; margin: 0 auto; }
+
+.pt-pillar-list { display: flex; flex-direction: column; gap: 14px; }
+.pt-pillar-row { display: flex; align-items: center; gap: 12px; }
+.pt-pillar-label { flex: 0 0 140px; font-size: 0.82rem; color: var(--text-muted); }
+.pt-pillar-track { flex: 1 1 auto; height: 6px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden; }
+.pt-pillar-track-fill { height: 100%; width: 0%; background: repeating-linear-gradient(45deg, rgba(255,255,255,0.08) 0 6px, transparent 6px 12px); }
+.pt-pillar-status { flex: 0 0 auto; font-size: 0.68rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); }
+
+.pt-strategy-path { display: flex; flex-wrap: wrap; gap: 0; }
+.pt-strategy-step { flex: 1 1 160px; padding: 4px 18px 4px 0; position: relative; }
+.pt-strategy-step-index {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--panel-border-soft);
+  color: var(--gold-light); font-size: 0.78rem; margin-bottom: 10px;
+}
+.pt-strategy-step h4 { font-size: 0.88rem; margin: 0 0 4px; }
+.pt-strategy-step p { font-size: 0.78rem; color: var(--text-faint); margin: 0; }
+
+.pt-connections { display: flex; flex-wrap: wrap; gap: 8px; }
+.pt-connection-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--panel-border-soft); background: rgba(232,206,122,0.04);
+  font-size: 0.78rem; color: var(--gold-light); text-decoration: none;
+}
+.pt-connection-chip img { width: 16px; height: 16px; object-fit: contain; }
+
+.pt-tag {
+  display: inline-block; padding: 3px 10px; border-radius: 999px;
+  font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase;
+  border: 1px solid var(--panel-border-soft); color: var(--text-faint);
+}
+.pt-tag--preview { color: var(--gold-light); border-color: rgba(232,206,122,0.4); }
+
+.pt-side-panel { display: flex; flex-direction: column; gap: 20px; position: sticky; top: 28px; }
+.pt-cta-block { display: flex; flex-direction: column; gap: 10px; }
+@media (max-width: 1100px) {
+  .pt-world-body { grid-template-columns: 1fr; }
+  .pt-side-panel { position: static; }
+}
+@media (max-width: 640px) {
+  .pt-world-hero { padding: 0 20px 28px; min-height: 40vh; }
+  .pt-world-body { padding: 28px 20px 48px; gap: 20px; }
+  .pt-panel { padding: 20px 20px; }
+  .pt-pillar-label { flex-basis: 108px; font-size: 0.76rem; }
+}

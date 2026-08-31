@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="pt-title">World | CHEW</title>
+<meta name="description" content="A CHEW World destination — the planning, readiness, and next moves connected to a real goal. Preview only; not a live service today.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="pt-shell">
+  <aside class="pt-sidebar">
+    <a href="portal-worlds.html" class="pt-brand">
+      <img src="assets/chew-icon-official.png" alt="CHEW" width="34" height="34">
+      <span class="pt-brand-word">CHEW</span>
+      <span class="pt-brand-tag">Creating Honest Economic Wealth</span>
+    </a>
+    <nav class="pt-nav">
+      <a href="portal-worlds.html" class="pt-nav-item is-active">
+        <span class="pt-nav-icon"><img src="assets/icon-worlds-globe.png" alt=""></span>
+        <span class="pt-nav-label"><strong>Worlds</strong><small>8 Possible Futures</small></span>
+      </a>
+      <a href="index.html#playbook" class="pt-nav-item">
+        <span class="pt-nav-icon"><img src="assets/icon-playbook-knight.png" alt=""></span>
+        <span class="pt-nav-label"><strong>Playbook</strong><small>Master the strategy</small></span>
+      </a>
+      <a href="index.html#tell-chew" class="pt-nav-item">
+        <span class="pt-nav-icon"><img src="assets/icon-my-position-pin.png" alt=""></span>
+        <span class="pt-nav-label"><strong>My Position</strong><small>See your stand</small></span>
+      </a>
+      <a href="chew-lab.html" class="pt-nav-item">
+        <span class="pt-nav-icon"><img src="assets/icon-the-lab-flask.png" alt=""></span>
+        <span class="pt-nav-label"><strong>The Lab</strong><small>Test. Simulate. Create.</small></span>
+      </a>
+    </nav>
+    <div class="pt-sidebar-foot">
+      <p class="pt-quote">&ldquo;Don't just eat.<br>Keep CHEW'n.&rdquo;</p>
+      <a href="index.html" class="pt-exit">&larr; Back to joinchew.com</a>
+    </div>
+  </aside>
+
+  <main class="pt-main">
+    <section class="pt-world-hero" id="pt-world-hero">
+      <div class="pt-world-hero-inner">
+        <a href="portal-worlds.html" class="pt-world-back">&larr; Back to Worlds</a>
+        <h1 id="pt-world-title">World</h1>
+        <p class="pt-aspiration" id="pt-world-aspiration"></p>
+      </div>
+    </section>
+
+    <div class="pt-world-body">
+      <div class="pt-world-main">
+        <div class="pt-panel" data-reveal>
+          <span class="pt-tag pt-tag--preview">Preview</span>
+          <h2 style="margin-top:10px;">Your World status</h2>
+          <p class="pt-panel-sub">This score reflects your real, connected financial position — not a demo. Nothing is connected yet.</p>
+          <div class="pt-status-ring"><strong>&mdash;</strong><span>No data</span></div>
+          <p class="pt-status-note">Connect your real financial position to see a readiness score here. Until then, CHEW shows no score rather than guess at one.</p>
+        </div>
+
+        <div class="pt-panel" data-reveal>
+          <h2>Key pillars</h2>
+          <p class="pt-panel-sub">The categories CHEW weighs for this World. Bars stay empty until real data is connected — never filled in to look complete.</p>
+          <div class="pt-pillar-list" id="pt-pillar-list"></div>
+        </div>
+
+        <div class="pt-panel" data-reveal>
+          <h2>Foundation strategy</h2>
+          <p class="pt-panel-sub">The real shape of the moves CHEW looks for on this World — a framework, not a personalized plan.</p>
+          <div class="pt-strategy-path" id="pt-strategy-path"></div>
+        </div>
+      </div>
+
+      <div class="pt-side-panel">
+        <div class="pt-panel" data-reveal>
+          <span class="pt-tag pt-tag--preview">Preview</span>
+          <h2 style="margin-top:10px;">CHEW Saw That</h2>
+          <p class="pt-panel-sub">Once your real financial details are connected, CHEW will surface changes here automatically — the same real reasoning engine, applied to your actual position.</p>
+          <div class="pt-cta-block">
+            <a href="index.html#tell-chew" class="btn btn-outline btn-sm">See the real reasoning engine &rarr;</a>
+          </div>
+        </div>
+
+        <div class="pt-panel" data-reveal>
+          <h2>World connections</h2>
+          <p class="pt-panel-sub">Nothing in the Eight Worlds sits in isolation. Illustrative — not a live calculation for your position.</p>
+          <div class="pt-connections" id="pt-connections"></div>
+        </div>
+
+        <div class="pt-panel" data-reveal>
+          <h2>CHEW's role here</h2>
+          <p class="pt-panel-sub" id="pt-world-role" style="margin-bottom:0;"></p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+var WORLDS = {
+  home: { title: 'Home', aspiration: 'Build toward the place you want to call yours.', role: 'CHEW organizes the financial position, information, barriers, and next moves connected to that goal.', img: 'assets/worlds/home.webp', pillars: ['Credit Health', 'Income Stability', 'Savings Power', 'Debt Control', 'Documentation Readiness'] },
+  drive: { title: 'Drive', aspiration: 'A vehicle that fits the life you’re building, not just the payment.', role: 'CHEW weighs the timing and readiness against everything else already on your plate.', img: 'assets/worlds/drive.webp', pillars: ['Payment Fit', 'Cash Flow', 'Credit Health', 'Insurance Readiness', 'Timing'] },
+  build: { title: 'Build', aspiration: 'Turn the idea into something a lender can actually say yes to.', role: 'CHEW sequences the documentation and structure funding actually requires.', img: 'assets/worlds/build.webp', pillars: ['Entity Structure', 'Banking History', 'Revenue Documentation', 'Credit Capacity', 'Execution Readiness'] },
+  go: { title: 'Go', aspiration: 'The freedom to move, on your own terms.', role: 'CHEW plans it so the move strengthens your position instead of straining it.', img: 'assets/worlds/go.webp', pillars: ['Cash Flow Flexibility', 'Reserve Buffer', 'Opportunity Cost', 'Timing', 'Effect on Other Goals'] },
+  celebrate: { title: 'Celebrate', aspiration: 'Milestones, without the money hangover after.', role: 'CHEW builds the buffer before the celebration, not the regret after it.', img: 'assets/worlds/celebrate.webp', pillars: ['Reserve Buffer', 'Budget Fit', 'Timing', 'Effect on Other Goals'] },
+  property: { title: 'Property', aspiration: 'Real assets, owned on purpose.', role: 'CHEW maps the real requirements between where you are and a real offer.', img: 'assets/worlds/property.webp', pillars: ['Capital Position', 'Financing Readiness', 'Cash Flow Potential', 'Risk Management', 'Exit Strategy'] },
+  levelup: { title: 'Level Up', aspiration: 'Skills and income, moving in the same direction.', role: 'CHEW connects what you’re learning to what it’s actually worth.', img: 'assets/worlds/levelup.webp', pillars: ['Skill Investment', 'Income Trajectory', 'Time Allocation', 'Return on Learning'] },
+  protect: { title: 'Protect', aspiration: 'The plan for when life doesn’t go to plan.', role: 'CHEW keeps the coverage and cushion in view before you need them, not after.', img: 'assets/worlds/protect.webp', pillars: ['Insurance Coverage', 'Reserve Buffer', 'Legal Protection', 'Risk Exposure', 'Legacy Planning'] }
+};
+var STRATEGY_STEPS = [
+  { h: 'Clarify the goal', p: 'Define what this World actually means for you.' },
+  { h: 'Strengthen the position', p: 'Build the financial footing that supports it.' },
+  { h: 'Clear what blocks it', p: 'Remove the friction sitting in the way first.' },
+  { h: 'Create access', p: 'Open the doors preparation and credibility unlock.' },
+  { h: 'Make the move', p: 'Act from a position that’s actually ready.' }
+];
+
+var params = new URLSearchParams(window.location.search);
+var key = params.get('world') || 'home';
+var w = WORLDS[key] || WORLDS.home;
+
+document.title = w.title + ' | CHEW';
+document.getElementById('pt-title').textContent = w.title + ' | CHEW';
+document.getElementById('pt-world-hero').style.backgroundImage = 'url(' + w.img + ')';
+document.getElementById('pt-world-title').textContent = w.title;
+document.getElementById('pt-world-aspiration').textContent = w.aspiration;
+document.getElementById('pt-world-role').textContent = w.role;
+
+document.getElementById('pt-pillar-list').innerHTML = w.pillars.map(function (label) {
+  return '<div class="pt-pillar-row"><span class="pt-pillar-label">' + label + '</span>'
+    + '<span class="pt-pillar-track"><span class="pt-pillar-track-fill"></span></span>'
+    + '<span class="pt-pillar-status">Not connected</span></div>';
+}).join('');
+
+document.getElementById('pt-strategy-path').innerHTML = STRATEGY_STEPS.map(function (s, i) {
+  return '<div class="pt-strategy-step"><span class="pt-strategy-step-index">' + (i + 1) + '</span><h4>' + s.h + '</h4><p>' + s.p + '</p></div>';
+}).join('');
+
+var others = Object.keys(WORLDS).filter(function (k) { return k !== key; }).slice(0, 4);
+document.getElementById('pt-connections').innerHTML = others.map(function (k) {
+  return '<a class="pt-connection-chip" href="portal-world.html?world=' + k + '">' + WORLDS[k].title + '</a>';
+}).join('');
+</script>
+<script src="script.js"></script>
+</body>
+</html>
