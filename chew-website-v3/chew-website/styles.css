@@ -3270,7 +3270,7 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   box-shadow: 0 0 0 1px rgba(0,0,0,0.6), 0 0 26px rgba(201,162,39,0.12), inset 0 1px 0 rgba(255,255,255,0.05);
   z-index: 2;
 }
-.pb2-hub img { width: 28px; height: 28px; opacity: 0.92; filter: drop-shadow(0 0 6px rgba(201,162,39,0.25)); }
+.pb2-hub img { width: 38px; height: 26px; object-fit: contain; opacity: 0.92; filter: drop-shadow(0 0 6px rgba(201,162,39,0.25)); }
 .pb2-hub-label { font-size: 0.54rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); }
 
 .pb2-ring { position: absolute; inset: 0; }
@@ -3439,7 +3439,7 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
     padding: 18px 8px; display: flex; align-items: center; gap: 14px;
   }
   .pb2-hub { position: static; transform: none; flex: 0 0 auto; width: 64px; height: 64px; }
-  .pb2-hub img { width: 22px; height: 22px; }
+  .pb2-hub img { width: 30px; height: 20px; }
   .pb2-hub-label { display: none; }
   .pb2-ring {
     position: static; flex: 1 1 auto; display: flex; gap: 10px;
