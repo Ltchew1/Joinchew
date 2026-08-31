@@ -90,6 +90,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 
 img { max-width: 100%; display: block; }
 img[hidden] { display: none; }
+svg[hidden] { display: none; }
 
 .container { max-width: var(--max-width); margin: 0 auto; padding: 0 24px; }
 .section { padding: 116px 0; position: relative; }
@@ -2114,11 +2115,12 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 .cx-portal-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 44px; }
 .cx-portal-card {
   position: relative;
-  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
-  padding: 30px 24px 26px;
+  display: flex; flex-direction: column; gap: 0;
+  padding: 0 0 24px;
   border: 1px solid var(--panel-border);
   border-radius: 14px;
   background: linear-gradient(160deg, rgba(255,255,255,0.035), rgba(255,255,255,0.006) 50%, rgba(0,0,0,0.15));
+  overflow: hidden;
   text-decoration: none; color: var(--text);
   transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -2128,23 +2130,32 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   box-shadow: 0 20px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(232,206,122,0.15);
 }
 .cx-portal-card:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; }
-.cx-portal-index { position: absolute; top: 22px; right: 22px; font-size: 0.66rem; letter-spacing: 0.1em; color: var(--gold-deep); }
-.cx-portal-icon {
-  width: 56px; height: 56px; border-radius: 50%; flex: 0 0 auto;
-  display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--panel-border-soft);
-  background: linear-gradient(160deg, rgba(232,206,122,0.08), rgba(0,0,0,0.2));
+.cx-portal-index {
+  position: absolute; top: 14px; right: 14px; z-index: 1;
+  font-size: 0.64rem; letter-spacing: 0.1em; color: var(--gold-light);
+  background: rgba(10,10,11,0.55); border: 1px solid var(--panel-border-soft);
+  border-radius: 999px; padding: 3px 8px; backdrop-filter: blur(4px);
 }
-.cx-portal-icon svg { width: 26px; height: 26px; stroke: var(--gold-light); stroke-width: 1.5; }
+/* The artifact fills the card's own object slot — the same approved
+   render used everywhere else this icon appears, just given real
+   visual weight here instead of a small nav-scale badge. */
+.cx-portal-icon {
+  width: 100%; aspect-ratio: 1 / 0.92; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  border: none; border-bottom: 1px solid var(--panel-border-soft);
+  background: radial-gradient(circle at 50% 38%, rgba(232,206,122,0.14), rgba(0,0,0,0.32) 74%);
+  padding: 20px;
+}
+.cx-portal-icon svg { width: 30% ; height: 30%; stroke: var(--gold-light); stroke-width: 1.5; }
 .cx-portal-icon .cxp-dot { fill: var(--gold-light); stroke: none; }
 /* Reserved production asset slots: the supplied portal renders (glass
    globe, gold knight, glowing pin, flask). Until each file exists it
    404s silently and script.js reveals the adjacent line-art .svg —
    not a design substitute, just no broken-image icon while waiting. */
-.cx-portal-icon-img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
-.cx-portal-icon-fallback { width: 26px; height: 26px; stroke: var(--gold-light); stroke-width: 1.5; }
-.cx-portal-body { display: flex; flex-direction: column; gap: 6px; }
-.cx-portal-card h3 { font-family: var(--font-display); font-size: 1.2rem; margin: 4px 0 0; color: var(--text); }
+.cx-portal-icon-img { width: 100%; height: 100%; object-fit: contain; border-radius: 0; filter: drop-shadow(0 12px 26px rgba(0,0,0,0.55)); }
+.cx-portal-icon-fallback { width: 30%; height: 30%; stroke: var(--gold-light); stroke-width: 1.5; }
+.cx-portal-body { display: flex; flex-direction: column; gap: 6px; padding: 18px 22px 0; }
+.cx-portal-card h3 { font-family: var(--font-display); font-size: 1.2rem; margin: 0; color: var(--text); }
 .cx-portal-card p { font-size: 0.88rem; color: var(--text-muted); margin: 0; }
 .cx-portal-cta {
   margin-top: auto; padding-top: 14px; font-size: 0.82rem; color: var(--gold-light);
@@ -2162,8 +2173,10 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   .cx-portals { padding: 72px 0 64px; }
   .cx-portal-grid { grid-template-columns: 1fr; gap: 14px; }
   .cx-portal-card { flex-direction: row; align-items: center; gap: 16px; padding: 18px 20px; }
-  .cx-portal-icon { width: 46px; height: 46px; }
+  .cx-portal-icon { width: 46px; height: 46px; aspect-ratio: 1 / 1; border-bottom: none; padding: 0; background: none; }
   .cx-portal-icon svg { width: 22px; height: 22px; }
+  .cx-portal-icon-img { filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); }
+  .cx-portal-body { padding: 0; }
   .cx-portal-index { display: none; }
   .cx-portal-cta { margin-top: 4px; padding-top: 0; }
   .cx-portal-tagline { margin-top: 40px; }
