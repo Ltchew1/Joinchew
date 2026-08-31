@@ -15,6 +15,10 @@
   --gold-deep: #8A6E1C;
   --sample-blue: #7B9CBE;  /* marks sample/illustrative input, never real registry structure — see Network Room */
 
+  --titanium: #8B8D90;     /* structure/architecture — never decorative gold */
+  --titanium-light: #C9CBCE;
+  --gunmetal: #2A2B2E;
+
   --text: #F2EEE4;         /* Bone — never pure white */
   --text-muted: #8A857A;   /* Ash — secondary text */
   --text-faint: rgba(138,133,122,0.82);
@@ -1968,6 +1972,157 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   pointer-events: none;
 }
 
+/* ============================================================
+   FLAGSHIP PREVIEW — Monument Hero
+   The CHEW mark as the opening moment, an abstracted "economic
+   globe" behind it (concentric rings/arcs + two real route+pulse
+   connections, reusing the established SVG trace technique — an
+   honest CSS/SVG interpretation, not a photoreal render, which
+   would need a supplied asset this pass doesn't have), then the
+   locked three-line phrase. The real goal-picker/reasoning demo
+   that used to live in this hero has moved to its own section
+   below the four portals — nothing about it was removed.
+   ============================================================ */
+.cx-monument {
+  position: relative;
+  min-height: 92vh;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  background: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(201,162,39,0.07), transparent 65%), var(--black);
+}
+.cx-monument-glow {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 50% 40% at 50% 38%, rgba(232,206,122,0.10), transparent 70%);
+}
+.cx-monument-globe {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: min(920px, 130vw); height: auto; opacity: 0.55; pointer-events: none;
+}
+.cxm-globe-ring { fill: none; stroke: rgba(232,206,122,0.14); stroke-width: 1; }
+.cxm-globe-path { fill: none; stroke: rgba(232,206,122,0.18); stroke-width: 1; }
+.cxm-globe-pulse {
+  stroke: var(--gold-light); stroke-width: 1.4; stroke-linecap: round;
+  stroke-dasharray: 90 1000;
+  filter: drop-shadow(0 0 5px rgba(232,206,122,0.6));
+  animation: cxm-globe-travel 9s linear infinite;
+}
+.cxm-globe-pulse--b { animation-duration: 12s; animation-delay: 2s; }
+@keyframes cxm-globe-travel { to { stroke-dashoffset: -1400; } }
+.cxm-globe-lights circle { fill: var(--gold-light); opacity: 0.7; animation: cxm-light-twinkle 4s ease-in-out infinite; }
+.cxm-globe-lights circle:nth-child(2n) { animation-delay: 1.2s; }
+.cxm-globe-lights circle:nth-child(3n) { animation-delay: 2.4s; }
+@keyframes cxm-light-twinkle { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.9; } }
+@media (prefers-reduced-motion: reduce) {
+  .cxm-globe-pulse { animation: none; opacity: 0.5; }
+  .cxm-globe-lights circle { animation: none; opacity: 0.6; }
+  .cx-monument-scroll { animation: none; opacity: 1; }
+}
+
+.cx-monument-inner { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; text-align: center; }
+@keyframes cxm-fade-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.cxm-enter {
+  opacity: 0;
+  animation: cxm-fade-rise 0.9s cubic-bezier(.16,1,.3,1) both;
+  animation-delay: var(--enter-delay, 0s);
+}
+@media (prefers-reduced-motion: reduce) { .cxm-enter { animation: none; opacity: 1; } }
+.cx-monument-mark { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.cx-monument-logo {
+  width: 108px; height: 108px;
+  filter: drop-shadow(0 0 46px rgba(201,162,39,0.4)) drop-shadow(0 10px 30px rgba(0,0,0,0.6));
+}
+.cx-monument-wordmark {
+  font-family: var(--font-display); font-size: 2.6rem; letter-spacing: 0.06em;
+  color: var(--text); margin-top: 4px;
+}
+.cx-monument-tagline {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 0.76rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold);
+  margin-top: 2px;
+}
+.cx-monument-tagline .rule-short { width: 24px; height: 1px; background: var(--gold-deep); display: inline-block; }
+.cx-monument-phrase {
+  margin: 44px 0 0; display: flex; flex-direction: column; gap: 6px;
+  font-family: var(--font-display); font-size: clamp(1.6rem, 4vw, 2.6rem); color: var(--text-muted);
+}
+.cx-monument-phrase strong { color: var(--gold-light); font-weight: 600; font-size: 1.18em; }
+.cx-monument-scroll {
+  margin-top: 56px; width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid var(--panel-border-soft); display: flex; align-items: center; justify-content: center;
+  color: var(--gold-light); font-size: 1.1rem; text-decoration: none;
+  opacity: 0;
+  animation: cxm-fade-rise 0.9s cubic-bezier(.16,1,.3,1) 1.5s both, cxm-scroll-bob 2.6s ease-in-out infinite 2.4s;
+}
+@keyframes cxm-scroll-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
+@media (max-width: 760px) {
+  .cx-monument { min-height: 86vh; padding: 40px 0; }
+  .cx-monument-logo { width: 84px; height: 84px; }
+  .cx-monument-wordmark { font-size: 2rem; }
+  .cx-monument-phrase { font-size: clamp(1.3rem, 6vw, 1.8rem); margin-top: 32px; }
+  .cx-monument-scroll { margin-top: 40px; }
+}
+
+/* ---- Portals: the four flagship destinations ---- */
+.cx-portals { position: relative; padding: 96px 0 88px; background: var(--black-soft); }
+.cx-portal-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 44px; }
+.cx-portal-card {
+  position: relative;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  padding: 30px 24px 26px;
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(255,255,255,0.035), rgba(255,255,255,0.006) 50%, rgba(0,0,0,0.15));
+  text-decoration: none; color: var(--text);
+  transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+.cx-portal-card:hover, .cx-portal-card:focus-visible {
+  border-color: var(--panel-border-soft);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(232,206,122,0.15);
+}
+.cx-portal-card:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; }
+.cx-portal-index { position: absolute; top: 22px; right: 22px; font-size: 0.66rem; letter-spacing: 0.1em; color: var(--gold-deep); }
+.cx-portal-icon {
+  width: 56px; height: 56px; border-radius: 50%; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--panel-border-soft);
+  background: linear-gradient(160deg, rgba(232,206,122,0.08), rgba(0,0,0,0.2));
+}
+.cx-portal-icon svg { width: 26px; height: 26px; stroke: var(--gold-light); stroke-width: 1.5; }
+.cx-portal-icon .cxp-dot { fill: var(--gold-light); stroke: none; }
+.cx-portal-body { display: flex; flex-direction: column; gap: 6px; }
+.cx-portal-card h3 { font-family: var(--font-display); font-size: 1.2rem; margin: 4px 0 0; color: var(--text); }
+.cx-portal-card p { font-size: 0.88rem; color: var(--text-muted); margin: 0; }
+.cx-portal-cta {
+  margin-top: auto; padding-top: 14px; font-size: 0.82rem; color: var(--gold-light);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.cx-portal-cta span { transition: transform 0.25s ease; }
+.cx-portal-card:hover .cx-portal-cta span, .cx-portal-card:focus-visible .cx-portal-cta span { transform: translateX(4px); }
+.cx-portal-tagline {
+  margin: 56px 0 0; text-align: center;
+  font-size: 0.82rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint);
+}
+.cx-portal-tagline span { color: var(--gold); }
+@media (max-width: 1120px) { .cx-portal-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) {
+  .cx-portals { padding: 72px 0 64px; }
+  .cx-portal-grid { grid-template-columns: 1fr; gap: 14px; }
+  .cx-portal-card { flex-direction: row; align-items: center; gap: 16px; padding: 18px 20px; }
+  .cx-portal-icon { width: 46px; height: 46px; }
+  .cx-portal-icon svg { width: 22px; height: 22px; }
+  .cx-portal-index { display: none; }
+  .cx-portal-cta { margin-top: 4px; padding-top: 0; }
+  .cx-portal-tagline { margin-top: 40px; }
+}
+
+/* ---- The demoted reasoning-demo section heading (no longer the
+   primary hero statement — the monument above owns that now) ---- */
+.hx-headline--demo { font-size: clamp(1.9rem, 3.4vw, 2.6rem); max-width: 26ch; }
+
 /* ---- Hero shell ---- */
 .hx-hero { position: relative; overflow: hidden; padding: 84px 0 72px; }
 .hx-hero-inner {
@@ -2584,7 +2739,7 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 .cx-awaken-bridge {
   position: relative;
   height: 1px;
-  margin: -190px 0 -190px;
+  margin: -70px 0 -70px;
   pointer-events: none;
   z-index: 1;
 }
@@ -2599,7 +2754,7 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   filter: blur(1px);
 }
 @media (max-width: 640px) {
-  .cx-awaken-bridge { margin: -110px 0 -110px; }
+  .cx-awaken-bridge { margin: -40px 0 -40px; }
   .cx-awaken-bridge::before { height: 280px; }
 }
 .cx-philosophy-route {
