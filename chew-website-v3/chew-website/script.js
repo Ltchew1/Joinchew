@@ -485,6 +485,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var worldPanelRole = document.getElementById('cx-world-panel-role');
     var worldPanelRelated = document.getElementById('cx-world-panel-related');
     var worldPanelImage = document.getElementById('cx-world-panel-image');
+    var worldPanelTakeover = document.getElementById('cx-world-panel-takeover');
     var openWorldKey = null;
     var worldReachEl = null;
 
@@ -588,6 +589,7 @@ document.addEventListener('DOMContentLoaded', function () {
       } else {
         worldPanelRelated.hidden = true;
       }
+      if (worldPanelTakeover) worldPanelTakeover.hidden = (key !== 'home');
       worldPanel.hidden = false;
       requestAnimationFrame(function () { worldPanel.classList.add('is-visible'); });
       worldPanel.scrollIntoView({ block: 'nearest', behavior: worldReduceMotion ? 'auto' : 'smooth' });
@@ -605,8 +607,51 @@ document.addEventListener('DOMContentLoaded', function () {
     if (worldPanelCloseBtn) worldPanelCloseBtn.addEventListener('click', closeWorldPanel);
 
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && openWorldKey) closeWorldPanel();
+      if (e.key === 'Escape' && openWorldKey && (!worldTakeover || worldTakeover.hidden)) closeWorldPanel();
     });
+
+    // World takeover — one fully realized destination (Home), a near-
+    // full-viewport reveal distinct from the inline panel above. Reuses
+    // the same real Home photograph via the same lazy WORLD_IMAGES map,
+    // no separate asset.
+    var worldTakeover = document.getElementById('world-takeover');
+    var wtBackdrop = document.getElementById('wt-backdrop');
+    var wtCloseBtn = document.getElementById('wt-close');
+    var wtBackBtn = document.getElementById('wt-back');
+    var wtSeePlayBtn = document.getElementById('wt-see-play');
+    if (worldTakeover && worldPanelTakeover) {
+      var wtLastFocus = null;
+      function openWorldTakeover() {
+        var url = worldImageUrl('home');
+        if (url && wtBackdrop) wtBackdrop.style.setProperty('--world-asset', 'url(' + url + ')');
+        wtLastFocus = document.activeElement;
+        worldTakeover.hidden = false;
+        requestAnimationFrame(function () { worldTakeover.classList.add('is-open'); });
+        if (wtCloseBtn) wtCloseBtn.focus();
+        document.documentElement.style.overflow = 'hidden';
+      }
+      function closeWorldTakeover() {
+        worldTakeover.classList.remove('is-open');
+        document.documentElement.style.overflow = '';
+        window.setTimeout(function () { worldTakeover.hidden = true; }, worldReduceMotion ? 0 : 350);
+        if (wtLastFocus && wtLastFocus.focus) wtLastFocus.focus();
+      }
+      worldPanelTakeover.addEventListener('click', openWorldTakeover);
+      if (wtCloseBtn) wtCloseBtn.addEventListener('click', closeWorldTakeover);
+      if (wtBackBtn) wtBackBtn.addEventListener('click', closeWorldTakeover);
+      if (wtSeePlayBtn) {
+        wtSeePlayBtn.addEventListener('click', function () {
+          closeWorldTakeover();
+          var homeGoalBtn = document.querySelector('.goal-btn[data-goal="home"]');
+          var tellChewEl = document.getElementById('tell-chew');
+          if (tellChewEl) tellChewEl.scrollIntoView({ block: 'center', behavior: worldReduceMotion ? 'auto' : 'smooth' });
+          if (homeGoalBtn) window.setTimeout(function () { homeGoalBtn.click(); }, worldReduceMotion ? 0 : 500);
+        });
+      }
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !worldTakeover.hidden) closeWorldTakeover();
+      });
+    }
   }
 
   // "Tell CHEW where you're trying to go" — a real, working call to
@@ -620,6 +665,38 @@ document.addEventListener('DOMContentLoaded', function () {
     var resultEl = document.getElementById('intelligence-reveal-result');
     var disclaimerEl = document.getElementById('reveal-disclaimer');
     var chainEl = document.getElementById('reveal-chain');
+    var cstEl = document.getElementById('chew-saw-that');
+    var cstHeadlineEl = document.getElementById('cst-headline');
+    var cstFactsEl = document.getElementById('cst-facts');
+    var cstWhyToggle = document.getElementById('cst-why-toggle');
+    var cstWhyBody = document.getElementById('cst-why-body');
+    if (cstWhyToggle) {
+      cstWhyToggle.addEventListener('click', function () {
+        var open = cstWhyBody.classList.toggle('is-open');
+        cstWhyToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        cstWhyToggle.textContent = open ? 'Hide the reasoning' : 'Show me why →';
+      });
+    }
+    // "CHEW Saw That" — built from the exact same basedOnFacts/rationale
+    // the reveal-chain above already fetched, presented as a state-change
+    // flourish. No second data source, no invented numbers.
+    function renderChewSawThat(rec, goalTitle) {
+      if (!cstEl) return;
+      var keys = Object.keys(rec.basedOnFacts || {});
+      cstHeadlineEl.textContent = goalTitle ? 'Position changed: ' + goalTitle + '.' : 'Position changed.';
+      cstFactsEl.innerHTML = keys.map(function (key) {
+        var fact = rec.basedOnFacts[key];
+        var cls = fact.met ? 'cst-fact cst-fact--met' : 'cst-fact cst-fact--unmet';
+        var mark = fact.met ? '✓ ' : '— ';
+        return '<span class="' + cls + '">' + mark + escapeHtml(formatFactKey(key)) + '</span>';
+      }).join('');
+      cstWhyBody.textContent = rec.rationale || '';
+      cstWhyBody.classList.remove('is-open');
+      cstWhyToggle.setAttribute('aria-expanded', 'false');
+      cstWhyToggle.textContent = 'Show me why →';
+      cstEl.hidden = false;
+      requestAnimationFrame(function () { cstEl.classList.add('is-visible'); });
+    }
     var cxWorldEls = document.querySelectorAll('.cx-world');
 
     // The only two mappings the real demo legitimately supports. Home and
@@ -1315,6 +1392,7 @@ document.addEventListener('DOMContentLoaded', function () {
         statusEl.classList.remove('is-error');
         resultEl.hidden = true;
         chainEl.classList.remove('is-visible');
+        if (cstEl) { cstEl.hidden = true; cstEl.classList.remove('is-visible'); }
         resetHeroField();
         lightMatchingWorld(null);
 
@@ -1347,14 +1425,16 @@ document.addEventListener('DOMContentLoaded', function () {
             lastGoalTitle = data.goalTitle || null;
             if (revealReduceMotion) {
               chainEl.classList.add('is-visible');
+              renderChewSawThat(rec, data.goalTitle);
               dominoSectionEl.hidden = false;
               radarSectionEl.hidden = false;
               futurebackSectionEl.hidden = false;
             } else {
               pendingTimeouts.push(setTimeout(function () { chainEl.classList.add('is-visible'); }, 1700));
-              pendingTimeouts.push(setTimeout(function () { dominoSectionEl.hidden = false; }, 2000));
-              pendingTimeouts.push(setTimeout(function () { radarSectionEl.hidden = false; }, 2300));
-              pendingTimeouts.push(setTimeout(function () { futurebackSectionEl.hidden = false; }, 2600));
+              pendingTimeouts.push(setTimeout(function () { renderChewSawThat(rec, data.goalTitle); }, 2000));
+              pendingTimeouts.push(setTimeout(function () { dominoSectionEl.hidden = false; }, 2300));
+              pendingTimeouts.push(setTimeout(function () { radarSectionEl.hidden = false; }, 2600));
+              pendingTimeouts.push(setTimeout(function () { futurebackSectionEl.hidden = false; }, 2900));
             }
           })
           .catch(function (err) {
