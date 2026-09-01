@@ -3761,6 +3761,150 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 }
 
 /* ============================================================
+   CHEW ECONOMIC COMMAND CENTER — Playbook rebuild.
+   The eight Plays above are preserved unchanged; this wraps them
+   inside a larger position-intelligence environment built entirely
+   from real, already-existing pieces: the same intelligence-demo
+   goal-picker/reveal engine (id-matched so script.js's existing
+   handlers drive it with zero new JS), the same Blind Spot / Domino /
+   Radar / Future-Back reveals, real World data. The eleven position
+   dimensions are a real, honest taxonomy — not live per-node status,
+   since no authenticated member data exists in this public context.
+   ============================================================ */
+.cec-shell { position: relative; padding: 96px 0 0; background: var(--black); overflow: hidden; }
+.cec-shell::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,162,39,0.08), transparent 60%),
+    linear-gradient(rgba(242,238,228,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(242,238,228,0.035) 1px, transparent 1px);
+  background-size: auto, 56px 56px, 56px 56px;
+}
+.cec-topbar { position: relative; z-index: 1; max-width: var(--max-width); margin: 0 auto; padding: 0 24px 28px; }
+.cec-topbar-titles { margin-top: 18px; text-align: center; }
+.cec-topbar-titles h1 { margin: 6px 0 0; font-size: clamp(1.8rem, 3.4vw, 2.6rem); }
+
+.cec-board {
+  position: relative; z-index: 1;
+  max-width: 1500px; margin: 0 auto; padding: 0 24px;
+  display: grid; grid-template-columns: 260px 1fr 300px; gap: 22px; align-items: start;
+}
+.cec-rail {
+  border: 1px solid var(--panel-border-soft); border-radius: 14px;
+  background: linear-gradient(160deg, rgba(255,250,240,0.03), rgba(10,8,4,0.2));
+  padding: 22px 20px;
+  display: flex; flex-direction: column; gap: 22px;
+}
+.cec-rail-title { font-family: var(--font-display); font-size: 1.05rem; margin: 0; color: var(--text); }
+.cec-status-label {
+  display: block; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--gold-light); margin-bottom: 8px;
+}
+.cec-status-text { margin: 0; font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; }
+.cec-events-empty, .cec-intel-empty {
+  margin: 0; font-size: 0.84rem; color: var(--text-faint); font-style: italic;
+}
+.cec-dims-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 6px 8px;
+}
+.cec-dims-list li {
+  font-size: 0.72rem; letter-spacing: 0.02em; color: var(--text-faint);
+  border: 1px solid var(--panel-border); border-radius: 999px; padding: 4px 10px;
+}
+
+.cec-graph { position: relative; min-height: 560px; display: flex; align-items: center; justify-content: center; }
+.cec-dim-ring { position: absolute; inset: 0; pointer-events: none; }
+.cec-dim-node {
+  position: absolute; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  font-size: 0.68rem; letter-spacing: 0.03em; color: var(--text-faint);
+  text-align: center; width: 90px;
+}
+.cec-dim-node::before {
+  content: ''; display: block; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--black-soft); border: 1.5px solid var(--titanium);
+}
+.cec-center {
+  position: relative; z-index: 1;
+  width: min(560px, 88%);
+  text-align: center;
+}
+.cec-center-lede { max-width: 46ch; margin: 10px auto 0; font-size: 0.94rem; color: var(--text-muted); }
+.cec-center .hx-goal-row { margin-top: 22px; }
+.cec-center .hx-field-wrap { margin-top: 8px; }
+
+.cec-intel-card {
+  border-top: 1px solid var(--panel-border-soft); padding-top: 18px;
+}
+.cec-rail-title + .cec-intel-card { border-top: none; padding-top: 0; }
+.cec-rail--intel .hx-move-banner { margin-top: 10px; }
+.cec-intel-card:has(.hx-move-banner.is-visible) #hx-move-empty { display: none; }
+.cec-intel-more {
+  margin: 0; font-size: 0.78rem; color: var(--text-faint);
+}
+.cec-intel-more a { color: var(--gold-light); }
+
+.cec-deeper {
+  position: relative; z-index: 1;
+  max-width: 1100px; margin: 28px auto 0; padding: 0 24px;
+}
+.cec-deeper-inner {
+  border: 1px solid var(--panel-border-soft); border-radius: 14px;
+  padding: 22px 24px; display: flex; flex-direction: column; gap: 18px;
+}
+
+.cec-plays { position: relative; z-index: 1; padding-top: 72px; }
+.cec-worlds-dock {
+  position: relative; z-index: 1;
+  padding: 56px 0 88px; margin-top: 40px;
+  background: var(--black-soft);
+}
+.cec-worlds-strip {
+  margin-top: 32px;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+  max-width: var(--max-width); padding: 0 24px; margin-left: auto; margin-right: auto;
+}
+.cec-world-chip {
+  display: block; padding: 16px 18px; border-radius: 12px;
+  border: 1px solid var(--panel-border-soft);
+  background: linear-gradient(160deg, rgba(255,250,240,0.03), rgba(10,8,4,0.2));
+  text-decoration: none; color: var(--text);
+  transition: border-color 0.3s ease, transform 0.3s ease;
+}
+.cec-world-chip:hover, .cec-world-chip:focus-visible {
+  text-decoration: none; border-color: rgba(232,206,122,0.4); transform: translateY(-3px);
+}
+.cec-world-chip-index { font-size: 0.62rem; letter-spacing: 0.1em; color: var(--gold-light); }
+.cec-world-chip h3 { margin: 4px 0 4px; font-family: var(--font-display); font-size: 1rem; }
+.cec-world-chip p { margin: 0; font-size: 0.78rem; color: var(--text-muted); }
+
+/* Route fracture / repair — real met/unmet state already computed by
+   renderHeroField(), just given a more dramatic visual language: an
+   unresolved requirement's edge reads as a broken/dashed route, a
+   resolved one as a solid, dimmed one. */
+.hx-field-svg .hx-edge { stroke-dasharray: 3 5; }
+.hx-field-svg .hx-edge.is-chosen-edge,
+.hx-field-svg .hx-edge.is-resolved-edge { stroke-dasharray: none; }
+
+@media (max-width: 1180px) {
+  .cec-board { grid-template-columns: 1fr; }
+  .cec-rail { flex-direction: row; flex-wrap: wrap; gap: 24px 32px; }
+  .cec-rail > * { flex: 1 1 240px; }
+  .cec-graph { min-height: 480px; order: -1; }
+  .cec-dim-node { display: none; }
+}
+@media (max-width: 640px) {
+  .cec-shell { padding-top: 78px; }
+  .cec-topbar { padding-bottom: 20px; }
+  .cec-board { padding: 0 16px; gap: 16px; }
+  .cec-rail { padding: 18px 16px; flex-direction: column; }
+  .cec-graph { min-height: 0; }
+  .cec-worlds-strip { grid-template-columns: repeat(2, 1fr); padding: 0 16px; }
+}
+
+/* ============================================================
    FLAGSHIP PREVIEW — CHEW Saw That
    A real intelligence flourish built from the SAME already-fetched
    /api/intelligence-demo response driving the reveal chain above it —

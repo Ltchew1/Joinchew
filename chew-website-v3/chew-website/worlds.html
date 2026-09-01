@@ -275,5 +275,17 @@
   </div>
 </footer>
 <script src="script.js"></script>
+<script>
+(function () {
+  // Arriving with a hash like #cx-world-home (e.g. from the Playbook's
+  // Worlds dock) opens that World's real panel by clicking the real
+  // button — no separate logic, just reusing script.js's own handler.
+  if (!location.hash) return;
+  var target = document.querySelector(location.hash);
+  if (target && target.classList.contains('cx-world')) {
+    window.setTimeout(function () { target.click(); target.scrollIntoView({ block: 'center' }); }, 60);
+  }
+})();
+</script>
 </body>
 </html>
