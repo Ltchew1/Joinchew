@@ -3867,7 +3867,7 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
   max-width: var(--max-width); padding: 0 24px; margin-left: auto; margin-right: auto;
 }
 .cec-world-chip {
-  display: block; padding: 16px 18px; border-radius: 12px;
+  display: block; border-radius: 12px;
   border: 1px solid var(--panel-border-soft);
   background: linear-gradient(160deg, rgba(255,250,240,0.03), rgba(10,8,4,0.2));
   text-decoration: none; color: var(--text);
@@ -3876,17 +3876,137 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 .cec-world-chip:hover, .cec-world-chip:focus-visible {
   text-decoration: none; border-color: rgba(232,206,122,0.4); transform: translateY(-3px);
 }
-.cec-world-chip-index { font-size: 0.62rem; letter-spacing: 0.1em; color: var(--gold-light); }
-.cec-world-chip h3 { margin: 4px 0 4px; font-family: var(--font-display); font-size: 1rem; }
-.cec-world-chip p { margin: 0; font-size: 0.78rem; color: var(--text-muted); }
 
-/* Route fracture / repair — real met/unmet state already computed by
-   renderHeroField(), just given a more dramatic visual language: an
-   unresolved requirement's edge reads as a broken/dashed route, a
-   resolved one as a solid, dimmed one. */
+/* ============================================================
+   STRATEGIC INTELLIGENCE GRAPHICS
+   Every rule below reads off real state script.js already computes
+   from the live API (is-chosen / is-resolved / is-deferred / is-lit
+   / is-falling / is-cleared) — nothing here is a second data source,
+   only how that real state is rendered. Red is reserved exclusively
+   for the one real barrier the engine actually found; everywhere
+   else stays black titanium / precision gold / glass.
+   Test for every piece: strip the words — can you still tell
+   something was found, blocked, or opened, from the shapes alone?
+   ============================================================ */
+:root { --barrier-red: #B23B2E; --barrier-red-glow: rgba(178,59,46,0.55); }
+
+/* ---- Terrain: the field is a tilted dimensional plane, not a flat
+   diagram. Perspective lives on the wrap (a real CSS property, so it
+   survives the existing JS mouse-tilt overwriting the wrap's own
+   transform); the resting rotation lives on the field itself. A
+   faint titanium floor grid beneath sells the depth without adding
+   a second background image. ---- */
+.hx-field-wrap { perspective: 1200px; }
+.hx-field { transform-style: preserve-3d; transform: rotateX(22deg); transition: opacity 0.5s ease, transform 0.6s ease; }
+.hx-field-wrap::before {
+  content: '';
+  position: absolute; left: 50%; top: 58%; width: 132%; height: 132%;
+  transform: translate(-50%, -50%) rotateX(68deg);
+  background-image:
+    linear-gradient(rgba(139,141,144,0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139,141,144,0.16) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse 58% 58% at 50% 50%, black, transparent 74%);
+  -webkit-mask-image: radial-gradient(ellipse 58% 58% at 50% 50%, black, transparent 74%);
+  pointer-events: none; z-index: 0; opacity: 0.75;
+}
+.hx-field, .hx-field-svg, .hx-field-idle { position: relative; z-index: 1; }
+@media (max-width: 980px) {
+  .hx-field { transform: none; }
+  .hx-field-wrap::before { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .hx-field { transition: none; } }
+
+/* ---- Node elevation: state reads as real height above the terrain,
+   not just color. A resolved requirement settles into the floor; the
+   one requirement CHEW actually chose rises off it — the same
+   physical language as "the barrier standing in the way." ---- */
+.hx-node.is-resolved { transform: translate(-50%, -50%) scale(0.82) translateZ(-6px); }
+.hx-node.is-deferred { transform: translate(-50%, -50%) scale(0.88) translateZ(-2px); }
+.hx-node.is-chosen { transform: translate(-50%, -50%) scale(1.34) translateZ(46px); }
+.hx-node-dot { box-shadow: 0 10px 14px -8px rgba(0,0,0,0.7); }
+
+/* ---- Route fracture / repair: an unresolved route reads broken; a
+   resolved one, solid and dimmed; the chosen (barrier) route glows
+   gold right up to the physical gate glyph sitting across it. ---- */
 .hx-field-svg .hx-edge { stroke-dasharray: 3 5; }
 .hx-field-svg .hx-edge.is-chosen-edge,
 .hx-field-svg .hx-edge.is-resolved-edge { stroke-dasharray: none; }
+.hx-field-svg .hx-edge.is-chosen-edge { filter: drop-shadow(0 0 3px rgba(232,206,122,0.55)); }
+
+/* ---- Barrier Engine: a physical gate laid across the one route the
+   engine actually flagged (chosenRequirementKey) — two posts and a
+   crossbar, not an icon-and-label card. This is the single place on
+   the board red is allowed to appear, and only because a real
+   barrier is genuinely there. ---- */
+.hx-barrier-glyph .hx-barrier-bar {
+  stroke: var(--barrier-red); stroke-width: 3.2; stroke-linecap: round;
+  filter: drop-shadow(0 0 6px var(--barrier-red-glow));
+  animation: hx-barrier-settle 0.5s cubic-bezier(.34,1.56,.64,1) both;
+}
+.hx-barrier-glyph .hx-barrier-post { fill: var(--black); stroke: var(--titanium-light); stroke-width: 1.6; }
+@keyframes hx-barrier-settle { 0% { transform: scaleX(0); opacity: 0; } 100% { transform: scaleX(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .hx-barrier-glyph .hx-barrier-bar { animation: none; } }
+
+/* ---- Domino energy: when script.js lights a real trace segment
+   (.is-lit) as a resolved step cascades to the next, a spark
+   actually travels the segment instead of the color simply
+   changing — the same visual grammar as the field's routes. ---- */
+.domino-trace-seg { position: relative; overflow: visible; }
+.domino-trace-seg.is-lit::after {
+  content: ''; position: absolute; left: 50%; top: 0; width: 6px; height: 6px;
+  margin-left: -3px; border-radius: 50%; background: var(--gold-light);
+  box-shadow: 0 0 9px 2px rgba(232,206,122,0.85);
+  animation: hx-energy-travel 0.75s cubic-bezier(.4,0,.2,1) both;
+}
+@keyframes hx-energy-travel { 0% { top: 0; opacity: 0; } 18% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+.domino-node.is-falling .domino-node-gate { filter: drop-shadow(0 0 6px rgba(232,206,122,0.5)); }
+@media (prefers-reduced-motion: reduce) { .domino-trace-seg.is-lit::after { animation: none; } }
+
+/* ---- Future-Back construction: the same spark travels the trace as
+   each waypoint lights, walking backward from the real goal to
+   today — the route is visibly being built, not just listed. ---- */
+.futureback-trace-seg { position: relative; overflow: visible; }
+.futureback-trace-seg.is-lit::after {
+  content: ''; position: absolute; left: 50%; top: 0; width: 6px; height: 6px;
+  margin-left: -3px; border-radius: 50%; background: var(--gold-light);
+  box-shadow: 0 0 9px 2px rgba(232,206,122,0.85);
+  animation: hx-energy-travel 0.75s cubic-bezier(.4,0,.2,1) both;
+}
+@media (prefers-reduced-motion: reduce) { .futureback-trace-seg.is-lit::after { animation: none; } }
+
+/* ---- Radar material: glass and precision gold instead of a flat
+   dial — a real opening in the registry reads as a lit aperture, not
+   a colored badge. ---- */
+.radar-wrap {
+  background: radial-gradient(ellipse 70% 70% at 50% 50%, rgba(232,206,122,0.05), rgba(8,8,10,0.4));
+  box-shadow: inset 0 0 0 1px var(--panel-border-soft), inset 0 0 40px rgba(0,0,0,0.5);
+}
+.radar-node.is-connected.is-available {
+  box-shadow: 0 0 0 1px var(--gold), 0 0 18px 2px rgba(201,162,39,0.45);
+}
+
+/* ---- Eight Worlds, on the horizon: real photography as a small
+   portal aperture per World (not one shared background image), each
+   tinted only by that World's own real thumbnail — distinct
+   environments glimpsed through a gold ring, not dashboard tiles. ---- */
+.cec-world-chip {
+  position: relative; padding-top: 0; overflow: hidden;
+  border-color: var(--panel-border);
+}
+.cec-world-chip::before {
+  content: ''; display: block; width: 100%; aspect-ratio: 16 / 10;
+  background-image: var(--world-portal), linear-gradient(160deg, rgba(20,20,15,0.2), rgba(8,8,10,0.55));
+  background-size: cover; background-position: center;
+  filter: saturate(0.82) brightness(0.62);
+  transition: filter 0.4s ease, transform 0.6s ease;
+}
+.cec-world-chip:hover::before, .cec-world-chip:focus-visible::before { filter: saturate(1) brightness(0.8); transform: scale(1.05); }
+.cec-world-chip-body { padding: 14px 16px 16px; }
+.cec-world-chip-index { font-size: 0.62rem; letter-spacing: 0.1em; color: var(--gold-light); }
+.cec-world-chip h3 { margin: 4px 0 4px; font-family: var(--font-display); font-size: 1rem; }
+.cec-world-chip p { margin: 0; font-size: 0.78rem; color: var(--text-muted); }
+@media (prefers-reduced-motion: reduce) { .cec-world-chip::before { transition: none; } }
 
 @media (max-width: 1180px) {
   .cec-board { grid-template-columns: 1fr; }

@@ -1266,7 +1266,37 @@ document.addEventListener('DOMContentLoaded', function () {
             nodeEls[chosenIndex].classList.add('is-chosen');
             nodeEls[chosenIndex].querySelector('.hx-node-status').textContent = 'The Move';
             var edge = edgeEls()[chosenIndex];
-            if (edge) edge.classList.add('is-chosen-edge');
+            if (edge) {
+              edge.classList.add('is-chosen-edge');
+              // Barrier Engine: a real physical obstruction glyph placed on
+              // the one route this example's own engine actually flagged
+              // (chosenRequirementKey) — geometry only, drawn from the same
+              // hub/node coordinates renderHeroField already computed, not
+              // a second data source or a decorative flourish on every edge.
+              var bPos = nodePosition(chosenIndex, total);
+              var bx = HX_HUB_X + (bPos.x - HX_HUB_X) * 0.6;
+              var by = HX_HUB_Y + (bPos.y - HX_HUB_Y) * 0.6;
+              var dx = bPos.x - HX_HUB_X, dy = bPos.y - HX_HUB_Y;
+              var len = Math.sqrt(dx * dx + dy * dy) || 1;
+              var ux = dx / len, uy = dy / len;
+              var bAngle = Math.atan2(dy, dx) * 180 / Math.PI;
+              // The route itself physically breaks at the barrier point —
+              // two real segments with a gap, not one continuous line with
+              // a decal on top — so the obstruction reads without any text.
+              var gap = 17;
+              edge.setAttribute('d', 'M' + HX_HUB_X + ',' + HX_HUB_Y + ' L' + (bx - ux * gap).toFixed(1) + ',' + (by - uy * gap).toFixed(1));
+              var farSeg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+              farSeg.setAttribute('class', 'hx-edge is-chosen-edge');
+              farSeg.setAttribute('d', 'M' + (bx + ux * gap).toFixed(1) + ',' + (by + uy * gap).toFixed(1) + ' L' + bPos.x.toFixed(1) + ',' + bPos.y.toFixed(1));
+              hxFieldSvgEl.appendChild(farSeg);
+              var gate = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+              gate.setAttribute('class', 'hx-barrier-glyph');
+              gate.setAttribute('transform', 'translate(' + bx.toFixed(1) + ',' + by.toFixed(1) + ') rotate(' + (bAngle + 90).toFixed(1) + ')');
+              gate.innerHTML = '<line class="hx-barrier-bar" x1="-16" y1="0" x2="16" y2="0"/>'
+                + '<circle class="hx-barrier-post" cx="-16" cy="0" r="3"/>'
+                + '<circle class="hx-barrier-post" cx="16" cy="0" r="3"/>';
+              hxFieldSvgEl.appendChild(gate);
+            }
           }
         }
         var moveText = recommendedAction || 'Every known requirement is met — nothing further to recommend for this example.';
