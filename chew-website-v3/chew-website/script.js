@@ -81,6 +81,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // World destination pages — shared interactive-node accordion. Same
+  // pattern on all eight world-*.html pages; each node just toggles its
+  // own static educational text, nothing personalized or fetched.
+  document.querySelectorAll('.wp-node').forEach(function (node) {
+    node.addEventListener('click', function () {
+      var isOpen = node.classList.toggle('is-open');
+      node.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+  });
+
   // Playbook's left sidebar — off-canvas on mobile, toggled the same way
   // the shared .nav-toggle works, just a separate element since this
   // page replaces the shared header with its own persistent rail.
@@ -465,256 +475,13 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // The Eight Worlds: no dedicated public World routes exist yet, so a
-  // World button never masquerades as an unrelated existing page —
-  // selecting one opens a shared inline preview in place instead. Only
-  // "build" carries a genuinely relevant existing-page link (CHEW
-  // Programs, which really is about business funding); every other
-  // World gets the same honest "ask CHEW" fallback rather than a forced
-  // link to a page that isn't actually that World.
-  // Copy hierarchy per correction: aspiration first, CHEW's actual role
-  // second, truthful access state last and quiet (rendered separately,
-  // below the fold of the panel, never leading the experience).
-  var WORLD_DETAILS = {
-    home: {
-      title: 'Home',
-      aspiration: 'Build toward the place you want to call yours.',
-      role: 'CHEW organizes the financial position, information, barriers, and next moves connected to that goal.'
-    },
-    drive: {
-      title: 'Drive',
-      aspiration: 'A vehicle that fits the life you’re building, not just the payment.',
-      role: 'CHEW weighs the timing and readiness against everything else already on your plate.'
-    },
-    build: {
-      title: 'Build',
-      aspiration: 'Turn the idea into something a lender can actually say yes to.',
-      role: 'CHEW sequences the documentation and structure funding actually requires.',
-      relatedHref: 'services.html',
-      relatedLabel: 'See CHEW Programs →'
-    },
-    go: {
-      title: 'Go',
-      aspiration: 'The freedom to move, on your own terms.',
-      role: 'CHEW plans it so the move strengthens your position instead of straining it.'
-    },
-    celebrate: {
-      title: 'Celebrate',
-      aspiration: 'Milestones, without the money hangover after.',
-      role: 'CHEW builds the buffer before the celebration, not the regret after it.'
-    },
-    property: {
-      title: 'Property',
-      aspiration: 'Real assets, owned on purpose.',
-      role: 'CHEW maps the real requirements between where you are and a real offer.'
-    },
-    levelup: {
-      title: 'Level Up',
-      aspiration: 'Skills and income, moving in the same direction.',
-      role: 'CHEW connects what you’re learning to what it’s actually worth.'
-    },
-    protect: {
-      title: 'Protect',
-      aspiration: 'The plan for when life doesn’t go to plan.',
-      role: 'CHEW keeps the coverage and cushion in view before you need them, not after.'
-    }
-  };
-
-  // Production photography (see assets/worlds/). jpg is authoritative;
-  // webp is offered to browsers that support it via a one-time feature
-  // check, not a <picture> per tile, since these load as CSS
-  // background-images through the existing --world-asset slot.
-  var WORLD_IMAGES = {
-    home: { jpg: 'assets/worlds/home.jpg', webp: 'assets/worlds/home.webp', alt: 'Illuminated modern home at twilight with reflecting water features.' },
-    drive: { jpg: 'assets/worlds/drive.jpg', webp: 'assets/worlds/drive.webp', alt: 'Black luxury sports car on a coastal road at dusk with a city skyline.' },
-    build: { jpg: 'assets/worlds/build.jpg', webp: 'assets/worlds/build.webp', alt: 'Executive workspace overlooking a city skyline, with business dashboards and a warehouse visible beyond.' },
-    go: { jpg: 'assets/worlds/go.jpg', webp: 'assets/worlds/go.webp', alt: 'A private jet and a luxury vehicle on a tarmac at sunset near a coastal skyline.' },
-    celebrate: { jpg: 'assets/worlds/celebrate.jpg', webp: 'assets/worlds/celebrate.webp', alt: 'A formal event space with chandeliers, floral centerpieces, and fireworks over a skyline.' },
-    property: { jpg: 'assets/worlds/property.jpg', webp: 'assets/worlds/property.webp', alt: 'Aerial night view of a waterfront multifamily and mixed-use real estate development.' },
-    levelup: { jpg: 'assets/worlds/levelup.jpg', webp: 'assets/worlds/levelup.webp', alt: 'A modern library and learning space with a staircase and an illuminated globe.' },
-    protect: { jpg: 'assets/worlds/protect.jpg', webp: 'assets/worlds/protect.webp', alt: 'A fortified hillside estate at night under a lightning storm, with a security command center.' }
-  };
-
-  var worldButtons = document.querySelectorAll('.cx-world');
-  var worldPanel = document.getElementById('cx-world-panel');
-  var worldGrid = document.getElementById('cx-worlds-grid');
-  if (worldButtons.length && worldPanel && worldGrid) {
-    var worldReduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var worldPanelTitle = document.getElementById('cx-world-panel-title');
-    var worldPanelAspiration = document.getElementById('cx-world-panel-aspiration');
-    var worldPanelRole = document.getElementById('cx-world-panel-role');
-    var worldPanelRelated = document.getElementById('cx-world-panel-related');
-    var worldPanelImage = document.getElementById('cx-world-panel-image');
-    var worldPanelTakeover = document.getElementById('cx-world-panel-takeover');
-    var openWorldKey = null;
-    var worldReachEl = null;
-
-    var supportsWebp = false;
-    try {
-      var webpCanvas = document.createElement('canvas');
-      if (webpCanvas.getContext && webpCanvas.getContext('2d')) {
-        supportsWebp = webpCanvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
-      }
-    } catch (e) { supportsWebp = false; }
-
-    function worldImageUrl(key) {
-      var img = WORLD_IMAGES[key];
-      if (!img) return null;
-      return supportsWebp ? img.webp : img.jpg;
-    }
-
-    // Lazy-load: the eight photographs only start downloading once the
-    // Worlds section is actually approaching the viewport, not on
-    // initial page load — the same real fact (the visitor scrolled this
-    // far) driving a real network request, nothing eager or wasted.
-    var worldsSectionEl = document.getElementById('cx-worlds');
-    if (worldsSectionEl && 'IntersectionObserver' in window) {
-      var worldImageObserver = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (!entry.isIntersecting) return;
-          worldButtons.forEach(function (btn) {
-            var key = btn.getAttribute('data-world');
-            var url = worldImageUrl(key);
-            if (url) btn.style.setProperty('--world-asset', 'url(' + url + ')');
-          });
-          worldImageObserver.disconnect();
-        });
-      }, { rootMargin: '400px 0px' });
-      worldImageObserver.observe(worldsSectionEl);
-    } else {
-      worldButtons.forEach(function (btn) {
-        var key = btn.getAttribute('data-world');
-        var url = worldImageUrl(key);
-        if (url) btn.style.setProperty('--world-asset', 'url(' + url + ')');
-      });
-    }
-
-    function clearWorldReach() {
-      if (worldReachEl && worldReachEl.parentNode) worldReachEl.parentNode.removeChild(worldReachEl);
-      worldReachEl = null;
-    }
-
-    // The gold "reach" bloom: CHEW's route arriving at the selected
-    // destination, positioned over the actual selected tile rather than
-    // a generic connecting line, since the constellation's layout is
-    // organic (not a fixed grid CHEW can precompute paths across).
-    function showWorldReach(btn) {
-      clearWorldReach();
-      var el = document.createElement('div');
-      el.className = 'cx-world-reach';
-      el.style.left = btn.offsetLeft + 'px';
-      el.style.top = btn.offsetTop + 'px';
-      el.style.width = btn.offsetWidth + 'px';
-      el.style.height = btn.offsetHeight + 'px';
-      btn.parentNode.insertBefore(el, btn.nextSibling);
-      worldReachEl = el;
-    }
-
-    function closeWorldPanel() {
-      openWorldKey = null;
-      worldGrid.classList.remove('has-selection');
-      worldPanel.classList.remove('is-visible');
-      clearWorldReach();
-      worldButtons.forEach(function (b) {
-        b.classList.remove('is-open');
-        b.setAttribute('aria-expanded', 'false');
-      });
-      window.setTimeout(function () { if (!openWorldKey) worldPanel.hidden = true; }, worldReduceMotion ? 0 : 450);
-    }
-
-    function openWorldPanel(btn, key) {
-      var detail = WORLD_DETAILS[key];
-      if (!detail) return;
-      openWorldKey = key;
-      worldGrid.classList.add('has-selection');
-      worldButtons.forEach(function (b) {
-        var isThis = b === btn;
-        b.classList.toggle('is-open', isThis);
-        b.setAttribute('aria-expanded', isThis ? 'true' : 'false');
-      });
-      showWorldReach(btn);
-      worldPanelTitle.textContent = detail.title;
-      worldPanelAspiration.textContent = detail.aspiration;
-      worldPanelRole.textContent = detail.role;
-      if (worldPanelImage) {
-        var panelUrl = worldImageUrl(key);
-        var panelImg = WORLD_IMAGES[key];
-        worldPanelImage.style.backgroundImage = panelUrl ? 'url(' + panelUrl + ')' : '';
-        worldPanelImage.setAttribute('aria-label', (panelImg && panelImg.alt) || '');
-      }
-      if (detail.relatedHref) {
-        worldPanelRelated.href = detail.relatedHref;
-        worldPanelRelated.textContent = detail.relatedLabel || 'Learn more →';
-        worldPanelRelated.hidden = false;
-      } else {
-        worldPanelRelated.hidden = true;
-      }
-      if (worldPanelTakeover) worldPanelTakeover.hidden = (key !== 'home');
-      worldPanel.hidden = false;
-      requestAnimationFrame(function () { worldPanel.classList.add('is-visible'); });
-      worldPanel.scrollIntoView({ block: 'nearest', behavior: worldReduceMotion ? 'auto' : 'smooth' });
-    }
-
-    worldButtons.forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var key = btn.getAttribute('data-world');
-        if (openWorldKey === key) { closeWorldPanel(); return; }
-        openWorldPanel(btn, key);
-      });
-    });
-
-    var worldPanelCloseBtn = document.getElementById('cx-world-panel-close');
-    if (worldPanelCloseBtn) worldPanelCloseBtn.addEventListener('click', closeWorldPanel);
-
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && openWorldKey && (!worldTakeover || worldTakeover.hidden)) closeWorldPanel();
-    });
-
-    // World takeover — one fully realized destination (Home), a near-
-    // full-viewport reveal distinct from the inline panel above. Reuses
-    // the same real Home photograph via the same lazy WORLD_IMAGES map,
-    // no separate asset.
-    var worldTakeover = document.getElementById('world-takeover');
-    var wtBackdrop = document.getElementById('wt-backdrop');
-    var wtCloseBtn = document.getElementById('wt-close');
-    var wtBackBtn = document.getElementById('wt-back');
-    if (worldTakeover && worldPanelTakeover) {
-      var wtLastFocus = null;
-      function openWorldTakeover() {
-        var url = worldImageUrl('home');
-        if (url && wtBackdrop) wtBackdrop.style.setProperty('--world-asset', 'url(' + url + ')');
-        wtLastFocus = document.activeElement;
-        worldTakeover.hidden = false;
-        requestAnimationFrame(function () { worldTakeover.classList.add('is-open'); });
-        if (wtCloseBtn) wtCloseBtn.focus();
-        document.documentElement.style.overflow = 'hidden';
-      }
-      function closeWorldTakeover() {
-        worldTakeover.classList.remove('is-open');
-        document.documentElement.style.overflow = '';
-        window.setTimeout(function () { worldTakeover.hidden = true; }, worldReduceMotion ? 0 : 350);
-        if (wtLastFocus && wtLastFocus.focus) wtLastFocus.focus();
-      }
-      worldPanelTakeover.addEventListener('click', openWorldTakeover);
-      if (wtCloseBtn) wtCloseBtn.addEventListener('click', closeWorldTakeover);
-      if (wtBackBtn) wtBackBtn.addEventListener('click', closeWorldTakeover);
-      // "See The Home Play" is a real link to chew-lab.html#tell-chew now
-      // (Worlds and The Lab are separate pages) — plain navigation, no
-      // same-page scroll/auto-click choreography needed.
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && !worldTakeover.hidden) closeWorldTakeover();
-      });
-    }
-  }
-
-  // Four-door "click the door" behavior — a shared cinematic beat
-  // (the artifact glows, a brief gold flash plays) before each door
-  // navigates to its real destination page. Worlds, Playbook, My
-  // Position, and The Lab are all now dedicated pages (the homepage
-  // itself ends at the four doors), so every door behaves the same
-  // way — no in-page overlay/takeover state to manage.
+  // "Click the door" behavior — a shared cinematic beat (the artifact
+  // glows, a brief gold flash plays) before navigating to a real
+  // destination page. Shared by the homepage's four doors and the
+  // Worlds hub's eight World cards, which now route to their own
+  // dedicated pages instead of opening an in-page preview.
   (function () {
-    var portalCards = document.querySelectorAll('.cx-portal-card');
+    var portalCards = document.querySelectorAll('.cx-portal-card, .cx-world-card');
     var launchFlash = document.getElementById('cx-portal-launch-flash');
     var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 

@@ -59,76 +59,49 @@
       <div class="text-center max-prose mx-auto" data-reveal>
         <span class="eyebrow">The Eight Worlds</span>
         <h2>Every part of your life CHEW is built to eventually hold.</h2>
-        <p class="max-prose mx-auto">These are the member destinations the CHEW intelligence engine is built toward — illustrative previews of where it's headed, not services CHEW provides today.</p>
+        <p class="max-prose mx-auto">Each World is its own destination — illustrative previews of where the CHEW intelligence engine is headed, not services CHEW provides today. Choose one to step in.</p>
       </div>
-      <div class="cx-worlds-field">
-        <div class="cx-worlds-grid" id="cx-worlds-grid" role="group" aria-label="The Eight CHEW Worlds — select a world to preview it">
-          <button type="button" class="cx-world" id="cx-world-home" data-world="home" data-asset-slot="CHEW_WORLD_HOME" aria-expanded="false" aria-controls="cx-world-panel">
-            <span class="cx-world-index">World 01</span>
-            <h3>Home</h3>
-            <p>Everyday money, finally in one place.</p>
-            <span class="cx-world-glyph" aria-hidden="true"></span>
-          </button>
-          <button type="button" class="cx-world" id="cx-world-drive" data-world="drive" data-asset-slot="CHEW_WORLD_DRIVE" aria-expanded="false" aria-controls="cx-world-panel">
-            <span class="cx-world-index">World 02</span>
-            <h3>Drive</h3>
-            <p>A vehicle, without wrecking the rest of the plan.</p>
-            <span class="cx-world-glyph" aria-hidden="true"></span>
-          </button>
-          <button type="button" class="cx-world" id="cx-world-build" data-world="build" data-asset-slot="CHEW_WORLD_BUILD" aria-expanded="false" aria-controls="cx-world-panel">
-            <span class="cx-world-index">World 03</span>
-            <h3>Build</h3>
-            <p>Turning a business idea into something fundable.</p>
-            <span class="cx-world-glyph" aria-hidden="true"></span>
-          </button>
-          <button type="button" class="cx-world" id="cx-world-go" data-world="go" data-asset-slot="CHEW_WORLD_GO" aria-expanded="false" aria-controls="cx-world-panel">
-            <span class="cx-world-index">World 04</span>
-            <h3>Go</h3>
-            <p>The freedom to move, on your own terms.</p>
-            <span class="cx-world-glyph" aria-hidden="true"></span>
-          </button>
-          <button type="button" class="cx-world" id="cx-world-celebrate" data-world="celebrate" data-asset-slot="CHEW_WORLD_CELEBRATE" aria-expanded="false" aria-controls="cx-world-panel">
-            <span class="cx-world-index">World 05</span>
-            <h3>Celebrate</h3>
-            <p>Milestones, without the money hangover after.</p>
-            <span class="cx-world-glyph" aria-hidden="true"></span>
-          </button>
-          <button type="button" class="cx-world" id="cx-world-property" data-world="property" data-asset-slot="CHEW_WORLD_PROPERTY" aria-expanded="false" aria-controls="cx-world-panel">
-            <span class="cx-world-index">World 06</span>
-            <h3>Property</h3>
-            <p>Owning real estate, on purpose and on paper.</p>
-            <span class="cx-world-glyph" aria-hidden="true"></span>
-          </button>
-          <button type="button" class="cx-world" id="cx-world-levelup" data-world="levelup" data-asset-slot="CHEW_WORLD_LEVELUP" aria-expanded="false" aria-controls="cx-world-panel">
-            <span class="cx-world-index">World 07</span>
-            <h3>Level Up</h3>
-            <p>Skills and income, moving the same direction.</p>
-            <span class="cx-world-glyph" aria-hidden="true"></span>
-          </button>
-          <button type="button" class="cx-world" id="cx-world-protect" data-world="protect" data-asset-slot="CHEW_WORLD_PROTECT" aria-expanded="false" aria-controls="cx-world-panel">
-            <span class="cx-world-index">World 08</span>
-            <h3>Protect</h3>
-            <p>The plan for when life doesn't go to plan.</p>
-            <span class="cx-world-glyph" aria-hidden="true"></span>
-          </button>
-        </div>
-
-        <div class="cx-world-panel" id="cx-world-panel" role="region" aria-live="polite" hidden>
-          <button type="button" class="cx-world-panel-close" id="cx-world-panel-close" aria-label="Return to the Eight Worlds">&times;</button>
-          <div class="cx-world-panel-image" id="cx-world-panel-image" role="img" aria-label=""></div>
-          <h3 id="cx-world-panel-title"></h3>
-          <p class="cx-world-panel-aspiration" id="cx-world-panel-aspiration"></p>
-          <p class="cx-world-panel-role" id="cx-world-panel-role"></p>
-          <div class="cx-world-panel-actions">
-            <a href="contact.html" class="cx-world-panel-link">Ask CHEW about this world &rarr;</a>
-            <a href="services.html" class="cx-world-panel-link cx-world-panel-link--related" id="cx-world-panel-related" hidden>See CHEW Programs &rarr;</a>
-            <button type="button" class="cx-world-panel-link cx-world-panel-link--takeover" id="cx-world-panel-takeover" hidden>Step Into This World &rarr;</button>
-          </div>
-          <div class="cx-world-panel-truth">
-            <span class="cx-world-panel-tag">Preview</span>
-            <span class="cx-world-panel-note">Access and fulfillment depend on capabilities CHEW is still building — not a live service today.</span>
-          </div>
-        </div>
+      <div class="cx-worlds-grid" id="cx-worlds-grid" data-reveal>
+        <a href="world-home.html" class="cx-world-card" id="cx-world-home" style="--world-portal:url(assets/worlds/home.jpg);">
+          <span class="cx-world-card-index">World 01</span>
+          <h3>Home</h3>
+          <p>Everyday money, finally in one place.</p>
+        </a>
+        <a href="world-drive.html" class="cx-world-card" id="cx-world-drive" style="--world-portal:url(assets/worlds/drive.jpg);">
+          <span class="cx-world-card-index">World 02</span>
+          <h3>Drive</h3>
+          <p>A vehicle, without wrecking the rest of the plan.</p>
+        </a>
+        <a href="world-build.html" class="cx-world-card" id="cx-world-build" style="--world-portal:url(assets/worlds/build.jpg);">
+          <span class="cx-world-card-index">World 03</span>
+          <h3>Build</h3>
+          <p>Turning a business idea into something fundable.</p>
+        </a>
+        <a href="world-go.html" class="cx-world-card" id="cx-world-go" style="--world-portal:url(assets/worlds/go.jpg);">
+          <span class="cx-world-card-index">World 04</span>
+          <h3>Go</h3>
+          <p>The freedom to move, on your own terms.</p>
+        </a>
+        <a href="world-celebrate.html" class="cx-world-card" id="cx-world-celebrate" style="--world-portal:url(assets/worlds/celebrate.jpg);">
+          <span class="cx-world-card-index">World 05</span>
+          <h3>Celebrate</h3>
+          <p>Milestones, without the money hangover after.</p>
+        </a>
+        <a href="world-property.html" class="cx-world-card" id="cx-world-property" style="--world-portal:url(assets/worlds/property.jpg);">
+          <span class="cx-world-card-index">World 06</span>
+          <h3>Property</h3>
+          <p>Owning real estate, on purpose and on paper.</p>
+        </a>
+        <a href="world-level-up.html" class="cx-world-card" id="cx-world-levelup" style="--world-portal:url(assets/worlds/levelup.jpg);">
+          <span class="cx-world-card-index">World 07</span>
+          <h3>Level Up</h3>
+          <p>Skills and income, moving the same direction.</p>
+        </a>
+        <a href="world-protect.html" class="cx-world-card" id="cx-world-protect" style="--world-portal:url(assets/worlds/protect.jpg);">
+          <span class="cx-world-card-index">World 08</span>
+          <h3>Protect</h3>
+          <p>The plan for when life doesn't go to plan.</p>
+        </a>
       </div>
     </div>
   </section>
@@ -243,25 +216,7 @@
   </section>
 </main>
 
-<div class="world-takeover" id="world-takeover" hidden role="dialog" aria-modal="true" aria-labelledby="wt-statement">
-  <div class="wt-backdrop" id="wt-backdrop" aria-hidden="true"></div>
-  <div class="wt-scrim" aria-hidden="true"></div>
-  <button type="button" class="wt-close" id="wt-close" aria-label="Close this World">&times;</button>
-  <div class="wt-inner">
-    <span class="wt-eyebrow" id="wt-eyebrow">World 01 — Home</span>
-    <h2 class="wt-statement" id="wt-statement">The house isn't the first move.</h2>
-    <div class="wt-factors" aria-label="What the Home play actually depends on">
-      <span>Income</span><span>Cash</span><span>Credit Profile</span><span>Documentation</span>
-      <span>Reserves</span><span>Obligations</span><span>Timing</span><span>Readiness</span>
-    </div>
-    <p class="wt-role">CHEW organizes the financial position, information, barriers, and next moves connected to that goal.</p>
-    <div class="wt-actions">
-      <a href="chew-lab.html#tell-chew" class="btn btn-gold cta-glow" id="wt-see-play">See The Home Play &rarr;</a>
-      <button type="button" class="btn btn-outline" id="wt-back">Back To The Worlds</button>
-    </div>
-    <p class="wt-truth">Preview — this World previews where the CHEW intelligence engine is headed. The reasoning underneath is real; the destination isn't a live service yet.</p>
-  </div>
-</div>
+<div class="cx-portal-launch-flash" id="cx-portal-launch-flash" aria-hidden="true"></div>
 
 <footer class="site-footer">
   <div class="container">
@@ -278,12 +233,12 @@
 <script>
 (function () {
   // Arriving with a hash like #cx-world-home (e.g. from the Playbook's
-  // Worlds dock) opens that World's real panel by clicking the real
-  // button — no separate logic, just reusing script.js's own handler.
+  // Worlds dock) scrolls straight to that World's real card on the hub
+  // — the card itself is now a real link to its own dedicated page.
   if (!location.hash) return;
   var target = document.querySelector(location.hash);
-  if (target && target.classList.contains('cx-world')) {
-    window.setTimeout(function () { target.click(); target.scrollIntoView({ block: 'center' }); }, 60);
+  if (target && target.classList.contains('cx-world-card')) {
+    window.setTimeout(function () { target.scrollIntoView({ block: 'center' }); }, 60);
   }
 })();
 </script>
