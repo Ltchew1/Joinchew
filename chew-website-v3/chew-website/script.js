@@ -81,6 +81,27 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // Playbook's left sidebar — off-canvas on mobile, toggled the same way
+  // the shared .nav-toggle works, just a separate element since this
+  // page replaces the shared header with its own persistent rail.
+  var pbcToggle = document.getElementById('pbc-mobile-toggle');
+  var pbcSidebar = document.getElementById('pbc-sidebar');
+  var pbcScrim = document.getElementById('pbc-sidebar-scrim');
+  if (pbcToggle && pbcSidebar) {
+    function pbcCloseSidebar() {
+      pbcSidebar.classList.remove('is-open');
+      pbcToggle.setAttribute('aria-expanded', 'false');
+      if (pbcScrim) pbcScrim.classList.remove('is-visible');
+    }
+    pbcToggle.addEventListener('click', function () {
+      var isOpen = pbcSidebar.classList.toggle('is-open');
+      pbcToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      if (pbcScrim) pbcScrim.classList.toggle('is-visible', isOpen);
+    });
+    if (pbcScrim) pbcScrim.addEventListener('click', pbcCloseSidebar);
+    pbcSidebar.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', pbcCloseSidebar); });
+  }
+
   // Shared across the hero goal picker and the Life Map below it: which
   // real demo goal (if any) the visitor has already picked in the hero,
   // so Life Map can carry that choice forward (goal continuity) instead
@@ -749,6 +770,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var pb2PrevBtn = document.getElementById('pb2-prev');
     var pb2NextBtn = document.getElementById('pb2-next');
     var pb2Dots = document.getElementById('pb2-dots');
+    var pbcRailPlayName = document.getElementById('pbc-rail-play-name');
+    var pbcRailChips = document.getElementById('pbc-rail-chips');
+    var pbcRailInsight = document.getElementById('pbc-rail-insight');
+    var pbcStripCards = Array.prototype.slice.call(document.querySelectorAll('.pbc-strip-card'));
 
     var PB2_PLAYS = [
       {
@@ -865,6 +890,19 @@ document.addEventListener('DOMContentLoaded', function () {
       });
       pb2Spokes.forEach(function (s, i) { s.classList.toggle('is-active-line', i === pb2ActiveIndex); });
       pb2DotEls.forEach(function (d, i) { d.classList.toggle('is-active', i === pb2ActiveIndex); });
+      pbcStripCards.forEach(function (c, i) { c.classList.toggle('is-active', i === pb2ActiveIndex); });
+
+      // Right rail — real data only: this Play's own name, its real
+      // World connections (or its one real cross-link), and an excerpt
+      // of its real deep-dive explanation. No fabricated readiness
+      // score, mastery count, or personal sequence history.
+      if (pbcRailPlayName) pbcRailPlayName.textContent = play.name;
+      if (pbcRailChips) {
+        pbcRailChips.innerHTML = (play.connectChips || []).map(function (name) {
+          return '<span class="pbc-rail-chip">' + name + '</span>';
+        }).join('') || (play.connectLabel ? '<span class="pbc-rail-chip pbc-rail-chip--link">' + play.connectLabel + '</span>' : '');
+      }
+      if (pbcRailInsight) pbcRailInsight.textContent = play.deep;
 
       pb2StageIndex.textContent = 'Play ' + String(pb2ActiveIndex + 1).padStart(2, '0');
       pb2StageName.textContent = play.name;
@@ -934,6 +972,18 @@ document.addEventListener('DOMContentLoaded', function () {
       }).join('');
       pb2ConnectPanel.hidden = false;
       requestAnimationFrame(function () { pb2ConnectPanel.classList.add('is-visible'); });
+    });
+
+    // Lower Play strip — "Explore" reuses the exact same real selection
+    // and deep-dive panel as the board above; it never renders its own
+    // copy of the content.
+    document.querySelectorAll('.pbc-strip-explore').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var idx = parseInt(btn.getAttribute('data-explore'), 10);
+        pb2Select(idx, false);
+        pb2Stage.scrollIntoView({ block: 'center', behavior: pb2ReduceMotion ? 'auto' : 'smooth' });
+        if (pb2Deep.hidden) pb2RunBtn.click();
+      });
     });
 
     pb2Select(0, false);
