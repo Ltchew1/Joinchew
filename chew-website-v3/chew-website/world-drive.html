@@ -16,7 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="is-world-page" style="--world-asset:url(assets/worlds/drive.jpg);">
 <header class="site-header">
   <div class="container">
     <a href="index.html" class="brand">
@@ -42,7 +42,7 @@
 </header>
 
 <main>
-  <section class="wp-hero" style="--world-asset:url(assets/worlds/drive.jpg);">
+  <section class="wp-hero">
     <div class="wp-hero-bg"></div>
     <div class="wp-hero-scrim"></div>
     <div class="hx-searchlight" data-parallax="0.05" aria-hidden="true"></div>
@@ -98,18 +98,19 @@
   <section class="wp-plays-section">
     <div class="wp-plays-inner" data-reveal>
       <span class="wp-plays-label">Related Plays in the Playbook</span>
-      <div class="wp-plays-chips">
-        <span class="wp-plays-chip">Switch Play</span>
+      <div class="wp-plays-row">
+        <a href="playbook.html" class="wp-play-medallion">
+          <span class="wp-play-medallion-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M7,12 H22 M18,8 L22,12 L18,16" stroke-linecap="round" stroke-linejoin="round"/><path d="M25,20 H10 M14,16 L10,20 L14,24" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="wp-play-medallion-name">Switch Play</span>
+        </a>
       </div>
       <a href="playbook.html" class="wp-plays-link">Open the Playbook &rarr;</a>
     </div>
   </section>
 
-  <section class="wp-move">
+  <section class="wp-move-slim">
     <div class="container">
-      <h2>Ready to see where you actually stand?</h2>
-      <p>Make Your Move starts the real intake — no guesswork, no fabricated numbers, just your actual position.</p>
-      <a href="apply.html" class="btn btn-gold cta-glow">Make Your Move &rarr;</a>
+      <p>Ready to see where you actually stand? <a href="apply.html">Make Your Move &rarr;</a></p>
     </div>
   </section>
 </main>
@@ -125,46 +126,11 @@
   </a>
 </nav>
 
-<footer class="site-footer">
+<footer class="site-footer wp-footer">
   <div class="container">
-    <div class="footer-grid">
-      <div>
-        <a href="index.html" class="brand" style="margin-bottom:14px; display:inline-flex;">
-          <img src="assets/chew-logo-monument.png" alt="CHEW" width="48" height="48">
-        </a>
-        <p style="max-width:32ch; font-size:0.92rem;">
-          Creating Honest Economic Wealth &mdash; the structure behind the income you're
-          already earning.
-        </p>
-      </div>
-      <div>
-        <h4>Company</h4>
-        <ul>
-          <li><a href="about.html">About CHEW</a></li>
-          <li><a href="philosophy.html">Philosophy</a></li>
-          <li><a href="services.html">Programs</a></li>
-          <li><a href="blueprint.html">Blueprint</a></li>
-          <li><a href="education.html">Education</a></li>
-          <li><a href="how-it-works.html">How It Works</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4>Resources</h4>
-        <ul>
-          <li><a href="resources.html">Resource Library</a></li>
-          <li><a href="faq.html">FAQ</a></li>
-          <li><a href="contact.html">Contact</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4>Legal</h4>
-        <ul>
-          <li><a href="privacy.html">Privacy Policy</a></li>
-          <li><a href="terms.html">Terms of Use</a></li>
-          <li><a href="disclaimer.html">Disclaimer</a></li>
-        </ul>
-      </div>
-    </div>
+    <a href="index.html" class="footer-mini-brand">
+      <img src="assets/chew-logo-monument.png" alt="CHEW" width="48" height="48">
+    </a>
     <div class="footer-legal">
       <span>&copy; 2026 CHEW LLC. All rights reserved.</span>
       <span>CHEW LLC is a financial education and business-infrastructure company. CHEW does not provide credit repair services, does not promise or guarantee funding, approvals, score changes, or removal of information, and does not provide legal, tax, or investment advice. Results depend on individual circumstances, participation, and third-party decisions. See our <a href="disclaimer.html" style="color:inherit;">disclaimer</a>.</span>

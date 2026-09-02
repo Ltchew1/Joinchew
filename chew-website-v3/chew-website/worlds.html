@@ -16,7 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="is-world-page">
 <header class="site-header">
   <div class="container">
     <a href="index.html" class="brand">
@@ -57,10 +57,24 @@
   <section class="cx-worlds" id="cx-worlds" style="padding-top:48px;">
     <div class="container">
       <div class="text-center max-prose mx-auto" data-reveal>
+        <div class="cx-worlds-glyph">
+          <img src="assets/icon-worlds-globe.png" alt="" width="64" height="64" loading="lazy">
+        </div>
         <span class="eyebrow">The Eight Worlds</span>
         <h2>Every part of your life CHEW is built to eventually hold.</h2>
-        <p class="max-prose mx-auto">Each World is its own destination — illustrative previews of where the CHEW intelligence engine is headed, not services CHEW provides today. Choose one to step in.</p>
+        <p class="max-prose mx-auto">Eight places inside one system — illustrative previews of where the CHEW intelligence engine is headed, not services CHEW provides today. Choose one to step in.</p>
       </div>
+      <div class="cx-worlds-connections">
+        <svg viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true">
+          <line x1="12" y1="8" x2="50" y2="30" stroke="rgba(232,206,122,0.28)" stroke-width="0.2"/>
+          <line x1="37" y1="8" x2="50" y2="30" stroke="rgba(232,206,122,0.28)" stroke-width="0.2"/>
+          <line x1="62" y1="8" x2="50" y2="30" stroke="rgba(232,206,122,0.28)" stroke-width="0.2"/>
+          <line x1="87" y1="8" x2="50" y2="30" stroke="rgba(232,206,122,0.28)" stroke-width="0.2"/>
+          <line x1="12" y1="52" x2="50" y2="30" stroke="rgba(232,206,122,0.28)" stroke-width="0.2"/>
+          <line x1="37" y1="52" x2="50" y2="30" stroke="rgba(232,206,122,0.28)" stroke-width="0.2"/>
+          <line x1="62" y1="52" x2="50" y2="30" stroke="rgba(232,206,122,0.28)" stroke-width="0.2"/>
+          <line x1="87" y1="52" x2="50" y2="30" stroke="rgba(232,206,122,0.28)" stroke-width="0.2"/>
+        </svg>
       <div class="cx-worlds-grid" id="cx-worlds-grid" data-reveal>
         <a href="world-home.html" class="cx-world-card" id="cx-world-home" style="--world-portal:url(assets/worlds/home.jpg);">
           <span class="cx-world-card-index">World 01</span>
@@ -102,6 +116,7 @@
           <h3>Protect</h3>
           <p>The plan for when life doesn't go to plan.</p>
         </a>
+      </div>
       </div>
     </div>
   </section>

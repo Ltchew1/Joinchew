@@ -4508,3 +4508,151 @@ a.pbc-resource:hover { text-decoration: none; border-color: var(--panel-border);
 @media (max-width: 640px) {
   .wp-switcher { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   WORLDS — IMMERSIVE EXPERIENCE PASS
+   Composition only: the routes, real photography, real Playbook
+   links, and educational content from the previous pass are
+   unchanged. What changes is how they're staged — one continuous
+   photographic environment instead of hero-then-website-sections,
+   glass "stations" instead of accordion bars, a strategy-medallion
+   Related Plays row instead of tags, and a fixed/transparent header
+   so the World never visually resets into "now a normal page."
+   ============================================================ */
+
+/* ---- One integrated nav: on World pages the shared header floats
+   over the environment instead of stacking as a second bar. ---- */
+.is-world-page .site-header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  background: rgba(8,8,9,0.32); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(232,206,122,0.14);
+}
+.is-world-page .wp-back { top: 92px; }
+@media (max-width: 640px) { .is-world-page .wp-back { top: 78px; } }
+/* worlds.html's own hero has no full-bleed photo to float over — it
+   just needs room for the now-fixed header instead of the removed
+   in-flow one. */
+.is-world-page .page-hero { padding-top: 148px; }
+@media (max-width: 640px) { .is-world-page .page-hero { padding-top: 118px; } }
+
+/* ---- The scene: hero + nodes share one photographic environment.
+   The hero holds the identity (title/statement); the nodes dock
+   continues the *same* image, dimmed and softened, rather than
+   cutting to flat black — the World stays visible while exploring. ---- */
+.wp-hero { min-height: 78vh; }
+.wp-nodes-section {
+  position: relative; padding: 64px 0 80px; overflow: hidden;
+  background: var(--black);
+}
+.wp-nodes-section::before {
+  content: ''; position: absolute; inset: 0; z-index: 0;
+  background-image: var(--world-asset); background-size: cover; background-position: center;
+  opacity: 0.22; filter: saturate(0.75) blur(1.5px);
+}
+.wp-nodes-section::after {
+  content: ''; position: absolute; inset: 0; z-index: 0;
+  background: linear-gradient(180deg, rgba(6,6,7,0.55) 0%, rgba(6,6,7,0.88) 46%, var(--black) 100%);
+}
+.wp-nodes-head, .wp-nodes-grid { position: relative; z-index: 1; }
+.wp-nodes-head { text-align: center; margin: 0 auto 36px; }
+
+/* ---- Nodes as stations, not FAQ rows: a numbered glass plaque with
+   room to open in place, corner brackets borrowed from the site's
+   existing "instrument, not a webpage" language. ---- */
+.wp-nodes-grid { grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.wp-node {
+  position: relative; min-height: 128px; padding: 26px 22px 22px;
+  border: 1px solid rgba(232,206,122,0.16); border-radius: 4px;
+  background: linear-gradient(160deg, rgba(255,250,240,0.05), rgba(8,8,9,0.55));
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.wp-node::before, .wp-node::after {
+  content: ''; position: absolute; width: 14px; height: 14px;
+  border-color: var(--gold-deep); border-style: solid; border-width: 0;
+  opacity: 0.55; transition: opacity 0.3s ease, border-color 0.3s ease;
+}
+.wp-node::before { top: -1px; left: -1px; border-top-width: 1px; border-left-width: 1px; }
+.wp-node::after { bottom: -1px; right: -1px; border-bottom-width: 1px; border-right-width: 1px; }
+.wp-node:hover, .wp-node.is-open { border-color: rgba(232,206,122,0.4); }
+.wp-node:hover::before, .wp-node:hover::after, .wp-node.is-open::before, .wp-node.is-open::after { opacity: 1; border-color: var(--gold-light); }
+.wp-node-label { font-size: 1.05rem; }
+.wp-node.is-open .wp-node-body { max-height: 260px; }
+
+/* ---- Related Plays: strategy medallions on a connecting line,
+   the Playbook's own material language, not tags under an article. ---- */
+.wp-plays-section { padding: 64px 0; background: var(--black-soft); border-top: 1px solid var(--panel-border-soft); border-bottom: 1px solid var(--panel-border-soft); }
+.wp-plays-inner {
+  max-width: var(--max-width); margin: 0 auto; padding: 0 24px;
+  display: block; text-align: center; background: none; border: none;
+}
+.wp-plays-label { display: block; margin-bottom: 4px; }
+.wp-plays-row { position: relative; display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 30px 40px; margin: 26px 0 28px; }
+.wp-plays-row::before {
+  content: ''; position: absolute; left: 12%; right: 12%; top: 34px; height: 1px; z-index: 0;
+  background: linear-gradient(90deg, transparent, rgba(232,206,122,0.3), transparent);
+}
+.wp-play-medallion { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; width: 96px; text-decoration: none; color: var(--text); }
+.wp-play-medallion:hover, .wp-play-medallion:focus-visible { text-decoration: none; }
+.wp-play-medallion-icon {
+  width: 68px; height: 68px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 35% 30%, rgba(232,206,122,0.14), rgba(10,8,4,0.5));
+  border: 1px solid var(--panel-border); color: var(--gold-light);
+  transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+.wp-play-medallion-icon svg { width: 30px; height: 30px; stroke: currentColor; stroke-width: 1.5; fill: none; }
+.wp-play-medallion:hover .wp-play-medallion-icon, .wp-play-medallion:focus-visible .wp-play-medallion-icon {
+  border-color: var(--gold-light); transform: translateY(-4px);
+  box-shadow: 0 0 20px rgba(201,162,39,0.28);
+}
+.wp-play-medallion-name { font-size: 0.8rem; text-align: center; line-height: 1.3; }
+.wp-plays-link { display: inline-block; margin-top: 6px; }
+
+/* ---- A slim, subordinate Make Your Move line — not a dedicated
+   black CTA section. The button in the fixed header already carries
+   the primary CTA throughout the whole experience. ---- */
+.wp-move-slim { padding: 30px 0; text-align: center; border-bottom: 1px solid var(--panel-border-soft); }
+.wp-move-slim p { margin: 0; font-size: 0.92rem; color: var(--text-muted); }
+.wp-move-slim a { color: var(--gold-light); font-weight: 600; }
+
+/* ---- Portal Rail: a real preview of where you're going, not a
+   passive strip — bigger photography, bigger type. ---- */
+.wp-switcher-link { min-height: 260px; padding: 40px 32px; }
+.wp-switcher-name { font-size: clamp(1.6rem, 3vw, 2.1rem); }
+@media (max-width: 640px) { .wp-switcher-link { min-height: 190px; padding: 28px 22px; } }
+
+/* ---- Compressed World-page footer: legal stays present, the
+   visual weight stays with the Worlds universe, not Company/
+   Resources/Legal columns. ---- */
+.wp-footer { padding: 44px 0 32px; background: var(--black); border-top: 1px solid var(--panel-border-soft); }
+.wp-footer .container { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
+
+@media (max-width: 900px) {
+  .wp-nodes-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .wp-nodes-grid { grid-template-columns: 1fr; }
+  .wp-nodes-section { padding: 48px 0 56px; }
+  .wp-plays-row::before { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wp-node, .wp-play-medallion-icon { transition: none; }
+}
+
+/* ============================================================
+   WORLDS HUB — the universe, not eight cards
+   ============================================================ */
+.cx-worlds-glyph { display: flex; justify-content: center; margin-bottom: 18px; }
+.cx-worlds-glyph img { width: 64px; height: auto; filter: drop-shadow(0 0 18px rgba(201,162,39,0.35)); }
+.cx-worlds-connections { position: relative; }
+.cx-worlds-connections svg { position: absolute; inset: -20px; z-index: 0; pointer-events: none; opacity: 0.5; }
+.cx-worlds-grid { position: relative; z-index: 1; }
+
+.hx-lifemap-section { padding: 108px 0 100px; }
+.hx-lifemap-section::before {
+  content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse 60% 60% at 50% 45%, rgba(201,162,39,0.1), transparent 70%);
+}
+.lifemap-wrap { max-width: 640px; }
+@media (max-width: 900px) { .lifemap-wrap { max-width: 480px; } }
