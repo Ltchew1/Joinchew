@@ -50,74 +50,61 @@
         <span aria-hidden="true">&larr;</span> Back to the Board
       </a>
       <span class="eyebrow">Worlds</span>
-      <h1 style="max-width:22ch;">Explore the economic universe.</h1>
+      <h1 style="max-width:22ch; font-size:clamp(2.1rem, 3.6vw, 3.2rem);">Explore the economic universe.</h1>
     </div>
   </section>
 
-  <section class="cx-worlds" id="cx-worlds" style="padding-top:48px;">
+  <section class="cx-worlds" id="cx-worlds" style="padding-top:16px;">
     <div class="container">
-      <div class="text-center max-prose mx-auto" data-reveal>
-        <div class="cx-worlds-glyph">
-          <img src="assets/icon-worlds-globe.png" alt="" width="64" height="64" loading="lazy">
-        </div>
+      <div class="text-center max-prose mx-auto" data-reveal style="margin-bottom:0;">
         <span class="eyebrow">The Eight Worlds</span>
-        <h2>Every part of your life CHEW is built to eventually hold.</h2>
-        <p class="max-prose mx-auto">Eight places inside one system — illustrative previews of where the CHEW intelligence engine is headed, not services CHEW provides today. Choose one to step in.</p>
+        <h2 style="font-size:clamp(1.5rem,2.6vw,2.1rem); margin:8px 0 6px;">One system. Eight places inside it.</h2>
+        <p class="max-prose mx-auto" style="font-size:0.92rem; margin:0 auto;">Illustrative previews of where the CHEW intelligence engine is headed — every one connected back to the same board and the same Playbook. Hover a World to see what it touches.</p>
       </div>
-      <div class="cx-worlds-connections">
-        <svg viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true">
-          <line x1="12" y1="8" x2="50" y2="30" stroke="rgba(232,206,122,0.28)" stroke-width="0.2"/>
-          <line x1="37" y1="8" x2="50" y2="30" stroke="rgba(232,206,122,0.28)" stroke-width="0.2"/>
-          <line x1="62" y1="8" x2="50" y2="30" stroke="rgba(232,206,122,0.28)" stroke-width="0.2"/>
-          <line x1="87" y1="8" x2="50" y2="30" stroke="rgba(232,206,122,0.28)" stroke-width="0.2"/>
-          <line x1="12" y1="52" x2="50" y2="30" stroke="rgba(232,206,122,0.28)" stroke-width="0.2"/>
-          <line x1="37" y1="52" x2="50" y2="30" stroke="rgba(232,206,122,0.28)" stroke-width="0.2"/>
-          <line x1="62" y1="52" x2="50" y2="30" stroke="rgba(232,206,122,0.28)" stroke-width="0.2"/>
-          <line x1="87" y1="52" x2="50" y2="30" stroke="rgba(232,206,122,0.28)" stroke-width="0.2"/>
-        </svg>
-      <div class="cx-worlds-grid" id="cx-worlds-grid" data-reveal>
-        <a href="world-home.html" class="cx-world-card" id="cx-world-home" style="--world-portal:url(assets/worlds/home.jpg);">
-          <span class="cx-world-card-index">World 01</span>
+
+      <div class="wh-diagram" id="wh-diagram" data-reveal>
+        <svg class="wh-routes" id="wh-routes" aria-hidden="true"></svg>
+
+        <div class="wh-core">
+          <div class="wh-core-ring" aria-hidden="true"></div>
+          <img src="assets/icon-worlds-globe.png" alt="The CHEW Worlds — one connected system" width="220" height="220" loading="lazy">
+          <span class="wh-core-label">The CHEW System</span>
+        </div>
+
+        <a href="world-home.html" class="wh-portal wh-portal--home" id="cx-world-home" data-world="home" style="--world-portal:url(assets/worlds/home.jpg);">
+          <span class="wh-portal-index">World 01</span>
           <h3>Home</h3>
-          <p>Everyday money, finally in one place.</p>
         </a>
-        <a href="world-drive.html" class="cx-world-card" id="cx-world-drive" style="--world-portal:url(assets/worlds/drive.jpg);">
-          <span class="cx-world-card-index">World 02</span>
-          <h3>Drive</h3>
-          <p>A vehicle, without wrecking the rest of the plan.</p>
-        </a>
-        <a href="world-build.html" class="cx-world-card" id="cx-world-build" style="--world-portal:url(assets/worlds/build.jpg);">
-          <span class="cx-world-card-index">World 03</span>
-          <h3>Build</h3>
-          <p>Turning a business idea into something fundable.</p>
-        </a>
-        <a href="world-go.html" class="cx-world-card" id="cx-world-go" style="--world-portal:url(assets/worlds/go.jpg);">
-          <span class="cx-world-card-index">World 04</span>
-          <h3>Go</h3>
-          <p>The freedom to move, on your own terms.</p>
-        </a>
-        <a href="world-celebrate.html" class="cx-world-card" id="cx-world-celebrate" style="--world-portal:url(assets/worlds/celebrate.jpg);">
-          <span class="cx-world-card-index">World 05</span>
-          <h3>Celebrate</h3>
-          <p>Milestones, without the money hangover after.</p>
-        </a>
-        <a href="world-property.html" class="cx-world-card" id="cx-world-property" style="--world-portal:url(assets/worlds/property.jpg);">
-          <span class="cx-world-card-index">World 06</span>
-          <h3>Property</h3>
-          <p>Owning real estate, on purpose and on paper.</p>
-        </a>
-        <a href="world-level-up.html" class="cx-world-card" id="cx-world-levelup" style="--world-portal:url(assets/worlds/levelup.jpg);">
-          <span class="cx-world-card-index">World 07</span>
-          <h3>Level Up</h3>
-          <p>Skills and income, moving the same direction.</p>
-        </a>
-        <a href="world-protect.html" class="cx-world-card" id="cx-world-protect" style="--world-portal:url(assets/worlds/protect.jpg);">
-          <span class="cx-world-card-index">World 08</span>
+        <a href="world-protect.html" class="wh-portal wh-portal--protect" id="cx-world-protect" data-world="protect" style="--world-portal:url(assets/worlds/protect.jpg);">
+          <span class="wh-portal-index">World 08</span>
           <h3>Protect</h3>
-          <p>The plan for when life doesn't go to plan.</p>
+        </a>
+        <a href="world-drive.html" class="wh-portal wh-portal--drive" id="cx-world-drive" data-world="drive" style="--world-portal:url(assets/worlds/drive.jpg);">
+          <span class="wh-portal-index">World 02</span>
+          <h3>Drive</h3>
+        </a>
+        <a href="world-property.html" class="wh-portal wh-portal--property" id="cx-world-property" data-world="property" style="--world-portal:url(assets/worlds/property.jpg);">
+          <span class="wh-portal-index">World 06</span>
+          <h3>Property</h3>
+        </a>
+        <a href="world-build.html" class="wh-portal wh-portal--build" id="cx-world-build" data-world="build" style="--world-portal:url(assets/worlds/build.jpg);">
+          <span class="wh-portal-index">World 03</span>
+          <h3>Build</h3>
+        </a>
+        <a href="world-level-up.html" class="wh-portal wh-portal--levelup" id="cx-world-levelup" data-world="levelup" style="--world-portal:url(assets/worlds/levelup.jpg);">
+          <span class="wh-portal-index">World 07</span>
+          <h3>Level Up</h3>
+        </a>
+        <a href="world-go.html" class="wh-portal wh-portal--go" id="cx-world-go" data-world="go" style="--world-portal:url(assets/worlds/go.jpg);">
+          <span class="wh-portal-index">World 04</span>
+          <h3>Go</h3>
+        </a>
+        <a href="world-celebrate.html" class="wh-portal wh-portal--celebrate" id="cx-world-celebrate" data-world="celebrate" style="--world-portal:url(assets/worlds/celebrate.jpg);">
+          <span class="wh-portal-index">World 05</span>
+          <h3>Celebrate</h3>
         </a>
       </div>
-      </div>
+      <p class="wh-caption">Hover a World to see which parts of the Life Map below it conceptually touches — an illustrative connection, not your real data.</p>
     </div>
   </section>
 
@@ -252,7 +239,7 @@
   // — the card itself is now a real link to its own dedicated page.
   if (!location.hash) return;
   var target = document.querySelector(location.hash);
-  if (target && target.classList.contains('cx-world-card')) {
+  if (target && target.classList.contains('wh-portal')) {
     window.setTimeout(function () { target.scrollIntoView({ block: 'center' }); }, 60);
   }
 })();

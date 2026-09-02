@@ -16,7 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
-<body class="is-world-page" style="--world-asset:url(assets/worlds/home.jpg);">
+<body class="is-world-page" data-world="home" style="--world-asset:url(assets/worlds/home.jpg);">
 <header class="site-header">
   <div class="container">
     <a href="index.html" class="brand">
@@ -42,6 +42,22 @@
 </header>
 
 <main>
+<div class="wp-drawer" id="wp-drawer" hidden>
+  <div class="wp-drawer-scrim" data-drawer-close></div>
+  <div class="wp-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="wp-drawer-title">
+    <button type="button" class="wp-drawer-close" data-drawer-close aria-label="Close">&times;</button>
+    <span class="wp-drawer-index" id="wp-drawer-index"></span>
+    <h3 id="wp-drawer-title"></h3>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">What It Is</span><p id="wp-drawer-what"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">Why It Matters</span><p id="wp-drawer-why"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">What To Look At</span><p id="wp-drawer-look"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">How It Connects</span><p id="wp-drawer-connects"></p></div>
+    <div class="wp-drawer-play" id="wp-drawer-play" hidden>
+      <a id="wp-drawer-play-link" href="playbook.html">Related Play: <span id="wp-drawer-play-name"></span> &rarr;</a>
+    </div>
+    <p class="wp-drawer-explore" id="wp-drawer-explore" hidden><a id="wp-drawer-explore-link" href="apply.html"></a></p>
+  </div>
+</div>
   <section class="wp-hero">
     <div class="wp-hero-bg"></div>
     <div class="wp-hero-scrim"></div>
@@ -56,40 +72,53 @@
       <h1>Home</h1>
       <p class="wp-hero-statement">Build toward the place you want to call yours.</p>
       <p class="wp-hero-lede">Homeownership isn't one decision — it's a sequence: what's already true, what's still missing, and what order to close the gaps in. CHEW maps that sequence instead of guessing at it.</p>
+      <span class="wp-hero-mood">ARCHITECTURAL STABILITY</span>
       <a href="#wp-nodes-home" class="wp-hero-scroll">Explore this World &darr;</a>
     </div>
   </section>
 
   <section class="wp-nodes-section" id="wp-nodes-home">
+    <div class="wp-nodes-reflection" aria-hidden="true"></div>
     <div class="container">
       <div class="wp-nodes-head" data-reveal>
         <span class="eyebrow">Inside Home</span>
         <h2>What actually determines when Home is real.</h2>
       </div>
-      <div class="wp-nodes-grid" data-reveal>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Home Position<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>Where you actually stand today — income, savings, credit, and your current housing situation — the real starting facts, not a guess.</p></div>
+      <div class="wp-map" data-reveal data-nodes="6">
+        <svg class="wm-routes" aria-hidden="true"></svg>
+        <div class="wm-core">
+          <span class="wm-core-eyebrow">World Core</span>
+          <span class="wm-core-name">Home</span>
+        </div>
+        <button type="button" class="wp-node" style="grid-area:n1;" aria-expanded="false" data-index="Station 01" data-title="Home Position" data-what="Where you actually stand today — income, savings, credit, and your current housing situation — the real starting facts, not a guess." data-why="Every other node on this board is measured against this one — get the starting facts wrong and every sequence after it drifts." data-look="The gap between your current housing cost and what you're actually saving each month, not just your income number." data-connects="Feeds directly into Cash + Reserves and Monthly Load — Home Position is the baseline the whole sequence is built from." data-explore-text="See how this shapes your Make Your Move" data-explore-href="apply.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="10"/><path d="M19,11 L16,16 L13,21 L16,16 Z" stroke-linejoin="round"/></svg></span>
+          <span class="wp-node-index">Station 01</span>
+          <span class="wp-node-label">Home Position</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Cash + Reserves<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>What's saved, what's liquid, and what a real down payment and closing costs actually require before anything else moves.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n2;" aria-expanded="false" data-index="Station 02" data-title="Cash + Reserves" data-what="What's saved, what's liquid, and what a real down payment and closing costs actually require before anything else moves." data-why="A home decision made before reserves are real tends to solve one problem by creating three smaller ones." data-look="Liquid savings versus anything tied up or hard to access quickly — only the liquid number counts here." data-connects="This is where the Playbook's Buffer Play shows up directly — reserves are the buffer a home purchase leans on." data-play="Buffer Play" data-play-href="playbook.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><rect x="7" y="7" width="18" height="18" rx="2"/><circle cx="16" cy="16" r="5"/><path d="M16,12 V16 L18.5,17.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="wp-node-index">Station 02</span>
+          <span class="wp-node-label">Cash + Reserves</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Monthly Load<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>Every recurring obligation already on the books, counted honestly before a mortgage payment gets added on top of it.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n3;" aria-expanded="false" data-index="Station 03" data-title="Monthly Load" data-what="Every recurring obligation already on the books, counted honestly before a mortgage payment gets added on top of it." data-why="Lenders look at this number too — knowing it first means no surprises when the real conversation starts." data-look="Obligations that are easy to forget: subscriptions, support payments, irregular bills that don't show up on a pay stub." data-connects="Connects straight to Buy / Rent / Prepare — the load determines which of the three paths is actually realistic right now." data-explore-text="See how this shapes your Make Your Move" data-explore-href="apply.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M5,20 Q10,12 16,18 T27,14" stroke-linecap="round"/><path d="M5,25 Q10,19 16,23 T27,21" stroke-linecap="round" opacity="0.5"/></svg></span>
+          <span class="wp-node-index">Station 03</span>
+          <span class="wp-node-label">Monthly Load</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Buy / Rent / Prepare<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>Three honest categories, not one default answer. CHEW doesn't assume buying is always the right next move — sometimes preparing is.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n4;" aria-expanded="false" data-index="Station 04" data-title="Buy / Rent / Prepare" data-what="Three honest categories, not one default answer. CHEW doesn't assume buying is always the right next move — sometimes preparing is." data-why="Most guidance skips straight to 'buy' — treating Prepare as a real, valid answer is what keeps this honest." data-look="Which of the three a real cash+load picture actually supports today, not which one feels like the milestone." data-connects="Pulls directly from Cash + Reserves and Monthly Load — this is where those two numbers turn into a real decision." data-explore-text="See how this shapes your Make Your Move" data-explore-href="apply.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,6 V14" stroke-linecap="round"/><path d="M16,14 L8,26 M16,14 L16,26 M16,14 L24,26" stroke-linecap="round"/></svg></span>
+          <span class="wp-node-index">Station 04</span>
+          <span class="wp-node-label">Buy / Rent / Prepare</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Documentation &amp; Timing<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>What paperwork actually needs to exist before an offer, and whether the timing works with everything else already on your plate.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n5;" aria-expanded="false" data-index="Station 05" data-title="Documentation &amp; Timing" data-what="What paperwork actually needs to exist before an offer, and whether the timing works with everything else already on your plate." data-why="Missing documentation is one of the most common reasons a real opportunity gets lost to someone who was simply more prepared." data-look="The document list a real lender will actually ask for — not the generic checklist, the specific one for your situation." data-connects="Sets up Future-Back — once the documents and timing are known, the sequence can be built backward from the close date." data-explore-text="See how this shapes your Make Your Move" data-explore-href="apply.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><rect x="8" y="5" width="16" height="21" rx="1"/><line x1="11" y1="10" x2="21" y2="10"/><line x1="11" y1="14" x2="21" y2="14"/><circle cx="16" cy="21" r="4"/></svg></span>
+          <span class="wp-node-index">Station 05</span>
+          <span class="wp-node-label">Documentation & Timing</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Future-Back<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>Start at the closing date and walk backward to what has to be true first, in order — the same logic CHEW runs live in the Playbook.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n6;" aria-expanded="false" data-index="Station 06" data-title="Future-Back" data-what="Start at the closing date and walk backward to what has to be true first, in order — the same logic CHEW runs live in the Playbook." data-why="Working backward from the goal is the only way to catch a hidden dependency before it becomes a delay." data-look="The one requirement, if any, that everything else in the sequence is quietly waiting on." data-connects="This node is the Wait and Cleanup Plays applied directly to a home purchase — open the Playbook to see the full logic." data-play="Wait Play" data-play-href="playbook.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,27 C16,27 24,18 24,12 A8,8 0 1 0 8,12 C8,18 16,27 16,27 Z" stroke-linejoin="round"/><circle cx="16" cy="12" r="3"/></svg></span>
+          <span class="wp-node-index">Station 06</span>
+          <span class="wp-node-label">Future-Back</span>
         </button>
       </div>
     </div>
@@ -99,26 +128,27 @@
     <div class="wp-plays-inner" data-reveal>
       <span class="wp-plays-label">Related Plays in the Playbook</span>
       <div class="wp-plays-row">
-        <a href="playbook.html" class="wp-play-medallion">
+        <a href="playbook.html" class="wp-play-medallion" data-note="In Home, Wait means holding until reserves and documentation are both real — not rushing an offer before the sequence is ready.">
           <span class="wp-play-medallion-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M9,5H23M9,27H23M10,5c0,7,12,7,12,11c0,4-12,4-12,11M22,5c0,7-12,7-12,11c0,4,12,4,12,11" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           <span class="wp-play-medallion-name">Wait Play</span>
         </a>
-        <a href="playbook.html" class="wp-play-medallion">
+        <a href="playbook.html" class="wp-play-medallion" data-note="Reserves are the buffer under a home decision — this Play is what keeps a purchase from draining the safety net underneath it.">
           <span class="wp-play-medallion-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,4 L26,8 V15 C26,22 21,26 16,28 C11,26 6,22 6,15 V8 Z" stroke-linejoin="round"/></svg></span>
           <span class="wp-play-medallion-name">Buffer Play</span>
         </a>
-        <a href="playbook.html" class="wp-play-medallion">
+        <a href="playbook.html" class="wp-play-medallion" data-note="Before a lender looks at your file, Cleanup clears the obligations and documentation gaps that would otherwise slow the sequence down.">
           <span class="wp-play-medallion-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M21,4 L11,22" stroke-linecap="round"/><path d="M11,22 L6,28 M11,22 L9,29 M11,22 L14,28" stroke-linecap="round"/><path d="M17,9 L23,13" stroke-linecap="round"/></svg></span>
           <span class="wp-play-medallion-name">Cleanup Play</span>
         </a>
       </div>
-      <a href="playbook.html" class="wp-plays-link">Open the Playbook &rarr;</a>
+      <p class="wp-plays-note">Hover a Play to see why it matters in Home.</p>
+      <a href="playbook.html" class="wp-plays-link">Enter the Playbook &rarr;</a>
     </div>
   </section>
 
   <section class="wp-move-slim">
     <div class="container">
-      <p>Ready to see where you actually stand? <a href="apply.html">Make Your Move &rarr;</a></p>
+      <p>Ready to make Home personal? <a href="apply.html">Make Your Move &rarr;</a></p>
     </div>
   </section>
 </main>

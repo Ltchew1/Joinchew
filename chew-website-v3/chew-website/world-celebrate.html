@@ -16,7 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
-<body class="is-world-page" style="--world-asset:url(assets/worlds/celebrate.jpg);">
+<body class="is-world-page" data-world="celebrate" style="--world-asset:url(assets/worlds/celebrate.jpg);">
 <header class="site-header">
   <div class="container">
     <a href="index.html" class="brand">
@@ -42,6 +42,22 @@
 </header>
 
 <main>
+<div class="wp-drawer" id="wp-drawer" hidden>
+  <div class="wp-drawer-scrim" data-drawer-close></div>
+  <div class="wp-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="wp-drawer-title">
+    <button type="button" class="wp-drawer-close" data-drawer-close aria-label="Close">&times;</button>
+    <span class="wp-drawer-index" id="wp-drawer-index"></span>
+    <h3 id="wp-drawer-title"></h3>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">What It Is</span><p id="wp-drawer-what"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">Why It Matters</span><p id="wp-drawer-why"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">What To Look At</span><p id="wp-drawer-look"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">How It Connects</span><p id="wp-drawer-connects"></p></div>
+    <div class="wp-drawer-play" id="wp-drawer-play" hidden>
+      <a id="wp-drawer-play-link" href="playbook.html">Related Play: <span id="wp-drawer-play-name"></span> &rarr;</a>
+    </div>
+    <p class="wp-drawer-explore" id="wp-drawer-explore" hidden><a id="wp-drawer-explore-link" href="apply.html"></a></p>
+  </div>
+</div>
   <section class="wp-hero">
     <div class="wp-hero-bg"></div>
     <div class="wp-hero-scrim"></div>
@@ -56,36 +72,48 @@
       <h1>Celebrate</h1>
       <p class="wp-hero-statement">Milestones, without the money hangover after.</p>
       <p class="wp-hero-lede">CHEW doesn't plan the wedding or the party — that's not what this is. CHEW builds the buffer underneath it, so the celebration doesn't become next year's regret.</p>
+      <span class="wp-hero-mood">LIGHT & MILESTONE</span>
       <a href="#wp-nodes-celebrate" class="wp-hero-scroll">Explore this World &darr;</a>
     </div>
   </section>
 
   <section class="wp-nodes-section" id="wp-nodes-celebrate">
+    <div class="wp-nodes-reflection" aria-hidden="true"></div>
     <div class="container">
       <div class="wp-nodes-head" data-reveal>
         <span class="eyebrow">Inside Celebrate</span>
         <h2>What actually protects a big moment financially.</h2>
       </div>
-      <div class="wp-nodes-grid" data-reveal>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Plan the Moment<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>What the event actually costs, honestly totaled — not the number it starts at before everything gets added.</p></div>
+      <div class="wp-map" data-reveal data-nodes="5">
+        <svg class="wm-routes" aria-hidden="true"></svg>
+        <div class="wm-core">
+          <span class="wm-core-eyebrow">World Core</span>
+          <span class="wm-core-name">Celebrate</span>
+        </div>
+        <button type="button" class="wp-node" style="grid-area:n1;" aria-expanded="false" data-index="Station 01" data-title="Plan the Moment" data-what="What the event actually costs, honestly totaled — not the number it starts at before everything gets added." data-why="The number an event starts at is rarely the number it ends at — totaling honestly early avoids the gap showing up later." data-look="Every line item that tends to get added after the initial budget is set." data-connects="Feeds Timeline — the real total determines how far out savings actually need to start." data-explore-text="See how this shapes your Make Your Move" data-explore-href="apply.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><rect x="7" y="5" width="18" height="22" rx="1"/><path d="M10.5,12 L12.5,14 L16.5,9" stroke-linecap="round" stroke-linejoin="round"/><line x1="19" y1="11" x2="22" y2="11" stroke-linecap="round"/><path d="M10.5,19 L12.5,21 L16.5,16" stroke-linecap="round" stroke-linejoin="round"/><line x1="19" y1="18" x2="22" y2="18" stroke-linecap="round"/></svg></span>
+          <span class="wp-node-index">Station 01</span>
+          <span class="wp-node-label">Plan the Moment</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Timeline<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>How far out the real savings runway needs to start, worked backward from the date.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n2;" aria-expanded="false" data-index="Station 02" data-title="Timeline" data-what="How far out the real savings runway needs to start, worked backward from the date." data-why="A short runway forces the funding conversation toward credit by default — a longer one keeps Save on the table." data-look="The latest date savings could realistically start and still hit the total without relying on credit." data-connects="Directly shapes which of the three paths in Save / Pay / Wait is realistic." data-explore-text="See how this shapes your Make Your Move" data-explore-href="apply.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M9,6 H23 M9,26 H23 M9,6 L23,26 M23,6 L9,26" stroke-linecap="round"/></svg></span>
+          <span class="wp-node-index">Station 02</span>
+          <span class="wp-node-label">Timeline</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Save / Pay / Wait<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>Three honest paths for funding a milestone — not a default assumption that it goes on a card.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n3;" aria-expanded="false" data-index="Station 03" data-title="Save / Pay / Wait" data-what="Three honest paths for funding a milestone — not a default assumption that it goes on a card." data-why="Defaulting to credit isn't a decision — weighing all three honestly is what makes it one." data-look="Whether the Timeline actually supports Save, or whether Wait is the more honest answer right now." data-connects="This is where the Buffer Play applies — a milestone funded from reserves instead of new debt." data-play="Buffer Play" data-play-href="playbook.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,6 V14" stroke-linecap="round"/><path d="M16,14 L8,26 M16,14 L16,26 M16,14 L24,26" stroke-linecap="round"/></svg></span>
+          <span class="wp-node-index">Station 03</span>
+          <span class="wp-node-label">Save / Pay / Wait</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Protect the Aftermath<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>What's left in reserves the week after, so the celebration doesn't quietly become a financial setback.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n4;" aria-expanded="false" data-index="Station 04" data-title="Protect the Aftermath" data-what="What's left in reserves the week after, so the celebration doesn't quietly become a financial setback." data-why="The moment itself is rarely the problem — what's left the week after is what determines whether it becomes one." data-look="The minimum reserve balance that should still exist after the event, before spending is finalized." data-connects="Connects straight back to Buffer — protecting the aftermath is the same discipline as funding the event itself." data-play="Buffer Play" data-play-href="playbook.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><rect x="7" y="7" width="18" height="18" rx="2"/><circle cx="16" cy="16" r="5"/><path d="M16,12 V16 L18.5,17.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="wp-node-index">Station 04</span>
+          <span class="wp-node-label">Protect the Aftermath</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Celebrate Play<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>The Buffer Play shows up here — see how it applies to milestone spending in the Playbook.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n5;" aria-expanded="false" data-index="Station 05" data-title="Celebrate Play" data-what="The Buffer Play shows up here — see how it applies to milestone spending in the Playbook." data-why="Buffer is the single Play that governs both funding the moment and protecting what's left after it." data-look="How much of your current reserve is realistically available for this milestone without going below your floor." data-connects="Open the Playbook to see the Buffer Play mapped to milestone spending specifically." data-play="Buffer Play" data-play-href="playbook.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,27 C16,27 24,18 24,12 A8,8 0 1 0 8,12 C8,18 16,27 16,27 Z" stroke-linejoin="round"/><circle cx="16" cy="12" r="3"/></svg></span>
+          <span class="wp-node-index">Station 05</span>
+          <span class="wp-node-label">Celebrate Play</span>
         </button>
       </div>
       <p class="text-center" style="font-size:0.8rem; color:var(--text-faint); margin-top:28px;">CHEW addresses the financial side of a milestone only — not event planning, vendor booking, or logistics.</p>
@@ -96,18 +124,19 @@
     <div class="wp-plays-inner" data-reveal>
       <span class="wp-plays-label">Related Plays in the Playbook</span>
       <div class="wp-plays-row">
-        <a href="playbook.html" class="wp-play-medallion">
+        <a href="playbook.html" class="wp-play-medallion" data-note="Celebrate runs on one Play — Buffer. Funding the moment from reserves, and protecting what's left once it's over.">
           <span class="wp-play-medallion-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,4 L26,8 V15 C26,22 21,26 16,28 C11,26 6,22 6,15 V8 Z" stroke-linejoin="round"/></svg></span>
           <span class="wp-play-medallion-name">Buffer Play</span>
         </a>
       </div>
-      <a href="playbook.html" class="wp-plays-link">Open the Playbook &rarr;</a>
+      <p class="wp-plays-note">Hover a Play to see why it matters in Celebrate.</p>
+      <a href="playbook.html" class="wp-plays-link">Enter the Playbook &rarr;</a>
     </div>
   </section>
 
   <section class="wp-move-slim">
     <div class="container">
-      <p>Ready to see where you actually stand? <a href="apply.html">Make Your Move &rarr;</a></p>
+      <p>Ready to make Celebrate personal? <a href="apply.html">Make Your Move &rarr;</a></p>
     </div>
   </section>
 </main>

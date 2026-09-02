@@ -81,15 +81,205 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // World destination pages — shared interactive-node accordion. Same
-  // pattern on all eight world-*.html pages; each node just toggles its
-  // own static educational text, nothing personalized or fetched.
-  document.querySelectorAll('.wp-node').forEach(function (node) {
-    node.addEventListener('click', function () {
-      var isOpen = node.classList.toggle('is-open');
-      node.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  // World destination pages — the World Map: stations arranged around
+  // a central World Core, with a real (DOM-measured) connecting-route
+  // overlay between each station and the core, redrawn on resize so it
+  // holds at any breakpoint. Selecting a station illuminates its route
+  // and opens the shared Intelligence Drawer instead of expanding in
+  // place — same static educational content as before, per-World and
+  // never fabricated, just staged as a drawer instead of an accordion.
+  (function () {
+    var map = document.querySelector('.wp-map');
+    if (!map) return;
+    var core = map.querySelector('.wm-core');
+    var nodes = Array.prototype.slice.call(map.querySelectorAll('.wp-node'));
+    var routesSvg = map.querySelector('.wm-routes');
+
+    function drawRoutes() {
+      if (!routesSvg || !core || window.innerWidth <= 900) { if (routesSvg) routesSvg.innerHTML = ''; return; }
+      var mapRect = map.getBoundingClientRect();
+      var coreRect = core.getBoundingClientRect();
+      var cx = coreRect.left + coreRect.width / 2 - mapRect.left;
+      var cy = coreRect.top + coreRect.height / 2 - mapRect.top;
+      routesSvg.innerHTML = '';
+      nodes.forEach(function (node, i) {
+        var r = node.getBoundingClientRect();
+        var nx = r.left + r.width / 2 - mapRect.left;
+        var ny = r.top + r.height / 2 - mapRect.top;
+        var mx = (cx + nx) / 2, my = (cy + ny) / 2;
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M ' + cx + ' ' + cy + ' Q ' + mx + ' ' + my + ' ' + nx + ' ' + ny);
+        path.dataset.index = String(i);
+        routesSvg.appendChild(path);
+      });
+    }
+    drawRoutes();
+    window.addEventListener('resize', drawRoutes);
+    window.addEventListener('load', drawRoutes);
+
+    var drawer = document.getElementById('wp-drawer');
+    if (!drawer) return;
+    var els = {
+      index: document.getElementById('wp-drawer-index'),
+      title: document.getElementById('wp-drawer-title'),
+      what: document.getElementById('wp-drawer-what'),
+      why: document.getElementById('wp-drawer-why'),
+      look: document.getElementById('wp-drawer-look'),
+      connects: document.getElementById('wp-drawer-connects'),
+      playWrap: document.getElementById('wp-drawer-play'),
+      playLink: document.getElementById('wp-drawer-play-link'),
+      playName: document.getElementById('wp-drawer-play-name'),
+      exploreWrap: document.getElementById('wp-drawer-explore'),
+      exploreLink: document.getElementById('wp-drawer-explore-link')
+    };
+    var closeTimer = null;
+
+    function openDrawer(node, i) {
+      nodes.forEach(function (n) { n.classList.remove('is-active'); n.setAttribute('aria-expanded', 'false'); });
+      node.classList.add('is-active');
+      node.setAttribute('aria-expanded', 'true');
+      if (routesSvg) {
+        routesSvg.querySelectorAll('path').forEach(function (p) {
+          p.classList.toggle('is-lit', Number(p.dataset.index) === i);
+        });
+      }
+      if (els.index) els.index.textContent = node.dataset.index || '';
+      if (els.title) els.title.textContent = node.dataset.title || '';
+      if (els.what) els.what.textContent = node.dataset.what || '';
+      if (els.why) els.why.textContent = node.dataset.why || '';
+      if (els.look) els.look.textContent = node.dataset.look || '';
+      if (els.connects) els.connects.textContent = node.dataset.connects || '';
+      if (els.playWrap) {
+        if (node.dataset.play) {
+          els.playWrap.hidden = false;
+          if (els.playName) els.playName.textContent = node.dataset.play;
+          if (els.playLink) els.playLink.href = node.dataset.playHref || 'playbook.html';
+        } else {
+          els.playWrap.hidden = true;
+        }
+      }
+      if (els.exploreWrap) {
+        if (node.dataset.exploreText) {
+          els.exploreWrap.hidden = false;
+          if (els.exploreLink) {
+            els.exploreLink.textContent = node.dataset.exploreText;
+            els.exploreLink.href = node.dataset.exploreHref || 'apply.html';
+          }
+        } else {
+          els.exploreWrap.hidden = true;
+        }
+      }
+      if (closeTimer) { window.clearTimeout(closeTimer); closeTimer = null; }
+      drawer.hidden = false;
+      void drawer.offsetWidth;
+      drawer.classList.add('is-open');
+      document.body.classList.add('wp-drawer-locked');
+    }
+    function closeDrawer() {
+      drawer.classList.remove('is-open');
+      nodes.forEach(function (n) { n.classList.remove('is-active'); n.setAttribute('aria-expanded', 'false'); });
+      if (routesSvg) routesSvg.querySelectorAll('path').forEach(function (p) { p.classList.remove('is-lit'); });
+      document.body.classList.remove('wp-drawer-locked');
+      closeTimer = window.setTimeout(function () { drawer.hidden = true; }, 420);
+    }
+    nodes.forEach(function (node, i) {
+      node.setAttribute('aria-expanded', 'false');
+      node.addEventListener('click', function () { openDrawer(node, i); });
+    });
+    drawer.querySelectorAll('[data-drawer-close]').forEach(function (el) {
+      el.addEventListener('click', closeDrawer);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && drawer.classList.contains('is-open')) closeDrawer();
+    });
+  })();
+
+  // Related Plays row — hovering/focusing a Play medallion swaps in a
+  // short "why this matters in this World" note; clicking still
+  // navigates straight to the Playbook (the medallion is a real link).
+  document.querySelectorAll('.wp-plays-inner').forEach(function (inner) {
+    var note = inner.querySelector('.wp-plays-note');
+    if (!note) return;
+    var defaultText = note.textContent;
+    inner.querySelectorAll('.wp-play-medallion').forEach(function (m) {
+      var text = m.getAttribute('data-note');
+      if (!text) return;
+      function show() { note.textContent = text; m.classList.add('is-active'); }
+      function hide() { note.textContent = defaultText; m.classList.remove('is-active'); }
+      m.addEventListener('mouseenter', show);
+      m.addEventListener('focus', show);
+      m.addEventListener('mouseleave', hide);
+      m.addEventListener('blur', hide);
     });
   });
+
+  // Worlds Hub — the canonical globe artifact as a literal centerpiece,
+  // with the eight real World portals arranged around it and a real
+  // (DOM-measured) orbital route system connecting them. Hovering a
+  // portal lights its route and previews — as a gentle highlight, not
+  // the full click-selection state — which Life Map categories that
+  // World conceptually touches (the same disclosed illustrative sample
+  // data already on this page, not real visitor facts).
+  (function () {
+    var diagram = document.querySelector('.wh-diagram');
+    if (!diagram) return;
+    var core = diagram.querySelector('.wh-core');
+    var portals = Array.prototype.slice.call(diagram.querySelectorAll('.wh-portal'));
+    var svg = diagram.querySelector('.wh-routes');
+
+    function draw() {
+      if (!svg || !core || window.innerWidth <= 900) { if (svg) svg.innerHTML = ''; return; }
+      var dRect = diagram.getBoundingClientRect();
+      var cRect = core.getBoundingClientRect();
+      var cx = cRect.left + cRect.width / 2 - dRect.left;
+      var cy = cRect.top + cRect.height / 2 - dRect.top;
+      svg.innerHTML = '';
+      portals.forEach(function (p, i) {
+        var r = p.getBoundingClientRect();
+        var nx = r.left + r.width / 2 - dRect.left;
+        var ny = r.top + r.height / 2 - dRect.top;
+        var mx = (cx + nx) / 2, my = (cy + ny) / 2;
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M ' + cx + ' ' + cy + ' Q ' + mx + ' ' + my + ' ' + nx + ' ' + ny);
+        path.dataset.index = String(i);
+        svg.appendChild(path);
+      });
+    }
+    draw();
+    window.addEventListener('resize', draw);
+    window.addEventListener('load', draw);
+
+    var lifemapWrap = document.getElementById('lifemap-wrap');
+    var WORLD_TERRITORIES = {
+      home: ['liquidity', 'credit', 'ownership'],
+      drive: ['liquidity', 'credit'],
+      build: ['business', 'capital', 'credit'],
+      property: ['property', 'capital', 'ownership'],
+      levelup: ['business', 'assets'],
+      go: ['liquidity'],
+      celebrate: ['liquidity', 'insurance'],
+      protect: ['insurance', 'assets', 'liquidity']
+    };
+    portals.forEach(function (p, i) {
+      var key = p.getAttribute('data-world');
+      function light() {
+        if (svg) svg.querySelectorAll('path').forEach(function (path) { path.classList.toggle('is-lit', Number(path.dataset.index) === i); });
+        if (lifemapWrap && key && WORLD_TERRITORIES[key]) {
+          WORLD_TERRITORIES[key].forEach(function (t) {
+            lifemapWrap.querySelectorAll('[data-territory="' + t + '"]').forEach(function (el) { el.classList.add('is-hub-preview'); });
+          });
+        }
+      }
+      function unlight() {
+        if (svg) svg.querySelectorAll('path').forEach(function (path) { path.classList.remove('is-lit'); });
+        if (lifemapWrap) lifemapWrap.querySelectorAll('.is-hub-preview').forEach(function (el) { el.classList.remove('is-hub-preview'); });
+      }
+      p.addEventListener('mouseenter', light);
+      p.addEventListener('focus', light);
+      p.addEventListener('mouseleave', unlight);
+      p.addEventListener('blur', unlight);
+    });
+  })();
 
   // Playbook's left sidebar — off-canvas on mobile, toggled the same way
   // the shared .nav-toggle works, just a separate element since this
@@ -481,7 +671,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Worlds hub's eight World cards, which now route to their own
   // dedicated pages instead of opening an in-page preview.
   (function () {
-    var portalCards = document.querySelectorAll('.cx-portal-card, .cx-world-card');
+    var portalCards = document.querySelectorAll('.cx-portal-card, .wh-portal');
     var launchFlash = document.getElementById('cx-portal-launch-flash');
     var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 

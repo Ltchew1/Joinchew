@@ -16,7 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
-<body class="is-world-page" style="--world-asset:url(assets/worlds/property.jpg);">
+<body class="is-world-page" data-world="property" style="--world-asset:url(assets/worlds/property.jpg);">
 <header class="site-header">
   <div class="container">
     <a href="index.html" class="brand">
@@ -42,6 +42,22 @@
 </header>
 
 <main>
+<div class="wp-drawer" id="wp-drawer" hidden>
+  <div class="wp-drawer-scrim" data-drawer-close></div>
+  <div class="wp-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="wp-drawer-title">
+    <button type="button" class="wp-drawer-close" data-drawer-close aria-label="Close">&times;</button>
+    <span class="wp-drawer-index" id="wp-drawer-index"></span>
+    <h3 id="wp-drawer-title"></h3>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">What It Is</span><p id="wp-drawer-what"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">Why It Matters</span><p id="wp-drawer-why"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">What To Look At</span><p id="wp-drawer-look"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">How It Connects</span><p id="wp-drawer-connects"></p></div>
+    <div class="wp-drawer-play" id="wp-drawer-play" hidden>
+      <a id="wp-drawer-play-link" href="playbook.html">Related Play: <span id="wp-drawer-play-name"></span> &rarr;</a>
+    </div>
+    <p class="wp-drawer-explore" id="wp-drawer-explore" hidden><a id="wp-drawer-explore-link" href="apply.html"></a></p>
+  </div>
+</div>
   <section class="wp-hero">
     <div class="wp-hero-bg"></div>
     <div class="wp-hero-scrim"></div>
@@ -56,40 +72,53 @@
       <h1>Property</h1>
       <p class="wp-hero-statement">Real assets, owned on purpose.</p>
       <p class="wp-hero-lede">Investment and commercial property run on different rules than a primary home. CHEW maps the real requirements between where you are and a real offer.</p>
+      <span class="wp-hero-mood">MAP & PORTFOLIO</span>
       <a href="#wp-nodes-property" class="wp-hero-scroll">Explore this World &darr;</a>
     </div>
   </section>
 
   <section class="wp-nodes-section" id="wp-nodes-property">
+    <div class="wp-nodes-reflection" aria-hidden="true"></div>
     <div class="container">
       <div class="wp-nodes-head" data-reveal>
         <span class="eyebrow">Inside Property</span>
         <h2>What actually determines deal readiness.</h2>
       </div>
-      <div class="wp-nodes-grid" data-reveal>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Property Position<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>What's already owned, what capital is available, and what a real deal actually requires from where you stand today.</p></div>
+      <div class="wp-map" data-reveal data-nodes="6">
+        <svg class="wm-routes" aria-hidden="true"></svg>
+        <div class="wm-core">
+          <span class="wm-core-eyebrow">World Core</span>
+          <span class="wm-core-name">Property</span>
+        </div>
+        <button type="button" class="wp-node" style="grid-area:n1;" aria-expanded="false" data-index="Station 01" data-title="Property Position" data-what="What's already owned, what capital is available, and what a real deal actually requires from where you stand today." data-why="Investment property runs on different rules than a primary home — this position is measured against those rules, not homeownership ones." data-look="What's already owned or leveraged, specifically — the starting capital base a real deal gets weighed against." data-connects="Feeds Deal Readiness directly — this is the baseline a real opportunity is measured against." data-explore-text="See how this shapes your Make Your Move" data-explore-href="apply.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="10"/><path d="M19,11 L16,16 L13,21 L16,16 Z" stroke-linejoin="round"/></svg></span>
+          <span class="wp-node-index">Station 01</span>
+          <span class="wp-node-label">Property Position</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Deal Readiness<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>The honest distance between your current position and being able to act on a real opportunity when it appears.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n2;" aria-expanded="false" data-index="Station 02" data-title="Deal Readiness" data-what="The honest distance between your current position and being able to act on a real opportunity when it appears." data-why="A good deal doesn't wait for you to get ready — readiness has to already exist before the opportunity shows up." data-look="The single gap most likely to slow you down if a real opportunity appeared this month." data-connects="Connects to the Wait Play — closing the readiness gap deliberately, before an opportunity forces the timeline." data-play="Wait Play" data-play-href="playbook.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><rect x="7" y="5" width="18" height="22" rx="1"/><path d="M10.5,12 L12.5,14 L16.5,9" stroke-linecap="round" stroke-linejoin="round"/><line x1="19" y1="11" x2="22" y2="11" stroke-linecap="round"/><path d="M10.5,19 L12.5,21 L16.5,16" stroke-linecap="round" stroke-linejoin="round"/><line x1="19" y1="18" x2="22" y2="18" stroke-linecap="round"/></svg></span>
+          <span class="wp-node-index">Station 02</span>
+          <span class="wp-node-label">Deal Readiness</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Capital<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>What's liquid, what's leveraged, and what a down payment or acquisition actually requires.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n3;" aria-expanded="false" data-index="Station 03" data-title="Capital" data-what="What's liquid, what's leveraged, and what a down payment or acquisition actually requires." data-why="Capital tied up in the wrong place can quietly disqualify you from a deal that otherwise fits." data-look="Whether existing capital is liquid enough to act on a real timeline, or locked in a way that would slow you down." data-connects="This is where the Leverage Play applies — using an existing position to structure the next acquisition." data-play="Leverage Play" data-play-href="playbook.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><rect x="7" y="7" width="18" height="18" rx="2"/><circle cx="16" cy="16" r="5"/><path d="M16,12 V16 L18.5,17.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="wp-node-index">Station 03</span>
+          <span class="wp-node-label">Capital</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Cash Flow<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>Whether a property adds to your position or quietly drains it — the number that matters more than the purchase price.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n4;" aria-expanded="false" data-index="Station 04" data-title="Cash Flow" data-what="Whether a property adds to your position or quietly drains it — the number that matters more than the purchase price." data-why="Purchase price gets the attention, but cash flow is what determines whether the deal was actually a good one." data-look="The real monthly number after every cost — not just principal and interest." data-connects="Directly shapes whether a deal is genuinely Leverage or simply added risk." data-explore-text="See how this shapes your Make Your Move" data-explore-href="apply.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M5,20 Q10,12 16,18 T27,14" stroke-linecap="round"/><path d="M5,25 Q10,19 16,23 T27,21" stroke-linecap="round" opacity="0.5"/></svg></span>
+          <span class="wp-node-index">Station 04</span>
+          <span class="wp-node-label">Cash Flow</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Documentation &amp; Ownership<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>The paperwork a real deal actually requires, prepared before the opportunity, not scrambled together after.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n5;" aria-expanded="false" data-index="Station 05" data-title="Documentation &amp; Ownership" data-what="The paperwork a real deal actually requires, prepared before the opportunity, not scrambled together after." data-why="Documentation prepared in advance is often the difference between closing a deal and losing it to someone faster." data-look="The specific document most likely to be requested first in a real offer conversation." data-connects="Sets up Deal Readiness — documentation is one of its largest components." data-explore-text="See how this shapes your Make Your Move" data-explore-href="apply.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><rect x="8" y="5" width="16" height="21" rx="1"/><line x1="11" y1="10" x2="21" y2="10"/><line x1="11" y1="14" x2="21" y2="14"/><circle cx="16" cy="21" r="4"/></svg></span>
+          <span class="wp-node-index">Station 05</span>
+          <span class="wp-node-label">Documentation & Ownership</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Property Play<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>The Wait and Leverage Plays both show up here — see how each applies to property strategy in the Playbook.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n6;" aria-expanded="false" data-index="Station 06" data-title="Property Play" data-what="The Wait and Leverage Plays both show up here — see how each applies to property strategy in the Playbook." data-why="Both Plays exist to keep a property decision deliberate instead of opportunistic." data-look="Which of the two applies first, given your current Deal Readiness and Capital position." data-connects="Open the Playbook to see both mapped to a real property decision." data-explore-text="See these Plays mapped in the Playbook" data-explore-href="playbook.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,27 C16,27 24,18 24,12 A8,8 0 1 0 8,12 C8,18 16,27 16,27 Z" stroke-linejoin="round"/><circle cx="16" cy="12" r="3"/></svg></span>
+          <span class="wp-node-index">Station 06</span>
+          <span class="wp-node-label">Property Play</span>
         </button>
       </div>
     </div>
@@ -99,22 +128,23 @@
     <div class="wp-plays-inner" data-reveal>
       <span class="wp-plays-label">Related Plays in the Playbook</span>
       <div class="wp-plays-row">
-        <a href="playbook.html" class="wp-play-medallion">
+        <a href="playbook.html" class="wp-play-medallion" data-note="Closing the readiness gap deliberately, before a real opportunity forces a timeline you weren't prepared for.">
           <span class="wp-play-medallion-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M9,5H23M9,27H23M10,5c0,7,12,7,12,11c0,4-12,4-12,11M22,5c0,7-12,7-12,11c0,4,12,4,12,11" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           <span class="wp-play-medallion-name">Wait Play</span>
         </a>
-        <a href="playbook.html" class="wp-play-medallion">
+        <a href="playbook.html" class="wp-play-medallion" data-note="Using an existing position — equity, capital, structure — to fund or strengthen the next acquisition.">
           <span class="wp-play-medallion-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M6,20 L26,12" stroke-linecap="round"/><path d="M16,16 V26 M11,26 H21" stroke-linecap="round"/><circle cx="16" cy="16" r="2"/></svg></span>
           <span class="wp-play-medallion-name">Leverage Play</span>
         </a>
       </div>
-      <a href="playbook.html" class="wp-plays-link">Open the Playbook &rarr;</a>
+      <p class="wp-plays-note">Hover a Play to see why it matters in Property.</p>
+      <a href="playbook.html" class="wp-plays-link">Enter the Playbook &rarr;</a>
     </div>
   </section>
 
   <section class="wp-move-slim">
     <div class="container">
-      <p>Ready to see where you actually stand? <a href="apply.html">Make Your Move &rarr;</a></p>
+      <p>Ready to make Property personal? <a href="apply.html">Make Your Move &rarr;</a></p>
     </div>
   </section>
 </main>

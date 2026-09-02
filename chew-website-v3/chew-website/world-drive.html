@@ -16,7 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
-<body class="is-world-page" style="--world-asset:url(assets/worlds/drive.jpg);">
+<body class="is-world-page" data-world="drive" style="--world-asset:url(assets/worlds/drive.jpg);">
 <header class="site-header">
   <div class="container">
     <a href="index.html" class="brand">
@@ -42,6 +42,22 @@
 </header>
 
 <main>
+<div class="wp-drawer" id="wp-drawer" hidden>
+  <div class="wp-drawer-scrim" data-drawer-close></div>
+  <div class="wp-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="wp-drawer-title">
+    <button type="button" class="wp-drawer-close" data-drawer-close aria-label="Close">&times;</button>
+    <span class="wp-drawer-index" id="wp-drawer-index"></span>
+    <h3 id="wp-drawer-title"></h3>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">What It Is</span><p id="wp-drawer-what"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">Why It Matters</span><p id="wp-drawer-why"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">What To Look At</span><p id="wp-drawer-look"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">How It Connects</span><p id="wp-drawer-connects"></p></div>
+    <div class="wp-drawer-play" id="wp-drawer-play" hidden>
+      <a id="wp-drawer-play-link" href="playbook.html">Related Play: <span id="wp-drawer-play-name"></span> &rarr;</a>
+    </div>
+    <p class="wp-drawer-explore" id="wp-drawer-explore" hidden><a id="wp-drawer-explore-link" href="apply.html"></a></p>
+  </div>
+</div>
   <section class="wp-hero">
     <div class="wp-hero-bg"></div>
     <div class="wp-hero-scrim"></div>
@@ -56,40 +72,53 @@
       <h1>Drive</h1>
       <p class="wp-hero-statement">A vehicle that fits the life you're building, not just the payment.</p>
       <p class="wp-hero-lede">A vehicle decision is a cash-flow decision wearing a different hat. CHEW looks at the whole cost, not just the monthly number.</p>
+      <span class="wp-hero-mood">MOVEMENT & VELOCITY</span>
       <a href="#wp-nodes-drive" class="wp-hero-scroll">Explore this World &darr;</a>
     </div>
   </section>
 
   <section class="wp-nodes-section" id="wp-nodes-drive">
+    <div class="wp-nodes-reflection" aria-hidden="true"></div>
     <div class="container">
       <div class="wp-nodes-head" data-reveal>
         <span class="eyebrow">Inside Drive</span>
         <h2>What actually determines the right vehicle move.</h2>
       </div>
-      <div class="wp-nodes-grid" data-reveal>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Drive Position<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>What you're driving now, what it costs you monthly, and what's actually changing.</p></div>
+      <div class="wp-map" data-reveal data-nodes="6">
+        <svg class="wm-routes" aria-hidden="true"></svg>
+        <div class="wm-core">
+          <span class="wm-core-eyebrow">World Core</span>
+          <span class="wm-core-name">Drive</span>
+        </div>
+        <button type="button" class="wp-node" style="grid-area:n1;" aria-expanded="false" data-index="Station 01" data-title="Drive Position" data-what="What you're driving now, what it costs you monthly, and what's actually changing." data-why="A vehicle decision made without this baseline tends to compare a new payment against an old one that was never fully counted." data-look="The full current cost — payment, insurance, maintenance — not just the loan balance." data-connects="Feeds Total Cost directly — Drive Position is what any new number gets measured against." data-explore-text="See how this shapes your Make Your Move" data-explore-href="apply.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="10"/><path d="M19,11 L16,16 L13,21 L16,16 Z" stroke-linejoin="round"/></svg></span>
+          <span class="wp-node-index">Station 01</span>
+          <span class="wp-node-label">Drive Position</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Buy / Finance / Wait<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>Three real paths, weighed against your position — not a sales script pointed at whichever pays best.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n2;" aria-expanded="false" data-index="Station 02" data-title="Buy / Finance / Wait" data-what="Three real paths, weighed against your position — not a sales script pointed at whichever pays best." data-why="The path that gets recommended fastest at a dealership is rarely the one weighed against your actual position." data-look="Which path the Total Cost and Timing nodes actually support, not which one has the lowest sticker price." data-connects="Connects to the Switch Play — swapping one obligation for a better-structured one is exactly this decision." data-explore-text="See how this shapes your Make Your Move" data-explore-href="apply.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,6 V14" stroke-linecap="round"/><path d="M16,14 L8,26 M16,14 L16,26 M16,14 L24,26" stroke-linecap="round"/></svg></span>
+          <span class="wp-node-index">Station 02</span>
+          <span class="wp-node-label">Buy / Finance / Wait</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Total Cost<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>Payment, insurance, maintenance, and depreciation together — the number that actually hits your monthly load, not just the sticker price.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n3;" aria-expanded="false" data-index="Station 03" data-title="Total Cost" data-what="Payment, insurance, maintenance, and depreciation together — the number that actually hits your monthly load, not just the sticker price." data-why="The sticker price is the smallest part of what a vehicle actually costs over the years you'll own it." data-look="Insurance and maintenance estimates for the specific vehicle, not a generic category average." data-connects="This is the real number Buy / Finance / Wait gets weighed against." data-explore-text="See how this shapes your Make Your Move" data-explore-href="apply.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M5,20 Q10,12 16,18 T27,14" stroke-linecap="round"/><path d="M5,25 Q10,19 16,23 T27,21" stroke-linecap="round" opacity="0.5"/></svg></span>
+          <span class="wp-node-index">Station 03</span>
+          <span class="wp-node-label">Total Cost</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Timing<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>Whether this is the month for a vehicle decision, or whether something else in your position should resolve first.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n4;" aria-expanded="false" data-index="Station 04" data-title="Timing" data-what="Whether this is the month for a vehicle decision, or whether something else in your position should resolve first." data-why="Two obligations landing in the same season compounds pressure that a few months of sequencing would have avoided." data-look="What else is already scheduled to move in your position in the next 60–90 days." data-connects="Directly shapes which of the three paths in Buy / Finance / Wait is actually realistic right now." data-explore-text="See how this shapes your Make Your Move" data-explore-href="apply.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M9,6 H23 M9,26 H23 M9,6 L23,26 M23,6 L9,26" stroke-linecap="round"/></svg></span>
+          <span class="wp-node-index">Station 04</span>
+          <span class="wp-node-label">Timing</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Protection<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>What happens to this decision if income or health changes — Protect's real overlap with Drive.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n5;" aria-expanded="false" data-index="Station 05" data-title="Protection" data-what="What happens to this decision if income or health changes — Protect's real overlap with Drive." data-why="A vehicle payment is one of the first obligations to feel the strain if income drops — worth planning for before it happens." data-look="Whether the payment still fits inside a reduced-income scenario, not just the current one." data-connects="This is the direct link to the Protect World — the same emergency-buffer logic applies here." data-explore-text="See how this shapes your Make Your Move" data-explore-href="apply.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,5 L25,9 V16 C25,22 21,25 16,27 C11,25 7,22 7,16 V9 Z" stroke-linejoin="round"/><path d="M12,16 L15,19 L20,12" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="wp-node-index">Station 05</span>
+          <span class="wp-node-label">Protection</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Drive Play<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>The Switch Play shows up here — see how it applies to a Drive decision in the Playbook.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n6;" aria-expanded="false" data-index="Station 06" data-title="Drive Play" data-what="The Switch Play shows up here — see how it applies to a Drive decision in the Playbook." data-why="Switch is the framework for trading one obligation for a better-structured one without a net loss." data-look="Whether a Switch actually improves your total cost, or just moves the same cost to a different lender." data-connects="Open the Playbook to see the Switch Play mapped step by step." data-play="Switch Play" data-play-href="playbook.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,27 C16,27 24,18 24,12 A8,8 0 1 0 8,12 C8,18 16,27 16,27 Z" stroke-linejoin="round"/><circle cx="16" cy="12" r="3"/></svg></span>
+          <span class="wp-node-index">Station 06</span>
+          <span class="wp-node-label">Drive Play</span>
         </button>
       </div>
     </div>
@@ -99,18 +128,19 @@
     <div class="wp-plays-inner" data-reveal>
       <span class="wp-plays-label">Related Plays in the Playbook</span>
       <div class="wp-plays-row">
-        <a href="playbook.html" class="wp-play-medallion">
+        <a href="playbook.html" class="wp-play-medallion" data-note="Drive is almost always a Switch decision — trading one obligation for a better-structured one, not just a new one.">
           <span class="wp-play-medallion-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M7,12 H22 M18,8 L22,12 L18,16" stroke-linecap="round" stroke-linejoin="round"/><path d="M25,20 H10 M14,16 L10,20 L14,24" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           <span class="wp-play-medallion-name">Switch Play</span>
         </a>
       </div>
-      <a href="playbook.html" class="wp-plays-link">Open the Playbook &rarr;</a>
+      <p class="wp-plays-note">Hover a Play to see why it matters in Drive.</p>
+      <a href="playbook.html" class="wp-plays-link">Enter the Playbook &rarr;</a>
     </div>
   </section>
 
   <section class="wp-move-slim">
     <div class="container">
-      <p>Ready to see where you actually stand? <a href="apply.html">Make Your Move &rarr;</a></p>
+      <p>Ready to make Drive personal? <a href="apply.html">Make Your Move &rarr;</a></p>
     </div>
   </section>
 </main>

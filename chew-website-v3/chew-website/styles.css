@@ -4368,45 +4368,8 @@ a.pbc-resource:hover { text-decoration: none; border-color: var(--panel-border);
   .pbc-strip-card { transition: none; }
 }
 
-/* ============================================================
-   WORLDS HUB — card grid (replaces the old inline-panel buttons).
-   Each card is a real link to its own dedicated World page; the
-   photo is the same real per-World asset already used sitewide.
-   ============================================================ */
-.cx-worlds-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
-  margin-top: 44px;
-}
-.cx-world-card {
-  position: relative; display: block; min-height: 340px; border-radius: 16px;
-  overflow: hidden; text-decoration: none; color: var(--text);
-  border: 1px solid var(--panel-border);
-  background-image: var(--world-portal), linear-gradient(160deg, #1c1d20, #0b0b0c);
-  background-size: cover; background-position: center;
-  transition: transform 0.4s cubic-bezier(.22,1,.36,1), border-color 0.3s ease;
-}
-.cx-world-card::before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(0deg, rgba(6,6,7,0.92) 0%, rgba(6,6,7,0.42) 52%, rgba(6,6,7,0.08) 100%);
-  transition: background 0.4s ease;
-}
-.cx-world-card::after {
-  content: ''; position: absolute; inset: 0; border-radius: inherit;
-  box-shadow: inset 0 0 0 1px rgba(232,206,122,0); transition: box-shadow 0.4s ease;
-}
-.cx-world-card:hover, .cx-world-card:focus-visible {
-  text-decoration: none; transform: translateY(-4px); border-color: rgba(232,206,122,0.4);
-}
-.cx-world-card:hover::after, .cx-world-card:focus-visible::after { box-shadow: inset 0 0 0 1px rgba(232,206,122,0.35); }
-.cx-world-card-index, .cx-world-card h3, .cx-world-card p {
-  position: relative; z-index: 1;
-}
-.cx-world-card { display: flex; flex-direction: column; justify-content: flex-end; padding: 22px 20px; }
-.cx-world-card-index { font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-light); margin-bottom: 6px; }
-.cx-world-card h3 { font-family: var(--font-display); font-size: 1.3rem; margin: 0 0 4px; }
-.cx-world-card p { font-size: 0.86rem; color: var(--text-muted); margin: 0; }
-@media (max-width: 1180px) { .cx-worlds-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 640px) { .cx-worlds-grid { grid-template-columns: 1fr; gap: 14px; } .cx-world-card { min-height: 260px; } }
+/* ---- The old 8-card hub grid (.cx-world-card / .cx-worlds-grid) was
+   replaced by the .wh-diagram centerpiece system further below. ---- */
 
 /* ============================================================
    WORLD DESTINATION PAGES — shared architecture
@@ -4455,22 +4418,6 @@ a.pbc-resource:hover { text-decoration: none; border-color: var(--panel-border);
 
 .wp-nodes-section { padding: 80px 0; }
 .wp-nodes-head { max-width: 60ch; margin-bottom: 32px; }
-.wp-nodes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-.wp-node {
-  text-align: left; border: 1px solid var(--panel-border); border-radius: 14px;
-  background: linear-gradient(160deg, rgba(255,250,240,0.03), rgba(10,8,4,0.2));
-  padding: 20px 20px 18px; cursor: pointer; color: var(--text);
-  transition: border-color 0.3s ease;
-}
-.wp-node:hover, .wp-node.is-open { border-color: rgba(232,206,122,0.4); }
-.wp-node-label { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-family: var(--font-display); font-size: 1.02rem; }
-.wp-node-label .wp-node-plus { color: var(--gold-light); font-size: 1.2rem; line-height: 1; transition: transform 0.3s ease; flex-shrink: 0; }
-.wp-node.is-open .wp-node-plus { transform: rotate(45deg); }
-.wp-node-body { max-height: 0; overflow: hidden; opacity: 0; transition: max-height 0.4s ease, opacity 0.3s ease; }
-.wp-node.is-open .wp-node-body { max-height: 220px; opacity: 1; margin-top: 12px; }
-.wp-node-body p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.55; margin: 0; }
-@media (max-width: 900px) { .wp-nodes-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 640px) { .wp-nodes-grid { grid-template-columns: 1fr; } }
 
 .wp-plays-section { padding: 0 0 64px; }
 .wp-plays-inner {
@@ -4532,40 +4479,95 @@ a.pbc-resource:hover { text-decoration: none; border-color: var(--panel-border);
 /* worlds.html's own hero has no full-bleed photo to float over — it
    just needs room for the now-fixed header instead of the removed
    in-flow one. */
-.is-world-page .page-hero { padding-top: 148px; }
-@media (max-width: 640px) { .is-world-page .page-hero { padding-top: 118px; } }
+.is-world-page .page-hero { padding-top: 112px; padding-bottom: 0; }
+@media (max-width: 640px) { .is-world-page .page-hero { padding-top: 96px; } }
 
 /* ---- The scene: hero + nodes share one photographic environment.
    The hero holds the identity (title/statement); the nodes dock
-   continues the *same* image, dimmed and softened, rather than
-   cutting to flat black — the World stays visible while exploring. ---- */
+   continues the *same* image — a deeper, blurred, darkened extension
+   of the exact photograph (not a fresh cut to flat black), plus a
+   soft reflection band at the seam so the World reads as one place
+   that keeps going, not a photo followed by a website section. ---- */
 .wp-hero { min-height: 78vh; }
 .wp-nodes-section {
-  position: relative; padding: 64px 0 80px; overflow: hidden;
+  position: relative; padding: 72px 0 88px; overflow: hidden;
   background: var(--black);
 }
 .wp-nodes-section::before {
-  content: ''; position: absolute; inset: 0; z-index: 0;
-  background-image: var(--world-asset); background-size: cover; background-position: center;
-  opacity: 0.22; filter: saturate(0.75) blur(1.5px);
+  content: ''; position: absolute; inset: -6% -6% -6% -6%; z-index: 0;
+  background-image: var(--world-asset); background-size: cover; background-position: center 20%;
+  opacity: 0.4; filter: saturate(0.6) blur(7px) brightness(0.55);
+  transform: scale(1.12);
 }
 .wp-nodes-section::after {
   content: ''; position: absolute; inset: 0; z-index: 0;
-  background: linear-gradient(180deg, rgba(6,6,7,0.55) 0%, rgba(6,6,7,0.88) 46%, var(--black) 100%);
+  background:
+    linear-gradient(180deg, rgba(6,6,7,0.2) 0%, rgba(6,6,7,0.72) 22%, rgba(6,6,7,0.94) 55%, var(--black) 100%);
 }
-.wp-nodes-head, .wp-nodes-grid { position: relative; z-index: 1; }
-.wp-nodes-head { text-align: center; margin: 0 auto 36px; }
+.wp-nodes-reflection {
+  position: absolute; top: 0; left: 0; right: 0; height: 120px; z-index: 0;
+  background-image: var(--world-asset); background-size: cover; background-position: center 92%;
+  opacity: 0.16; filter: blur(3px) brightness(0.7);
+  transform: scaleY(-1); mask-image: linear-gradient(180deg, rgba(0,0,0,0.5), transparent);
+  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.5), transparent);
+}
+.wp-nodes-head, .wp-map, .wp-nodes-foot { position: relative; z-index: 1; }
+.wp-nodes-head { text-align: center; margin: 0 auto 44px; }
+.wp-nodes-head .eyebrow { display: inline-flex; align-items: center; gap: 8px; }
+.wp-nodes-head .eyebrow::before { content: ''; width: 18px; height: 1px; background: var(--gold-light); display: inline-block; }
 
-/* ---- Nodes as stations, not FAQ rows: a numbered glass plaque with
-   room to open in place, corner brackets borrowed from the site's
-   existing "instrument, not a webpage" language. ---- */
-.wp-nodes-grid { grid-template-columns: repeat(3, 1fr); gap: 18px; }
+/* ---- The World Map: stations arranged around a central World Core,
+   with a JS-drawn connecting-route overlay between each station and
+   the core (drawn in real DOM coordinates so it holds at any
+   breakpoint or content length — no fixed circular math to break). ---- */
+.wp-map {
+  position: relative; display: grid; max-width: 920px; margin: 0 auto;
+  grid-template-columns: repeat(3, 1fr); column-gap: 22px; row-gap: 22px;
+  grid-template-areas: "n1 n2 n3" "n4 core n5" ". n6 .";
+  align-items: stretch;
+}
+.wp-map[data-nodes="5"] { grid-template-areas: "n1 n2 n3" "n4 core n5"; }
+.wm-routes { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; overflow: visible; }
+.wm-routes path {
+  fill: none; stroke: rgba(232,206,122,0.16); stroke-width: 1; transition: stroke 0.4s ease, stroke-width 0.4s ease;
+}
+.wm-routes path.is-lit { stroke: var(--gold-light); stroke-width: 1.4; filter: drop-shadow(0 0 4px rgba(201,162,39,0.5)); }
+
+.wm-core {
+  grid-area: core; position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  min-height: 128px; padding: 18px; border-radius: 50%; aspect-ratio: 1;
+  margin: 0 auto; width: 100%; max-width: 148px;
+  background: radial-gradient(circle at 38% 32%, rgba(232,206,122,0.16), rgba(8,8,9,0.86) 72%);
+  border: 1px solid rgba(232,206,122,0.35);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.4), 0 0 34px rgba(201,162,39,0.14), inset 0 1px 0 rgba(255,255,255,0.05);
+  text-align: center;
+}
+.wm-core-eyebrow { font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold-light); opacity: 0.8; }
+.wm-core-name { font-family: var(--font-display); font-style: italic; font-size: 1.1rem; }
+@media (prefers-reduced-motion: no-preference) {
+  .wm-core { animation: wmCorePulse 5s ease-in-out infinite; }
+}
+@keyframes wmCorePulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(0,0,0,0.4), 0 0 34px rgba(201,162,39,0.14), inset 0 1px 0 rgba(255,255,255,0.05); }
+  50% { box-shadow: 0 0 0 1px rgba(0,0,0,0.4), 0 0 46px rgba(201,162,39,0.24), inset 0 1px 0 rgba(255,255,255,0.05); }
+}
+
+/* ---- Nodes as intelligence stations: a bespoke vector glyph (this
+   environment has no photoreal 3D-render tool available, so each
+   station icon is a hand-authored gold-line SVG glyph in the same
+   visual family as the Playbook's Play icons, not a stock bullet),
+   a station index, and a name — selecting one opens the Intelligence
+   Drawer rather than expanding in place. ---- */
 .wp-node {
-  position: relative; min-height: 128px; padding: 26px 22px 22px;
+  position: relative; z-index: 1; text-align: center; cursor: pointer; color: var(--text);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  min-height: 132px; padding: 22px 14px 18px;
   border: 1px solid rgba(232,206,122,0.16); border-radius: 4px;
   background: linear-gradient(160deg, rgba(255,250,240,0.05), rgba(8,8,9,0.55));
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
 }
 .wp-node::before, .wp-node::after {
   content: ''; position: absolute; width: 14px; height: 14px;
@@ -4574,25 +4576,85 @@ a.pbc-resource:hover { text-decoration: none; border-color: var(--panel-border);
 }
 .wp-node::before { top: -1px; left: -1px; border-top-width: 1px; border-left-width: 1px; }
 .wp-node::after { bottom: -1px; right: -1px; border-bottom-width: 1px; border-right-width: 1px; }
-.wp-node:hover, .wp-node.is-open { border-color: rgba(232,206,122,0.4); }
-.wp-node:hover::before, .wp-node:hover::after, .wp-node.is-open::before, .wp-node.is-open::after { opacity: 1; border-color: var(--gold-light); }
-.wp-node-label { font-size: 1.05rem; }
-.wp-node.is-open .wp-node-body { max-height: 260px; }
+.wp-node:hover { border-color: rgba(232,206,122,0.4); transform: translateY(-3px); }
+.wp-node.is-active { border-color: var(--gold-light); box-shadow: 0 0 24px rgba(201,162,39,0.22); }
+.wp-node:hover::before, .wp-node:hover::after, .wp-node.is-active::before, .wp-node.is-active::after { opacity: 1; border-color: var(--gold-light); }
+.wp-node-icon { width: 40px; height: 40px; color: var(--gold-light); }
+.wp-node-icon svg { width: 100%; height: 100%; stroke: currentColor; stroke-width: 1.3; fill: none; }
+.wp-node-index { font-size: 0.62rem; letter-spacing: 0.14em; color: var(--text-faint); }
+.wp-node-label { font-family: var(--font-display); font-size: 0.98rem; line-height: 1.25; }
+.wp-nodes-foot { text-align: center; margin-top: 30px; font-size: 0.78rem; color: var(--text-faint); }
 
-/* ---- Related Plays: strategy medallions on a connecting line,
-   the Playbook's own material language, not tags under an article. ---- */
-.wp-plays-section { padding: 64px 0; background: var(--black-soft); border-top: 1px solid var(--panel-border-soft); border-bottom: 1px solid var(--panel-border-soft); }
+/* ---- The Intelligence Drawer: the shared reveal surface for every
+   station on every World. Slides in from the right on desktop (the
+   World stays visible beside it); becomes a bottom sheet on mobile.
+   No accordion, no page jump — the environment never leaves view. ---- */
+body.wp-drawer-locked { overflow: hidden; }
+.wp-drawer { position: fixed; inset: 0; z-index: 90; }
+.wp-drawer[hidden] { display: none; }
+.wp-drawer-scrim {
+  position: absolute; inset: 0; background: rgba(4,4,5,0.6); backdrop-filter: blur(2px);
+  opacity: 0; transition: opacity 0.3s ease;
+}
+.wp-drawer.is-open .wp-drawer-scrim { opacity: 1; }
+.wp-drawer-panel {
+  position: absolute; top: 0; right: 0; height: 100%; width: min(440px, 92vw);
+  background: linear-gradient(160deg, #131110, #08080a);
+  border-left: 1px solid rgba(232,206,122,0.3);
+  box-shadow: -24px 0 60px rgba(0,0,0,0.5);
+  padding: 96px 32px 40px; overflow-y: auto;
+  transform: translateX(100%); transition: transform 0.42s cubic-bezier(.22,1,.36,1);
+}
+.wp-drawer.is-open .wp-drawer-panel { transform: translateX(0); }
+.wp-drawer-close {
+  position: absolute; top: 28px; right: 28px; width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--panel-border); background: transparent; color: var(--text-muted);
+  font-size: 1.3rem; line-height: 1; cursor: pointer; transition: border-color 0.3s ease, color 0.3s ease;
+}
+.wp-drawer-close:hover { border-color: var(--gold-light); color: var(--gold-light); }
+.wp-drawer-index { display: block; font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold-light); margin-bottom: 8px; }
+.wp-drawer-panel h3 { font-size: 1.6rem; margin: 0 0 22px; }
+.wp-drawer-section { margin-bottom: 20px; }
+.wp-drawer-label { display: block; font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-light); opacity: 0.85; margin-bottom: 6px; }
+.wp-drawer-section p { margin: 0; font-size: 0.92rem; line-height: 1.6; color: var(--text-muted); }
+.wp-drawer-play {
+  margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--panel-border-soft);
+}
+.wp-drawer-play a {
+  display: inline-flex; align-items: center; gap: 10px; text-decoration: none;
+  color: var(--gold-light); font-family: var(--font-display); font-size: 1rem;
+  border: 1px solid rgba(232,206,122,0.3); border-radius: 999px; padding: 9px 18px;
+  transition: border-color 0.3s ease, background 0.3s ease;
+}
+.wp-drawer-play a:hover { border-color: var(--gold-light); background: rgba(201,162,39,0.08); text-decoration: none; }
+.wp-drawer-explore { margin-top: 14px; font-size: 0.86rem; }
+.wp-drawer-explore a { color: var(--text); font-weight: 600; }
+@media (max-width: 640px) {
+  .wp-drawer-panel {
+    top: auto; right: 0; left: 0; bottom: 0; height: auto; max-height: 82vh; width: auto;
+    border-left: none; border-top: 1px solid rgba(232,206,122,0.3); border-radius: 20px 20px 0 0;
+    padding: 40px 24px 36px; transform: translateY(100%);
+  }
+  .wp-drawer.is-open .wp-drawer-panel { transform: translateY(0); }
+  .wp-drawer-close { top: 16px; right: 16px; }
+}
+
+/* ---- Related Plays: strategy medallions on a connecting route,
+   the Playbook's own material language. Selecting one reveals a
+   short note on why that Play matters inside this World, and
+   Open Playbook reads as entering the command center. ---- */
+.wp-plays-section { padding: 68px 0; background: var(--black-soft); border-top: 1px solid var(--panel-border-soft); border-bottom: 1px solid var(--panel-border-soft); }
 .wp-plays-inner {
   max-width: var(--max-width); margin: 0 auto; padding: 0 24px;
   display: block; text-align: center; background: none; border: none;
 }
 .wp-plays-label { display: block; margin-bottom: 4px; }
-.wp-plays-row { position: relative; display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 30px 40px; margin: 26px 0 28px; }
+.wp-plays-row { position: relative; display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 30px 40px; margin: 26px 0 10px; }
 .wp-plays-row::before {
   content: ''; position: absolute; left: 12%; right: 12%; top: 34px; height: 1px; z-index: 0;
   background: linear-gradient(90deg, transparent, rgba(232,206,122,0.3), transparent);
 }
-.wp-play-medallion { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; width: 96px; text-decoration: none; color: var(--text); }
+.wp-play-medallion { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100px; text-decoration: none; color: var(--text); background: none; border: none; padding: 0; cursor: pointer; font: inherit; }
 .wp-play-medallion:hover, .wp-play-medallion:focus-visible { text-decoration: none; }
 .wp-play-medallion-icon {
   width: 68px; height: 68px; border-radius: 50%; flex-shrink: 0;
@@ -4602,57 +4664,186 @@ a.pbc-resource:hover { text-decoration: none; border-color: var(--panel-border);
   transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
 }
 .wp-play-medallion-icon svg { width: 30px; height: 30px; stroke: currentColor; stroke-width: 1.5; fill: none; }
-.wp-play-medallion:hover .wp-play-medallion-icon, .wp-play-medallion:focus-visible .wp-play-medallion-icon {
+.wp-play-medallion:hover .wp-play-medallion-icon, .wp-play-medallion:focus-visible .wp-play-medallion-icon, .wp-play-medallion.is-active .wp-play-medallion-icon {
   border-color: var(--gold-light); transform: translateY(-4px);
   box-shadow: 0 0 20px rgba(201,162,39,0.28);
 }
 .wp-play-medallion-name { font-size: 0.8rem; text-align: center; line-height: 1.3; }
-.wp-plays-link { display: inline-block; margin-top: 6px; }
+.wp-plays-note {
+  max-width: 52ch; margin: 6px auto 22px; min-height: 22px;
+  font-size: 0.86rem; color: var(--text-muted); font-style: italic;
+}
+.wp-plays-link {
+  display: inline-flex; align-items: center; gap: 10px; margin-top: 6px; text-decoration: none;
+  color: var(--text); font-family: var(--font-display); font-size: 1rem;
+  border: 1px solid rgba(232,206,122,0.32); border-radius: 999px; padding: 12px 26px;
+  transition: border-color 0.3s ease, background 0.3s ease, transform 0.3s ease;
+}
+.wp-plays-link:hover { border-color: var(--gold-light); background: rgba(201,162,39,0.08); text-decoration: none; transform: translateY(-2px); }
 
-/* ---- A slim, subordinate Make Your Move line — not a dedicated
-   black CTA section. The button in the fixed header already carries
-   the primary CTA throughout the whole experience. ---- */
+/* ---- A slim, subordinate Make Your Move line. ---- */
 .wp-move-slim { padding: 30px 0; text-align: center; border-bottom: 1px solid var(--panel-border-soft); }
-.wp-move-slim p { margin: 0; font-size: 0.92rem; color: var(--text-muted); }
-.wp-move-slim a { color: var(--gold-light); font-weight: 600; }
+.wp-move-slim p { margin: 0; font-size: 0.92rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.wp-move-slim a { color: var(--gold-light); font-weight: 600; text-transform: none; letter-spacing: normal; }
 
-/* ---- Portal Rail: a real preview of where you're going, not a
-   passive strip — bigger photography, bigger type. ---- */
+/* ---- Portal Rail: a real preview of where you're going. ---- */
 .wp-switcher-link { min-height: 260px; padding: 40px 32px; }
 .wp-switcher-name { font-size: clamp(1.6rem, 3vw, 2.1rem); }
 @media (max-width: 640px) { .wp-switcher-link { min-height: 190px; padding: 28px 22px; } }
 
-/* ---- Compressed World-page footer: legal stays present, the
-   visual weight stays with the Worlds universe, not Company/
-   Resources/Legal columns. ---- */
-.wp-footer { padding: 44px 0 32px; background: var(--black); border-top: 1px solid var(--panel-border-soft); }
-.wp-footer .container { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
+/* ---- Compressed World-page footer: one line, so it never competes
+   with the Portal Rail directly above it. ---- */
+.wp-footer { padding: 22px 0; background: var(--black); border-top: 1px solid var(--panel-border-soft); }
+.wp-footer .container { display: flex; flex-direction: row; align-items: center; justify-content: center; text-align: center; gap: 14px; flex-wrap: wrap; }
+.wp-footer .footer-mini-brand img { width: 30px; height: 30px; }
+.wp-footer .footer-legal { display: flex; flex-direction: row; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.wp-footer .footer-legal span:last-child { display: none; }
+@media (min-width: 900px) { .wp-footer .footer-legal span:last-child { display: inline; font-size: 0.66rem; color: var(--text-faint); max-width: 46ch; } }
+
+/* ---- Per-World visual personality: one shared system, eight
+   distinct moods — carried only by the route-line color temperature
+   and a small identity tag under the World name. Composition,
+   photography, and structure stay identical across all eight. ---- */
+.wp-hero-mood { display: block; font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-faint); margin-top: 10px; }
+.is-world-page[data-world="home"] .wm-routes path.is-lit,
+.is-world-page[data-world="build"] .wm-routes path.is-lit { stroke: var(--gold-light); }
+.is-world-page[data-world="drive"] .wm-routes path.is-lit,
+.is-world-page[data-world="go"] .wm-routes path.is-lit { stroke: #d9c68f; }
+.is-world-page[data-world="celebrate"] .wm-routes path.is-lit,
+.is-world-page[data-world="levelup"] .wm-routes path.is-lit { stroke: #e8ce7a; }
+.is-world-page[data-world="property"] .wm-routes path.is-lit,
+.is-world-page[data-world="protect"] .wm-routes path.is-lit { stroke: #cbb377; }
 
 @media (max-width: 900px) {
-  .wp-nodes-grid { grid-template-columns: repeat(2, 1fr); }
+  .wp-map { grid-template-columns: repeat(2, 1fr); grid-template-areas: "n1 n2" "n3 n4" "n5 n6" "core core"; max-width: 640px; }
+  .wp-map[data-nodes="5"] { grid-template-areas: "n1 n2" "n3 n4" "n5 n5" "core core"; }
+  .wm-core { max-width: 200px; margin-top: 8px; }
 }
 @media (max-width: 640px) {
-  .wp-nodes-grid { grid-template-columns: 1fr; }
   .wp-nodes-section { padding: 48px 0 56px; }
+  /* ---- Mobile: a journey, not a stacked accordion — one column of
+     large stations; tapping opens the same Intelligence Drawer as a
+     bottom sheet instead of pushing the page taller. ---- */
+  .wp-map {
+    display: flex; flex-direction: column; gap: 12px; max-width: 480px;
+  }
+  .wm-core { order: -1; margin: 0 auto 8px; max-width: 168px; }
+  .wm-routes { display: none; }
+  .wp-node { flex-direction: row; justify-content: flex-start; text-align: left; min-height: 0; padding: 16px 18px; gap: 16px; }
+  .wp-node-icon { width: 34px; height: 34px; flex-shrink: 0; }
   .wp-plays-row::before { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .wp-node, .wp-play-medallion-icon { transition: none; }
+  .wp-node, .wp-play-medallion-icon, .wp-plays-link, .wp-drawer-panel, .wp-drawer-scrim, .wm-core { transition: none; animation: none; }
 }
 
 /* ============================================================
-   WORLDS HUB — the universe, not eight cards
+   WORLDS HUB — one universe, not eight cards. The canonical
+   homepage globe artifact enlarged into a literal centerpiece,
+   with the eight real World portals arranged spatially around it
+   and a JS-drawn orbital route system connecting them.
    ============================================================ */
-.cx-worlds-glyph { display: flex; justify-content: center; margin-bottom: 18px; }
-.cx-worlds-glyph img { width: 64px; height: auto; filter: drop-shadow(0 0 18px rgba(201,162,39,0.35)); }
-.cx-worlds-connections { position: relative; }
-.cx-worlds-connections svg { position: absolute; inset: -20px; z-index: 0; pointer-events: none; opacity: 0.5; }
-.cx-worlds-grid { position: relative; z-index: 1; }
+.wh-diagram {
+  position: relative; max-width: 900px; margin: 18px auto 0;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 16px;
+  grid-template-areas:
+    ".        home      ."
+    "protect  .         drive"
+    "property globe     build"
+    "levelup  .         go"
+    ".        celebrate .";
+  align-items: center;
+}
+.wh-routes { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; overflow: visible; }
+.wh-routes path { fill: none; stroke: rgba(232,206,122,0.16); stroke-width: 1; transition: stroke 0.4s ease, stroke-width 0.4s ease; }
+.wh-routes path.is-lit { stroke: var(--gold-light); stroke-width: 1.5; filter: drop-shadow(0 0 5px rgba(201,162,39,0.55)); }
 
-.hx-lifemap-section { padding: 108px 0 100px; }
+.wh-core {
+  grid-area: globe; position: relative; z-index: 1; justify-self: center;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  width: 100%; max-width: 220px; padding: 18px;
+}
+.wh-core-ring {
+  position: absolute; inset: -18%; z-index: -1; border-radius: 50%;
+  border: 1px solid rgba(232,206,122,0.16);
+}
+.wh-core-ring::before {
+  content: ''; position: absolute; inset: 14%; border-radius: 50%;
+  border: 1px solid rgba(232,206,122,0.1);
+}
+.wh-core img {
+  width: 100%; max-width: 148px; height: auto;
+  filter: drop-shadow(0 0 30px rgba(201,162,39,0.4));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .wh-core img { animation: wmCorePulse2 6s ease-in-out infinite; }
+}
+@keyframes wmCorePulse2 {
+  0%, 100% { filter: drop-shadow(0 0 24px rgba(201,162,39,0.32)); }
+  50% { filter: drop-shadow(0 0 40px rgba(201,162,39,0.52)); }
+}
+.wh-core-label { font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold-light); text-align: center; }
+
+.wh-portal {
+  position: relative; z-index: 1; display: block; min-height: 128px; border-radius: 14px;
+  overflow: hidden; text-decoration: none; color: var(--text);
+  border: 1px solid var(--panel-border);
+  background-image: var(--world-portal), linear-gradient(160deg, #1c1d20, #0b0b0c);
+  background-size: cover; background-position: center;
+  transition: transform 0.4s cubic-bezier(.22,1,.36,1), border-color 0.3s ease;
+  display: flex; flex-direction: column; justify-content: flex-end; padding: 16px 16px;
+}
+.wh-portal::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(0deg, rgba(6,6,7,0.92) 0%, rgba(6,6,7,0.4) 55%, rgba(6,6,7,0.05) 100%);
+}
+.wh-portal::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(232,206,122,0); transition: box-shadow 0.4s ease;
+}
+.wh-portal:hover, .wh-portal:focus-visible { text-decoration: none; transform: translateY(-4px); border-color: rgba(232,206,122,0.4); }
+.wh-portal:hover::after, .wh-portal:focus-visible::after { box-shadow: inset 0 0 0 1px rgba(232,206,122,0.35); }
+.wh-portal-index, .wh-portal h3 { position: relative; z-index: 1; }
+.wh-portal-index { display: block; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-light); margin-bottom: 4px; }
+.wh-portal h3 { font-family: var(--font-display); font-size: 1.14rem; margin: 0; }
+.wh-portal--home { grid-area: home; }
+.wh-portal--protect { grid-area: protect; }
+.wh-portal--drive { grid-area: drive; }
+.wh-portal--property { grid-area: property; }
+.wh-portal--build { grid-area: build; }
+.wh-portal--levelup { grid-area: levelup; }
+.wh-portal--go { grid-area: go; }
+.wh-portal--celebrate { grid-area: celebrate; }
+
+.wh-caption { text-align: center; max-width: 46ch; margin: 34px auto 0; font-size: 0.86rem; color: var(--text-faint); }
+
+@media (max-width: 900px) {
+  .wh-diagram {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-areas: "globe globe" "home protect" "drive property" "build levelup" "go celebrate";
+    max-width: 520px;
+  }
+  .wh-routes { display: none; }
+  .wh-core { max-width: 260px; margin-bottom: 6px; }
+  .wh-core img { max-width: 116px; }
+}
+@media (max-width: 560px) {
+  .wh-diagram { grid-template-columns: 1fr; grid-template-areas: "globe" "home" "protect" "drive" "property" "build" "levelup" "go" "celebrate"; }
+  .wh-portal { min-height: 200px; }
+}
+
+.hx-lifemap-section { padding: 96px 0 100px; }
 .hx-lifemap-section::before {
   content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
   background: radial-gradient(ellipse 60% 60% at 50% 45%, rgba(201,162,39,0.1), transparent 70%);
 }
-.lifemap-wrap { max-width: 640px; }
+.lifemap-wrap { max-width: 760px; }
 @media (max-width: 900px) { .lifemap-wrap { max-width: 480px; } }
+
+/* Hover-preview from a hub portal onto the Life Map: a gentle
+   highlight (not the full click-selection dimming state) showing
+   which categories a World conceptually touches — illustrative
+   only, the same disclosed-sample data already on this page. */
+.lifemap-node.is-hub-preview circle { stroke: var(--gold-light); opacity: 1; fill: rgba(201,162,39,0.1); }
+.lifemap-label.is-hub-preview { fill: var(--text); opacity: 1; }
+.lifemap-spoke.is-hub-preview { opacity: 0.5; }

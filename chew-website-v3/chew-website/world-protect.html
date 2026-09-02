@@ -16,7 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
-<body class="is-world-page" style="--world-asset:url(assets/worlds/protect.jpg);">
+<body class="is-world-page" data-world="protect" style="--world-asset:url(assets/worlds/protect.jpg);">
 <header class="site-header">
   <div class="container">
     <a href="index.html" class="brand">
@@ -42,6 +42,22 @@
 </header>
 
 <main>
+<div class="wp-drawer" id="wp-drawer" hidden>
+  <div class="wp-drawer-scrim" data-drawer-close></div>
+  <div class="wp-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="wp-drawer-title">
+    <button type="button" class="wp-drawer-close" data-drawer-close aria-label="Close">&times;</button>
+    <span class="wp-drawer-index" id="wp-drawer-index"></span>
+    <h3 id="wp-drawer-title"></h3>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">What It Is</span><p id="wp-drawer-what"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">Why It Matters</span><p id="wp-drawer-why"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">What To Look At</span><p id="wp-drawer-look"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">How It Connects</span><p id="wp-drawer-connects"></p></div>
+    <div class="wp-drawer-play" id="wp-drawer-play" hidden>
+      <a id="wp-drawer-play-link" href="playbook.html">Related Play: <span id="wp-drawer-play-name"></span> &rarr;</a>
+    </div>
+    <p class="wp-drawer-explore" id="wp-drawer-explore" hidden><a id="wp-drawer-explore-link" href="apply.html"></a></p>
+  </div>
+</div>
   <section class="wp-hero">
     <div class="wp-hero-bg"></div>
     <div class="wp-hero-scrim"></div>
@@ -56,40 +72,53 @@
       <h1>Protect</h1>
       <p class="wp-hero-statement">The plan for when life doesn't go to plan.</p>
       <p class="wp-hero-lede">Protection isn't pessimism — it's the plan that keeps everything else you've built from unwinding when something goes wrong.</p>
+      <span class="wp-hero-mood">RESILIENCE & SHIELD</span>
       <a href="#wp-nodes-protect" class="wp-hero-scroll">Explore this World &darr;</a>
     </div>
   </section>
 
   <section class="wp-nodes-section" id="wp-nodes-protect">
+    <div class="wp-nodes-reflection" aria-hidden="true"></div>
     <div class="container">
       <div class="wp-nodes-head" data-reveal>
         <span class="eyebrow">Inside Protect</span>
         <h2>What actually protects a position.</h2>
       </div>
-      <div class="wp-nodes-grid" data-reveal>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Protection Position<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>What's already covered, what's exposed, and what's genuinely at risk if something changes tomorrow.</p></div>
+      <div class="wp-map" data-reveal data-nodes="6">
+        <svg class="wm-routes" aria-hidden="true"></svg>
+        <div class="wm-core">
+          <span class="wm-core-eyebrow">World Core</span>
+          <span class="wm-core-name">Protect</span>
+        </div>
+        <button type="button" class="wp-node" style="grid-area:n1;" aria-expanded="false" data-index="Station 01" data-title="Protection Position" data-what="What's already covered, what's exposed, and what's genuinely at risk if something changes tomorrow." data-why="Most people can name what they're covered for but not what they're actually exposed on — this closes that gap." data-look="The single largest uncovered exposure in your current position, ranked honestly." data-connects="Feeds Emergency Buffer directly — the exposure found here is what the buffer needs to cover." data-explore-text="See how this shapes your Make Your Move" data-explore-href="apply.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="10"/><path d="M19,11 L16,16 L13,21 L16,16 Z" stroke-linejoin="round"/></svg></span>
+          <span class="wp-node-index">Station 01</span>
+          <span class="wp-node-label">Protection Position</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Emergency Buffer<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>How much runway actually exists before a disruption becomes a crisis — the real number, not a rule of thumb.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n2;" aria-expanded="false" data-index="Station 02" data-title="Emergency Buffer" data-what="How much runway actually exists before a disruption becomes a crisis — the real number, not a rule of thumb." data-why="A generic rule of thumb rarely matches your actual fixed costs — the real number is what matters here." data-look="How many months your current reserves would realistically cover if income stopped tomorrow." data-connects="This is the Buffer Play directly — Protection is where Buffer's logic applies most literally." data-play="Buffer Play" data-play-href="playbook.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><rect x="7" y="7" width="18" height="18" rx="2"/><circle cx="16" cy="16" r="5"/><path d="M16,12 V16 L18.5,17.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="wp-node-index">Station 02</span>
+          <span class="wp-node-label">Emergency Buffer</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Household Risk<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>What a lost income stream, a health event, or a major repair would actually mean for the rest of the position.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n3;" aria-expanded="false" data-index="Station 03" data-title="Household Risk" data-what="What a lost income stream, a health event, or a major repair would actually mean for the rest of the position." data-why="Household risk tends to be invisible until it isn't — naming it in advance is what makes it plannable." data-look="The single household risk most likely to actually occur, not the most dramatic hypothetical." data-connects="Connects to Emergency Buffer — this is the risk the buffer is actually sized against." data-explore-text="See how this shapes your Make Your Move" data-explore-href="apply.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,5 L25,9 V16 C25,22 21,25 16,27 C11,25 7,22 7,16 V9 Z" stroke-linejoin="round"/><path d="M12,16 L15,19 L20,12" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="wp-node-index">Station 03</span>
+          <span class="wp-node-label">Household Risk</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Business Risk<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>The exposure a business creates for the rest of your position, and where the two are entangled more than they should be.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n4;" aria-expanded="false" data-index="Station 04" data-title="Business Risk" data-what="The exposure a business creates for the rest of your position, and where the two are entangled more than they should be." data-why="When personal and business finances are entangled, a business problem becomes a household problem overnight." data-look="Where personal and business obligations are still mixed together in a way that spreads risk unnecessarily." data-connects="This is the Stack Play applied to risk — separating and layering protection deliberately." data-play="Stack Play" data-play-href="playbook.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><rect x="8" y="8" width="4" height="18"/><rect x="14" y="4" width="4" height="22"/><rect x="20" y="11" width="4" height="15"/></svg></span>
+          <span class="wp-node-index">Station 04</span>
+          <span class="wp-node-label">Business Risk</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Plan B<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>The honest contingency — not a guarantee, a plan for what happens if the main path doesn't hold.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n5;" aria-expanded="false" data-index="Station 05" data-title="Plan B" data-what="The honest contingency — not a guarantee, a plan for what happens if the main path doesn't hold." data-why="A named Plan B, even a rough one, changes how a setback actually feels when it happens." data-look="The first concrete step Plan B would actually require, not just the general idea of it." data-connects="This is the Cleanup Play — clearing the path so a contingency plan is actually usable if it's needed." data-play="Cleanup Play" data-play-href="playbook.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M6,24 C6,24 6,16 12,16 C18,16 18,8 24,8" stroke-linecap="round"/><circle cx="6" cy="24" r="2"/><circle cx="24" cy="8" r="2"/></svg></span>
+          <span class="wp-node-index">Station 05</span>
+          <span class="wp-node-label">Plan B</span>
         </button>
-        <button type="button" class="wp-node" aria-expanded="false">
-          <span class="wp-node-label">Protect Play<span class="wp-node-plus" aria-hidden="true">+</span></span>
-          <div class="wp-node-body"><p>The Stack, Buffer, and Cleanup Plays all show up here — see how each applies to protection in the Playbook.</p></div>
+        <button type="button" class="wp-node" style="grid-area:n6;" aria-expanded="false" data-index="Station 06" data-title="Protect Play" data-what="The Stack, Buffer, and Cleanup Plays all show up here — see how each applies to protection in the Playbook." data-why="All three Plays exist to make protection a deliberate structure, not a reaction after something's already gone wrong." data-look="Which of the three applies first, given your current Emergency Buffer and exposure." data-connects="Open the Playbook to see all three mapped to a real protection decision." data-explore-text="See these Plays mapped in the Playbook" data-explore-href="playbook.html">
+          <span class="wp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,27 C16,27 24,18 24,12 A8,8 0 1 0 8,12 C8,18 16,27 16,27 Z" stroke-linejoin="round"/><circle cx="16" cy="12" r="3"/></svg></span>
+          <span class="wp-node-index">Station 06</span>
+          <span class="wp-node-label">Protect Play</span>
         </button>
       </div>
       <p class="text-center" style="font-size:0.8rem; color:var(--text-faint); margin-top:28px;">Educational only — not legal, tax, or insurance advice. CHEW does not sell or broker insurance products.</p>
@@ -100,26 +129,27 @@
     <div class="wp-plays-inner" data-reveal>
       <span class="wp-plays-label">Related Plays in the Playbook</span>
       <div class="wp-plays-row">
-        <a href="playbook.html" class="wp-play-medallion">
+        <a href="playbook.html" class="wp-play-medallion" data-note="Separating and layering protection deliberately — instead of personal and business risk staying entangled by default.">
           <span class="wp-play-medallion-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><rect x="7" y="6" width="18" height="5" rx="1"/><rect x="9" y="13" width="14" height="5" rx="1"/><rect x="11" y="20" width="10" height="5" rx="1"/></svg></span>
           <span class="wp-play-medallion-name">Stack Play</span>
         </a>
-        <a href="playbook.html" class="wp-play-medallion">
+        <a href="playbook.html" class="wp-play-medallion" data-note="Protection's core Play — sizing real reserves against the risk actually found in this World, not a rule of thumb.">
           <span class="wp-play-medallion-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,4 L26,8 V15 C26,22 21,26 16,28 C11,26 6,22 6,15 V8 Z" stroke-linejoin="round"/></svg></span>
           <span class="wp-play-medallion-name">Buffer Play</span>
         </a>
-        <a href="playbook.html" class="wp-play-medallion">
+        <a href="playbook.html" class="wp-play-medallion" data-note="Clearing the path so a real contingency plan is usable the day it's actually needed, not just an idea on paper.">
           <span class="wp-play-medallion-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M21,4 L11,22" stroke-linecap="round"/><path d="M11,22 L6,28 M11,22 L9,29 M11,22 L14,28" stroke-linecap="round"/><path d="M17,9 L23,13" stroke-linecap="round"/></svg></span>
           <span class="wp-play-medallion-name">Cleanup Play</span>
         </a>
       </div>
-      <a href="playbook.html" class="wp-plays-link">Open the Playbook &rarr;</a>
+      <p class="wp-plays-note">Hover a Play to see why it matters in Protect.</p>
+      <a href="playbook.html" class="wp-plays-link">Enter the Playbook &rarr;</a>
     </div>
   </section>
 
   <section class="wp-move-slim">
     <div class="container">
-      <p>Ready to see where you actually stand? <a href="apply.html">Make Your Move &rarr;</a></p>
+      <p>Ready to make Protect personal? <a href="apply.html">Make Your Move &rarr;</a></p>
     </div>
   </section>
 </main>
