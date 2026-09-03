@@ -69,152 +69,181 @@
         <div class="step-dot" data-step-dot="2"></div>
         <div class="step-dot" data-step-dot="3"></div>
         <div class="step-dot" data-step-dot="4"></div>
-        <div class="step-dot" data-step-dot="5"></div>
       </div>
+
+      <p class="text-center" style="font-size:0.82rem; color:var(--text-faint); margin:-14px 0 26px;">
+        Tap through &mdash; about 2 minutes. Only your name and email need typing.
+      </p>
 
       <form novalidate id="apply-form">
 
         <fieldset class="glass card apply-step" data-step="1">
-          <span class="eyebrow">Step 1 of 5 &middot; Vision</span>
-          <h3 style="margin-top:6px;">What are you building toward?</h3>
-
-          <div class="form-field">
-            <label for="q1">What life are you trying to build?</label>
-            <textarea id="q1" name="life_vision" required></textarea>
-          </div>
-          <div class="form-field">
-            <label for="q2">Your top three financial goals, ranked.</label>
-            <textarea id="q2" name="top_goals" required></textarea>
-          </div>
-          <div class="form-field">
-            <label for="q3">What income are you building toward?</label>
-            <input type="text" id="q3" name="income_target" required>
-          </div>
-          <div class="form-field">
-            <label for="q4">What assets do you want to own in 10 years?</label>
-            <textarea id="q4" name="assets_target" required></textarea>
-          </div>
-          <div class="form-field">
-            <label for="q5">What legacy do you want to create?</label>
-            <textarea id="q5" name="legacy" required></textarea>
-          </div>
-        </fieldset>
-
-        <fieldset class="glass card apply-step" data-step="2" style="display:none;">
-          <span class="eyebrow">Step 2 of 5 &middot; Where You Stand</span>
+          <span class="eyebrow">Step 1 of 4 &middot; Current Position</span>
           <h3 style="margin-top:6px;">Where you stand today.</h3>
 
-          <div class="form-field">
-            <label for="q6">Income range</label>
-            <select id="q6" name="income_range" required>
-              <option value="">Select one&hellip;</option>
-              <option value="under_50k">Under $50k</option>
-              <option value="50k_100k">$50k&ndash;$100k</option>
-              <option value="100k_250k">$100k&ndash;$250k</option>
-              <option value="250k_plus">$250k+</option>
-            </select>
+          <div class="tap-field">
+            <label class="tap-field-label">Current income range</label>
+            <div class="tap-grid" role="radiogroup" aria-label="Current income range" data-tap-group="income_range" data-required="true">
+              <label class="tap-option"><input type="radio" name="income_range" value="under_50k">Under $50k</label>
+              <label class="tap-option"><input type="radio" name="income_range" value="50k_100k">$50k&ndash;$100k</label>
+              <label class="tap-option"><input type="radio" name="income_range" value="100k_250k">$100k&ndash;$250k</label>
+              <label class="tap-option"><input type="radio" name="income_range" value="250k_plus">$250k+</label>
+            </div>
           </div>
-          <div class="form-field">
-            <label>Do you own a business?</label>
-            <div class="checkbox-row"><input type="radio" name="has_business" value="yes" id="q7-yes" required><label for="q7-yes" style="margin:0;">Yes</label></div>
-            <div class="checkbox-row"><input type="radio" name="has_business" value="no" id="q7-no"><label for="q7-no" style="margin:0;">No</label></div>
-            <input type="text" id="q7-stage" name="business_stage" placeholder="If yes, what stage is it at?" style="margin-top:8px;">
-          </div>
-          <div class="form-field">
-            <label for="q8">Current savings range</label>
-            <select id="q8" name="savings_range" required>
-              <option value="">Select one&hellip;</option>
-              <option value="under_5k">Under $5k</option>
-              <option value="5k_25k">$5k&ndash;$25k</option>
-              <option value="25k_100k">$25k&ndash;$100k</option>
-              <option value="100k_plus">$100k+</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label for="q9">Current debt range</label>
-            <select id="q9" name="debt_range" required>
-              <option value="">Select one&hellip;</option>
-              <option value="none">None</option>
-              <option value="under_10k">Under $10k</option>
-              <option value="10k_50k">$10k&ndash;$50k</option>
-              <option value="50k_plus">$50k+</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label>Do you use credit monitoring?</label>
-            <div class="checkbox-row"><input type="radio" name="uses_credit_monitoring" value="yes" id="q10-yes" required><label for="q10-yes" style="margin:0;">Yes</label></div>
-            <div class="checkbox-row"><input type="radio" name="uses_credit_monitoring" value="no" id="q10-no"><label for="q10-no" style="margin:0;">No</label></div>
-          </div>
-          <div class="form-field">
-            <label for="q11-score">How organized are your finances today? (1&ndash;10)</label>
-            <input type="number" id="q11-score" name="organization_score" min="1" max="10" required>
-          </div>
-          <div class="form-field">
-            <label for="q11-why">Why that number?</label>
-            <textarea id="q11-why" name="organization_why" required></textarea>
-          </div>
-        </fieldset>
 
-        <fieldset class="glass card apply-step" data-step="3" style="display:none;">
-          <span class="eyebrow">Step 3 of 5 &middot; How You Manage Money</span>
-          <h3 style="margin-top:6px;">How you manage money today.</h3>
+          <div class="tap-field">
+            <label class="tap-field-label">Current savings range</label>
+            <div class="tap-grid" role="radiogroup" aria-label="Current savings range" data-tap-group="savings_range" data-required="true">
+              <label class="tap-option"><input type="radio" name="savings_range" value="under_5k">Under $5k</label>
+              <label class="tap-option"><input type="radio" name="savings_range" value="5k_25k">$5k&ndash;$25k</label>
+              <label class="tap-option"><input type="radio" name="savings_range" value="25k_100k">$25k&ndash;$100k</label>
+              <label class="tap-option"><input type="radio" name="savings_range" value="100k_plus">$100k+</label>
+            </div>
+          </div>
 
-          <div class="form-field">
-            <label for="q12">Describe your current money-management system, if any.</label>
-            <textarea id="q12" name="money_system" required></textarea>
+          <div class="tap-field">
+            <label class="tap-field-label">Current debt range</label>
+            <div class="tap-grid" role="radiogroup" aria-label="Current debt range" data-tap-group="debt_range" data-required="true">
+              <label class="tap-option"><input type="radio" name="debt_range" value="none">None</label>
+              <label class="tap-option"><input type="radio" name="debt_range" value="under_10k">Under $10k</label>
+              <label class="tap-option"><input type="radio" name="debt_range" value="10k_50k">$10k&ndash;$50k</label>
+              <label class="tap-option"><input type="radio" name="debt_range" value="50k_plus">$50k+</label>
+            </div>
           </div>
-          <div class="form-field">
-            <label>Do you track cash flow?</label>
-            <div class="checkbox-row"><input type="radio" name="cash_flow_tracking" value="yes" id="q13-yes" required><label for="q13-yes" style="margin:0;">Yes</label></div>
-            <div class="checkbox-row"><input type="radio" name="cash_flow_tracking" value="no" id="q13-no"><label for="q13-no" style="margin:0;">No</label></div>
-            <input type="text" id="q13-how" name="cash_flow_how" placeholder="If yes, how?" style="margin-top:8px;">
-          </div>
-          <div class="form-field">
-            <label for="q14">What financial education have you pursued before?</label>
-            <textarea id="q14" name="prior_education" required></textarea>
-          </div>
-          <div class="form-field">
-            <label for="q15">What did you actually implement from it?</label>
-            <textarea id="q15" name="implementation_history" required></textarea>
-          </div>
-        </fieldset>
 
-        <fieldset class="glass card apply-step" data-step="4" style="display:none;">
-          <span class="eyebrow">Step 4 of 5 &middot; Readiness</span>
-          <h3 style="margin-top:6px;">Whether now is the right time.</h3>
-
-          <div class="form-field">
-            <label for="q16">Why CHEW, why now?</label>
-            <textarea id="q16" name="why_chew" required></textarea>
-          </div>
-          <div class="form-field">
-            <label for="q17">CHEW gives strategy and education; clients do the implementing. Describe your capacity to implement in the next 90 days.</label>
-            <textarea id="q17" name="implementation_capacity" required></textarea>
-          </div>
-          <div class="form-field">
-            <label for="q18">Hours per week you can commit</label>
-            <input type="number" id="q18" name="hours_per_week" min="0" required>
-          </div>
-          <div class="form-field">
-            <label for="q19">What would make you quit?</label>
-            <textarea id="q19" name="quit_reason" required></textarea>
-          </div>
-          <div class="form-field">
-            <label>Are you seeking guaranteed results?</label>
-            <div class="checkbox-row"><input type="radio" name="seeking_guarantees" value="yes" id="q20-yes" required><label for="q20-yes" style="margin:0;">Yes</label></div>
-            <div class="checkbox-row"><input type="radio" name="seeking_guarantees" value="no" id="q20-no"><label for="q20-no" style="margin:0;">No</label></div>
-            <div id="guarantee-note" class="status-note" style="display:none; margin-top:10px;">
-              CHEW does not guarantee funding, approvals, or score changes &mdash; no legitimate
-              financial company can. If that's what you're looking for, our
-              <a href="philosophy.html" style="color:inherit; text-decoration:underline;">Philosophy</a>
-              page explains why, and what we offer instead. You're welcome to continue your
-              assessment.
+          <div class="tap-field">
+            <label class="tap-field-label">Do you own a business?</label>
+            <div class="tap-grid tap-grid--2col" role="radiogroup" aria-label="Do you own a business?" data-tap-group="has_business" data-required="true">
+              <label class="tap-option"><input type="radio" name="has_business" value="yes">Yes</label>
+              <label class="tap-option"><input type="radio" name="has_business" value="no">No</label>
+            </div>
+            <div class="tap-field" id="business-stage-field" style="display:none; margin-top:14px; margin-bottom:0;">
+              <label class="tap-field-label">What stage?</label>
+              <div class="tap-grid" role="radiogroup" aria-label="Business stage" data-tap-group="business_stage">
+                <label class="tap-option"><input type="radio" name="business_stage" value="idea">Idea stage</label>
+                <label class="tap-option"><input type="radio" name="business_stage" value="early">Early, not yet profitable</label>
+                <label class="tap-option"><input type="radio" name="business_stage" value="established">Established &amp; profitable</label>
+              </div>
             </div>
           </div>
         </fieldset>
 
-        <fieldset class="glass card apply-step" data-step="5" style="display:none;">
-          <span class="eyebrow">Step 5 of 5 &middot; Let's Connect</span>
+        <fieldset class="glass card apply-step" data-step="2" style="display:none;">
+          <span class="eyebrow">Step 2 of 4 &middot; What Matters</span>
+          <h3 style="margin-top:6px;">What you're building toward.</h3>
+
+          <div class="tap-field">
+            <label class="tap-field-label">What are you here to build?</label>
+            <div class="tap-grid" role="radiogroup" aria-label="Primary goal" data-tap-group="primary_goal" data-required="true">
+              <label class="tap-option"><input type="radio" name="primary_goal" value="income_structure">Income &amp; savings structure</label>
+              <label class="tap-option"><input type="radio" name="primary_goal" value="credit_loan_ready">Credit repair or loan-readiness</label>
+              <label class="tap-option"><input type="radio" name="primary_goal" value="business">Starting or growing a business</label>
+              <label class="tap-option"><input type="radio" name="primary_goal" value="home_property">Buying a home or property</label>
+              <label class="tap-option"><input type="radio" name="primary_goal" value="financial_system">A clear system &mdash; don't have one now</label>
+              <label class="tap-option"><input type="radio" name="primary_goal" value="not_sure">Not sure yet &mdash; want help figuring it out</label>
+            </div>
+          </div>
+
+          <div class="tap-field">
+            <label class="tap-field-label">Target income range</label>
+            <label class="tap-field-hint">Where you're trying to get to, roughly.</label>
+            <div class="tap-grid" role="radiogroup" aria-label="Target income range" data-tap-group="target_income_range" data-required="true">
+              <label class="tap-option"><input type="radio" name="target_income_range" value="under_100k">Under $100k</label>
+              <label class="tap-option"><input type="radio" name="target_income_range" value="100k_250k">$100k&ndash;$250k</label>
+              <label class="tap-option"><input type="radio" name="target_income_range" value="250k_500k">$250k&ndash;$500k</label>
+              <label class="tap-option"><input type="radio" name="target_income_range" value="500k_plus">$500k+</label>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="glass card apply-step" data-step="3" style="display:none;">
+          <span class="eyebrow">Step 3 of 4 &middot; What's In The Way</span>
+          <h3 style="margin-top:6px;">How you operate today.</h3>
+
+          <div class="tap-field">
+            <label class="tap-field-label">How do you currently manage money?</label>
+            <label class="tap-field-hint">Tap all that apply.</label>
+            <div class="tap-grid" role="group" aria-label="Money management" data-tap-group="money_management" data-required="true">
+              <label class="tap-option"><input type="checkbox" name="money_management" value="app">App or software</label>
+              <label class="tap-option"><input type="checkbox" name="money_management" value="spreadsheet">Spreadsheet</label>
+              <label class="tap-option"><input type="checkbox" name="money_management" value="bookkeeper">Bookkeeper or accountant</label>
+              <label class="tap-option"><input type="checkbox" name="money_management" value="mental_math">Mostly mental math</label>
+              <label class="tap-option"><input type="checkbox" name="money_management" value="mixed">Business &amp; personal mixed together</label>
+            </div>
+          </div>
+
+          <div class="tap-field">
+            <label class="tap-field-label">How organized does that feel right now?</label>
+            <div class="tap-grid tap-grid--scale" role="radiogroup" aria-label="Organization level" data-tap-group="organization_level" data-required="true">
+              <label class="tap-option"><input type="radio" name="organization_level" value="chaos">Total chaos</label>
+              <label class="tap-option"><input type="radio" name="organization_level" value="some_structure">Some structure</label>
+              <label class="tap-option"><input type="radio" name="organization_level" value="fairly_organized">Fairly organized</label>
+              <label class="tap-option"><input type="radio" name="organization_level" value="very_organized">Very organized</label>
+              <label class="tap-option"><input type="radio" name="organization_level" value="fully_systemized">Fully systemized</label>
+            </div>
+          </div>
+
+          <div class="tap-field">
+            <label class="tap-field-label">Have you done financial coaching or education before?</label>
+            <div class="tap-grid" role="radiogroup" aria-label="Coaching history" data-tap-group="coaching_history" data-required="true">
+              <label class="tap-option"><input type="radio" name="coaching_history" value="never">Never tried it</label>
+              <label class="tap-option"><input type="radio" name="coaching_history" value="tried_no_stick">Tried it, didn't stick</label>
+              <label class="tap-option"><input type="radio" name="coaching_history" value="tried_some_stuck">Tried it, still using some</label>
+              <label class="tap-option"><input type="radio" name="coaching_history" value="currently_similar">Currently doing something similar</label>
+            </div>
+          </div>
+
+          <div class="tap-field">
+            <label class="tap-field-label">Hours per week you can realistically commit</label>
+            <div class="tap-grid tap-grid--2col" role="radiogroup" aria-label="Hours per week" data-tap-group="hours_per_week" data-required="true">
+              <label class="tap-option"><input type="radio" name="hours_per_week" value="under_2">Under 2 hrs/wk</label>
+              <label class="tap-option"><input type="radio" name="hours_per_week" value="2_5">2&ndash;5 hrs/wk</label>
+              <label class="tap-option"><input type="radio" name="hours_per_week" value="5_10">5&ndash;10 hrs/wk</label>
+              <label class="tap-option"><input type="radio" name="hours_per_week" value="10_plus">10+ hrs/wk</label>
+            </div>
+          </div>
+
+          <div class="tap-field">
+            <label class="tap-field-label">What's pulling you toward CHEW right now?</label>
+            <label class="tap-field-hint">Pick up to 2.</label>
+            <div class="tap-grid" role="group" aria-label="What's pulling you toward CHEW" data-tap-group="pulling_toward_chew" data-required="true" data-max="2">
+              <label class="tap-option"><input type="checkbox" name="pulling_toward_chew" value="income_no_structure">Income without real structure</label>
+              <label class="tap-option"><input type="checkbox" name="pulling_toward_chew" value="home_property_goal">A home or property goal</label>
+              <label class="tap-option"><input type="checkbox" name="pulling_toward_chew" value="business_idea">A business idea or existing business</label>
+              <label class="tap-option"><input type="checkbox" name="pulling_toward_chew" value="stuck_debt_credit">Debt or credit that feels stuck</label>
+              <label class="tap-option"><input type="checkbox" name="pulling_toward_chew" value="real_education">Wanting real financial education</label>
+              <label class="tap-option"><input type="checkbox" name="pulling_toward_chew" value="past_program_failed">Tried other programs, it didn't stick</label>
+            </div>
+          </div>
+
+          <div class="tap-field">
+            <label class="tap-field-label">If it got hard, what would most likely make you stop?</label>
+            <div class="tap-grid" role="radiogroup" aria-label="What would make you stop" data-tap-group="stop_reason" data-required="true">
+              <label class="tap-option"><input type="radio" name="stop_reason" value="time">Running out of time</label>
+              <label class="tap-option"><input type="radio" name="stop_reason" value="money">Money getting tight</label>
+              <label class="tap-option"><input type="radio" name="stop_reason" value="doubt">Doubting it'll actually work</label>
+              <label class="tap-option"><input type="radio" name="stop_reason" value="life">Life getting in the way</label>
+              <label class="tap-option"><input type="radio" name="stop_reason" value="structure">Not liking structure or accountability</label>
+            </div>
+          </div>
+
+          <div class="tap-field" style="margin-bottom:0;">
+            <label class="tap-field-label">Are you seeking guaranteed results?</label>
+            <div class="tap-grid tap-grid--2col" role="radiogroup" aria-label="Seeking guarantees" data-tap-group="seeking_guarantees" data-required="true">
+              <label class="tap-option"><input type="radio" name="seeking_guarantees" value="yes">Yes</label>
+              <label class="tap-option"><input type="radio" name="seeking_guarantees" value="no">No</label>
+            </div>
+            <div id="guarantee-note" class="tap-field-note" style="display:none;">
+              CHEW does not guarantee funding, approvals, or score changes &mdash; no legitimate
+              financial company can. If that's what you're looking for, our
+              <a href="philosophy.html" style="color:inherit; text-decoration:underline;">Philosophy</a>
+              page explains why, and what we offer instead. You're welcome to continue.
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="glass card apply-step" data-step="4" style="display:none;">
+          <span class="eyebrow">Step 4 of 4 &middot; Next Move</span>
           <h3 style="margin-top:6px;">How to reach you.</h3>
 
           <div class="form-field">
@@ -229,22 +258,31 @@
             <label for="phone">Phone (optional)</label>
             <input type="tel" id="phone" name="phone" autocomplete="tel">
           </div>
-          <div class="form-field">
-            <label for="timeline">What's your timeline to get started?</label>
-            <select id="timeline" name="timeline" required>
-              <option value="">Select one&hellip;</option>
-              <option value="immediately">Immediately</option>
-              <option value="1_3_months">1&ndash;3 months</option>
-              <option value="3_6_months">3&ndash;6 months</option>
-              <option value="just_exploring">Just exploring</option>
-            </select>
+
+          <div class="tap-field">
+            <label class="tap-field-label">What's your timeline to get started?</label>
+            <div class="tap-grid tap-grid--2col" role="radiogroup" aria-label="Timeline" data-tap-group="timeline" data-required="true">
+              <label class="tap-option"><input type="radio" name="timeline" value="immediately">Immediately</label>
+              <label class="tap-option"><input type="radio" name="timeline" value="1_3_months">1&ndash;3 months</label>
+              <label class="tap-option"><input type="radio" name="timeline" value="3_6_months">3&ndash;6 months</label>
+              <label class="tap-option"><input type="radio" name="timeline" value="just_exploring">Just exploring</label>
+            </div>
           </div>
-          <div class="form-field">
-            <label for="referral_source">How did you hear about CHEW?</label>
-            <input type="text" id="referral_source" name="referral_source">
+
+          <div class="tap-field">
+            <label class="tap-field-label">How did you hear about CHEW?</label>
+            <label class="tap-field-hint">Optional.</label>
+            <div class="tap-grid" role="radiogroup" aria-label="Referral source" data-tap-group="referral_source">
+              <label class="tap-option"><input type="radio" name="referral_source" value="social">Instagram / social</label>
+              <label class="tap-option"><input type="radio" name="referral_source" value="friend">Friend or referral</label>
+              <label class="tap-option"><input type="radio" name="referral_source" value="search">Google search</label>
+              <label class="tap-option"><input type="radio" name="referral_source" value="podcast_youtube">Podcast / YouTube</label>
+              <label class="tap-option"><input type="radio" name="referral_source" value="other">Other</label>
+            </div>
           </div>
+
           <div class="form-field">
-            <label for="additional_info">Anything else we should know?</label>
+            <label for="additional_info">Anything else we should know? <span style="font-weight:400; color:var(--text-faint);">(optional)</span></label>
             <textarea id="additional_info" name="additional_info"></textarea>
           </div>
         </fieldset>
@@ -295,16 +333,66 @@
     window.scrollTo({ top: document.getElementById('apply-form').offsetTop - 100, behavior: 'smooth' });
   }
 
+  // ---- Tap options: real radio/checkbox inputs under the hood, styled
+  // as tap cards. A change listener keeps a .is-checked class on the
+  // label (drives the visual state without relying on :has() support),
+  // and enforces an optional per-group tap ceiling (data-max) by
+  // disabling the remaining unchecked options once it's reached. ----
+  var tapGroups = Array.prototype.slice.call(document.querySelectorAll('[data-tap-group]'));
+
+  function refreshTapGroup(groupEl) {
+    var inputs = Array.prototype.slice.call(groupEl.querySelectorAll('input'));
+    inputs.forEach(function (input) {
+      input.closest('.tap-option').classList.toggle('is-checked', input.checked);
+    });
+    var max = parseInt(groupEl.getAttribute('data-max') || '0', 10);
+    if (max && inputs[0] && inputs[0].type === 'checkbox') {
+      var checkedCount = inputs.filter(function (i) { return i.checked; }).length;
+      inputs.forEach(function (input) {
+        var atCeiling = checkedCount >= max && !input.checked;
+        input.disabled = atCeiling;
+        input.closest('.tap-option').classList.toggle('is-disabled', atCeiling);
+      });
+    }
+  }
+
+  tapGroups.forEach(function (groupEl) {
+    groupEl.addEventListener('change', function () { refreshTapGroup(groupEl); });
+    refreshTapGroup(groupEl);
+  });
+
+  // Do you own a business? -> reveal the business-stage tap group only
+  // when the answer is yes; it's supporting detail, never required.
+  var businessStageField = document.getElementById('business-stage-field');
+  document.querySelectorAll('input[name="has_business"]').forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      businessStageField.style.display = (radio.value === 'yes' && radio.checked) ? 'block' : 'none';
+    });
+  });
+
+  document.querySelectorAll('input[name="seeking_guarantees"]').forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      document.getElementById('guarantee-note').style.display = (radio.value === 'yes' && radio.checked) ? 'block' : 'none';
+    });
+  });
+
   function currentStepValid() {
     var stepEl = steps[current - 1];
-    var fields = stepEl.querySelectorAll('[required]');
-    for (var i = 0; i < fields.length; i++) {
-      var field = fields[i];
-      if (field.type === 'radio') {
-        var group = stepEl.querySelectorAll('input[name="' + field.name + '"]');
-        var checked = Array.prototype.some.call(group, function (r) { return r.checked; });
-        if (!checked) { return false; }
-      } else if (!field.value || !field.value.trim()) {
+
+    var requiredGroups = stepEl.querySelectorAll('[data-tap-group][data-required="true"]');
+    for (var g = 0; g < requiredGroups.length; g++) {
+      var groupEl = requiredGroups[g];
+      var checkedCount = groupEl.querySelectorAll('input:checked').length;
+      if (checkedCount < 1) {
+        groupEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        return false;
+      }
+    }
+
+    var textFields = stepEl.querySelectorAll('input[required], textarea[required]');
+    for (var i = 0; i < textFields.length; i++) {
+      var field = textFields[i];
+      if (!field.checkValidity()) {
         field.reportValidity();
         return false;
       }
@@ -321,12 +409,6 @@
     if (current > 1) { current--; showStep(current); }
   });
 
-  document.querySelectorAll('input[name="seeking_guarantees"]').forEach(function (radio) {
-    radio.addEventListener('change', function () {
-      document.getElementById('guarantee-note').style.display = (radio.value === 'yes' && radio.checked) ? 'block' : 'none';
-    });
-  });
-
   document.getElementById('apply-form').addEventListener('submit', function (e) {
     e.preventDefault();
     if (!currentStepValid()) return;
@@ -335,7 +417,12 @@
     var formData = new FormData(form);
     var answers = {};
     formData.forEach(function (value, key) {
-      if (key !== 'full_name' && key !== 'email' && key !== 'phone') {
+      if (key === 'full_name' || key === 'email' || key === 'phone') return;
+      if (Object.prototype.hasOwnProperty.call(answers, key)) {
+        // A repeated key means a checkbox group (multi-select) — collect as an array.
+        if (!Array.isArray(answers[key])) answers[key] = [answers[key]];
+        answers[key].push(value);
+      } else {
         answers[key] = value;
       }
     });
