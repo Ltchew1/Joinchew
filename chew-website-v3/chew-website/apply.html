@@ -61,244 +61,188 @@
     </div>
   </section>
 
-  <section class="section">
-    <div class="container" style="max-width:720px;">
+  <section class="section myv-section">
+    <div class="container" style="max-width:640px;">
 
-      <div id="step-progress" style="display:flex; gap:8px; margin-bottom:32px;">
-        <div class="step-dot active" data-step-dot="1"></div>
-        <div class="step-dot" data-step-dot="2"></div>
-        <div class="step-dot" data-step-dot="3"></div>
-        <div class="step-dot" data-step-dot="4"></div>
+      <div class="myv-progress" id="myv-progress">
+        <span class="myv-progress-label" id="myv-progress-label">Position 1/11</span>
+        <div class="myv-progress-bar"><div class="myv-progress-fill" id="myv-progress-fill" style="width:9%;"></div></div>
       </div>
 
-      <p class="text-center" style="font-size:0.82rem; color:var(--text-faint); margin:-14px 0 26px;">
-        Tap through &mdash; about 2 minutes. Only your name and email need typing.
-      </p>
-
       <form novalidate id="apply-form">
+        <div class="glass card myv-card">
+          <div id="myv-stage">
 
-        <fieldset class="glass card apply-step" data-step="1">
-          <span class="eyebrow">Step 1 of 4 &middot; Current Position</span>
-          <h3 style="margin-top:6px;">Where you stand today.</h3>
-
-          <div class="tap-field">
-            <label class="tap-field-label">Current income range</label>
-            <div class="tap-grid" role="radiogroup" aria-label="Current income range" data-tap-group="income_range" data-required="true">
-              <label class="tap-option"><input type="radio" name="income_range" value="under_50k">Under $50k</label>
-              <label class="tap-option"><input type="radio" name="income_range" value="50k_100k">$50k&ndash;$100k</label>
-              <label class="tap-option"><input type="radio" name="income_range" value="100k_250k">$100k&ndash;$250k</label>
-              <label class="tap-option"><input type="radio" name="income_range" value="250k_plus">$250k+</label>
-            </div>
-          </div>
-
-          <div class="tap-field">
-            <label class="tap-field-label">Current savings range</label>
-            <div class="tap-grid" role="radiogroup" aria-label="Current savings range" data-tap-group="savings_range" data-required="true">
-              <label class="tap-option"><input type="radio" name="savings_range" value="under_5k">Under $5k</label>
-              <label class="tap-option"><input type="radio" name="savings_range" value="5k_25k">$5k&ndash;$25k</label>
-              <label class="tap-option"><input type="radio" name="savings_range" value="25k_100k">$25k&ndash;$100k</label>
-              <label class="tap-option"><input type="radio" name="savings_range" value="100k_plus">$100k+</label>
-            </div>
-          </div>
-
-          <div class="tap-field">
-            <label class="tap-field-label">Current debt range</label>
-            <div class="tap-grid" role="radiogroup" aria-label="Current debt range" data-tap-group="debt_range" data-required="true">
-              <label class="tap-option"><input type="radio" name="debt_range" value="none">None</label>
-              <label class="tap-option"><input type="radio" name="debt_range" value="under_10k">Under $10k</label>
-              <label class="tap-option"><input type="radio" name="debt_range" value="10k_50k">$10k&ndash;$50k</label>
-              <label class="tap-option"><input type="radio" name="debt_range" value="50k_plus">$50k+</label>
-            </div>
-          </div>
-
-          <div class="tap-field">
-            <label class="tap-field-label">Do you own a business?</label>
-            <div class="tap-grid tap-grid--2col" role="radiogroup" aria-label="Do you own a business?" data-tap-group="has_business" data-required="true">
-              <label class="tap-option"><input type="radio" name="has_business" value="yes">Yes</label>
-              <label class="tap-option"><input type="radio" name="has_business" value="no">No</label>
-            </div>
-            <div class="tap-field" id="business-stage-field" style="display:none; margin-top:14px; margin-bottom:0;">
-              <label class="tap-field-label">What stage?</label>
-              <div class="tap-grid" role="radiogroup" aria-label="Business stage" data-tap-group="business_stage">
-                <label class="tap-option"><input type="radio" name="business_stage" value="idea">Idea stage</label>
-                <label class="tap-option"><input type="radio" name="business_stage" value="early">Early, not yet profitable</label>
-                <label class="tap-option"><input type="radio" name="business_stage" value="established">Established &amp; profitable</label>
+            <fieldset class="myv-q" data-q="1">
+              <h3>What do you want to move first?</h3>
+              <div class="myv-options" role="radiogroup" aria-label="What do you want to move first?">
+                <label class="myv-option"><input type="radio" name="primary_move" value="money_organized" required><span>Get my money organized</span></label>
+                <label class="myv-option"><input type="radio" name="primary_move" value="credit_position"><span>Strengthen my credit position</span></label>
+                <label class="myv-option"><input type="radio" name="primary_move" value="business_growth"><span>Build/grow my business</span></label>
+                <label class="myv-option"><input type="radio" name="primary_move" value="funding_ready"><span>Get funding-ready</span></label>
+                <label class="myv-option"><input type="radio" name="primary_move" value="prepare_home"><span>Prepare for a home</span></label>
+                <label class="myv-option"><input type="radio" name="primary_move" value="build_property"><span>Build toward property</span></label>
+                <label class="myv-option"><input type="radio" name="primary_move" value="income_career"><span>Increase income/career</span></label>
+                <label class="myv-option"><input type="radio" name="primary_move" value="protect_building"><span>Protect what I'm building</span></label>
+                <label class="myv-option"><input type="radio" name="primary_move" value="not_sure"><span>I'm not sure yet</span></label>
               </div>
-            </div>
-          </div>
-        </fieldset>
+            </fieldset>
 
-        <fieldset class="glass card apply-step" data-step="2" style="display:none;">
-          <span class="eyebrow">Step 2 of 4 &middot; What Matters</span>
-          <h3 style="margin-top:6px;">What you're building toward.</h3>
+            <fieldset class="myv-q" data-q="2" hidden>
+              <h3>What best describes your income?</h3>
+              <div class="myv-options" role="radiogroup" aria-label="What best describes your income?">
+                <label class="myv-option"><input type="radio" name="income_type" value="w2" required><span>W-2 / job</span></label>
+                <label class="myv-option"><input type="radio" name="income_type" value="business_self_employed"><span>Business/self-employed</span></label>
+                <label class="myv-option"><input type="radio" name="income_type" value="both"><span>Both</span></label>
+                <label class="myv-option"><input type="radio" name="income_type" value="fixed_benefit"><span>Fixed/benefit income</span></label>
+                <label class="myv-option"><input type="radio" name="income_type" value="inconsistent"><span>Income is inconsistent</span></label>
+                <label class="myv-option"><input type="radio" name="income_type" value="prefer_not_to_say"><span>Prefer not to say</span></label>
+              </div>
+            </fieldset>
 
-          <div class="tap-field">
-            <label class="tap-field-label">What are you here to build?</label>
-            <div class="tap-grid" role="radiogroup" aria-label="Primary goal" data-tap-group="primary_goal" data-required="true">
-              <label class="tap-option"><input type="radio" name="primary_goal" value="income_structure">Income &amp; savings structure</label>
-              <label class="tap-option"><input type="radio" name="primary_goal" value="credit_loan_ready">Credit repair or loan-readiness</label>
-              <label class="tap-option"><input type="radio" name="primary_goal" value="business">Starting or growing a business</label>
-              <label class="tap-option"><input type="radio" name="primary_goal" value="home_property">Buying a home or property</label>
-              <label class="tap-option"><input type="radio" name="primary_goal" value="financial_system">A clear system &mdash; don't have one now</label>
-              <label class="tap-option"><input type="radio" name="primary_goal" value="not_sure">Not sure yet &mdash; want help figuring it out</label>
-            </div>
-          </div>
+            <fieldset class="myv-q" data-q="3" hidden>
+              <h3>Current annual income range</h3>
+              <div class="myv-options" role="radiogroup" aria-label="Current annual income range">
+                <label class="myv-option"><input type="radio" name="income_range" value="under_25k" required><span>Under $25K</span></label>
+                <label class="myv-option"><input type="radio" name="income_range" value="25k_50k"><span>$25K&ndash;$50K</span></label>
+                <label class="myv-option"><input type="radio" name="income_range" value="50k_75k"><span>$50K&ndash;$75K</span></label>
+                <label class="myv-option"><input type="radio" name="income_range" value="75k_100k"><span>$75K&ndash;$100K</span></label>
+                <label class="myv-option"><input type="radio" name="income_range" value="100k_150k"><span>$100K&ndash;$150K</span></label>
+                <label class="myv-option"><input type="radio" name="income_range" value="150k_250k"><span>$150K&ndash;$250K</span></label>
+                <label class="myv-option"><input type="radio" name="income_range" value="250k_plus"><span>$250K+</span></label>
+              </div>
+            </fieldset>
 
-          <div class="tap-field">
-            <label class="tap-field-label">Target income range</label>
-            <label class="tap-field-hint">Where you're trying to get to, roughly.</label>
-            <div class="tap-grid" role="radiogroup" aria-label="Target income range" data-tap-group="target_income_range" data-required="true">
-              <label class="tap-option"><input type="radio" name="target_income_range" value="under_100k">Under $100k</label>
-              <label class="tap-option"><input type="radio" name="target_income_range" value="100k_250k">$100k&ndash;$250k</label>
-              <label class="tap-option"><input type="radio" name="target_income_range" value="250k_500k">$250k&ndash;$500k</label>
-              <label class="tap-option"><input type="radio" name="target_income_range" value="500k_plus">$500k+</label>
-            </div>
-          </div>
-        </fieldset>
+            <fieldset class="myv-q" data-q="4" hidden>
+              <h3>Current savings / liquid cash range</h3>
+              <div class="myv-options" role="radiogroup" aria-label="Current savings / liquid cash range">
+                <label class="myv-option"><input type="radio" name="savings_range" value="under_1k" required><span>Under $1K</span></label>
+                <label class="myv-option"><input type="radio" name="savings_range" value="1k_5k"><span>$1K&ndash;$5K</span></label>
+                <label class="myv-option"><input type="radio" name="savings_range" value="5k_15k"><span>$5K&ndash;$15K</span></label>
+                <label class="myv-option"><input type="radio" name="savings_range" value="15k_50k"><span>$15K&ndash;$50K</span></label>
+                <label class="myv-option"><input type="radio" name="savings_range" value="50k_100k"><span>$50K&ndash;$100K</span></label>
+                <label class="myv-option"><input type="radio" name="savings_range" value="100k_plus"><span>$100K+</span></label>
+                <label class="myv-option"><input type="radio" name="savings_range" value="prefer_not_to_say"><span>Prefer not to say</span></label>
+              </div>
+            </fieldset>
 
-        <fieldset class="glass card apply-step" data-step="3" style="display:none;">
-          <span class="eyebrow">Step 3 of 4 &middot; What's In The Way</span>
-          <h3 style="margin-top:6px;">How you operate today.</h3>
+            <fieldset class="myv-q" data-q="5" hidden>
+              <h3>Current debt range</h3>
+              <div class="myv-options" role="radiogroup" aria-label="Current debt range">
+                <label class="myv-option"><input type="radio" name="debt_range" value="none" required><span>None</span></label>
+                <label class="myv-option"><input type="radio" name="debt_range" value="under_5k"><span>Under $5K</span></label>
+                <label class="myv-option"><input type="radio" name="debt_range" value="5k_15k"><span>$5K&ndash;$15K</span></label>
+                <label class="myv-option"><input type="radio" name="debt_range" value="15k_50k"><span>$15K&ndash;$50K</span></label>
+                <label class="myv-option"><input type="radio" name="debt_range" value="50k_100k"><span>$50K&ndash;$100K</span></label>
+                <label class="myv-option"><input type="radio" name="debt_range" value="100k_plus"><span>$100K+</span></label>
+                <label class="myv-option"><input type="radio" name="debt_range" value="not_sure"><span>Not sure</span></label>
+              </div>
+            </fieldset>
 
-          <div class="tap-field">
-            <label class="tap-field-label">How do you currently manage money?</label>
-            <label class="tap-field-hint">Tap all that apply.</label>
-            <div class="tap-grid" role="group" aria-label="Money management" data-tap-group="money_management" data-required="true">
-              <label class="tap-option"><input type="checkbox" name="money_management" value="app">App or software</label>
-              <label class="tap-option"><input type="checkbox" name="money_management" value="spreadsheet">Spreadsheet</label>
-              <label class="tap-option"><input type="checkbox" name="money_management" value="bookkeeper">Bookkeeper or accountant</label>
-              <label class="tap-option"><input type="checkbox" name="money_management" value="mental_math">Mostly mental math</label>
-              <label class="tap-option"><input type="checkbox" name="money_management" value="mixed">Business &amp; personal mixed together</label>
-            </div>
-          </div>
+            <fieldset class="myv-q" data-q="6" hidden>
+              <h3>Do you currently own a business?</h3>
+              <div class="myv-options" role="radiogroup" aria-label="Do you currently own a business?">
+                <label class="myv-option"><input type="radio" name="business_status" value="no" required><span>No</span></label>
+                <label class="myv-option"><input type="radio" name="business_status" value="idea_stage"><span>Idea stage</span></label>
+                <label class="myv-option"><input type="radio" name="business_status" value="formed_no_revenue"><span>Formed, no revenue yet</span></label>
+                <label class="myv-option"><input type="radio" name="business_status" value="under_50k_year"><span>Operating under $50K/yr</span></label>
+                <label class="myv-option"><input type="radio" name="business_status" value="50k_250k_year"><span>$50K&ndash;$250K/yr</span></label>
+                <label class="myv-option"><input type="radio" name="business_status" value="250k_plus_year"><span>$250K+/yr</span></label>
+              </div>
+            </fieldset>
 
-          <div class="tap-field">
-            <label class="tap-field-label">How organized does that feel right now?</label>
-            <div class="tap-grid tap-grid--scale" role="radiogroup" aria-label="Organization level" data-tap-group="organization_level" data-required="true">
-              <label class="tap-option"><input type="radio" name="organization_level" value="chaos">Total chaos</label>
-              <label class="tap-option"><input type="radio" name="organization_level" value="some_structure">Some structure</label>
-              <label class="tap-option"><input type="radio" name="organization_level" value="fairly_organized">Fairly organized</label>
-              <label class="tap-option"><input type="radio" name="organization_level" value="very_organized">Very organized</label>
-              <label class="tap-option"><input type="radio" name="organization_level" value="fully_systemized">Fully systemized</label>
-            </div>
-          </div>
+            <fieldset class="myv-q" data-q="7" hidden>
+              <h3>Do you currently monitor your credit?</h3>
+              <div class="myv-options myv-options--2col" role="radiogroup" aria-label="Do you currently monitor your credit?">
+                <label class="myv-option"><input type="radio" name="credit_monitoring" value="yes_regularly" required><span>Yes &mdash; regularly</span></label>
+                <label class="myv-option"><input type="radio" name="credit_monitoring" value="sometimes"><span>Sometimes</span></label>
+                <label class="myv-option"><input type="radio" name="credit_monitoring" value="no"><span>No</span></label>
+                <label class="myv-option"><input type="radio" name="credit_monitoring" value="not_sure_what_to_use"><span>Not sure what I should be using</span></label>
+              </div>
+            </fieldset>
 
-          <div class="tap-field">
-            <label class="tap-field-label">Have you done financial coaching or education before?</label>
-            <div class="tap-grid" role="radiogroup" aria-label="Coaching history" data-tap-group="coaching_history" data-required="true">
-              <label class="tap-option"><input type="radio" name="coaching_history" value="never">Never tried it</label>
-              <label class="tap-option"><input type="radio" name="coaching_history" value="tried_no_stick">Tried it, didn't stick</label>
-              <label class="tap-option"><input type="radio" name="coaching_history" value="tried_some_stuck">Tried it, still using some</label>
-              <label class="tap-option"><input type="radio" name="coaching_history" value="currently_similar">Currently doing something similar</label>
-            </div>
-          </div>
+            <fieldset class="myv-q" data-q="8" hidden>
+              <h3>What feels most in the way right now?</h3>
+              <div class="myv-options" role="radiogroup" aria-label="What feels most in the way right now?">
+                <label class="myv-option"><input type="radio" name="primary_barrier" value="cash_flow" required><span>Cash flow</span></label>
+                <label class="myv-option"><input type="radio" name="primary_barrier" value="debt"><span>Debt</span></label>
+                <label class="myv-option"><input type="radio" name="primary_barrier" value="credit_position"><span>Credit position</span></label>
+                <label class="myv-option"><input type="radio" name="primary_barrier" value="savings_reserves"><span>Savings/reserves</span></label>
+                <label class="myv-option"><input type="radio" name="primary_barrier" value="income"><span>Income</span></label>
+                <label class="myv-option"><input type="radio" name="primary_barrier" value="business_structure"><span>Business structure</span></label>
+                <label class="myv-option"><input type="radio" name="primary_barrier" value="documentation"><span>Documentation</span></label>
+                <label class="myv-option"><input type="radio" name="primary_barrier" value="funding_readiness"><span>Funding readiness</span></label>
+                <label class="myv-option"><input type="radio" name="primary_barrier" value="dont_know"><span>I don't know what the real blocker is</span></label>
+              </div>
+            </fieldset>
 
-          <div class="tap-field">
-            <label class="tap-field-label">Hours per week you can realistically commit</label>
-            <div class="tap-grid tap-grid--2col" role="radiogroup" aria-label="Hours per week" data-tap-group="hours_per_week" data-required="true">
-              <label class="tap-option"><input type="radio" name="hours_per_week" value="under_2">Under 2 hrs/wk</label>
-              <label class="tap-option"><input type="radio" name="hours_per_week" value="2_5">2&ndash;5 hrs/wk</label>
-              <label class="tap-option"><input type="radio" name="hours_per_week" value="5_10">5&ndash;10 hrs/wk</label>
-              <label class="tap-option"><input type="radio" name="hours_per_week" value="10_plus">10+ hrs/wk</label>
-            </div>
-          </div>
+            <fieldset class="myv-q" data-q="9" hidden>
+              <h3>How organized is your money right now?</h3>
+              <div class="myv-options" role="radiogroup" aria-label="How organized is your money right now?">
+                <label class="myv-option"><input type="radio" name="organization_level" value="real_system" required><span>I have a real system</span></label>
+                <label class="myv-option"><input type="radio" name="organization_level" value="mostly_organized"><span>Mostly organized</span></label>
+                <label class="myv-option"><input type="radio" name="organization_level" value="some_organized"><span>Some things are organized</span></label>
+                <label class="myv-option"><input type="radio" name="organization_level" value="pretty_scattered"><span>Pretty scattered</span></label>
+                <label class="myv-option"><input type="radio" name="organization_level" value="need_system_from_scratch"><span>I need a system from scratch</span></label>
+              </div>
+            </fieldset>
 
-          <div class="tap-field">
-            <label class="tap-field-label">What's pulling you toward CHEW right now?</label>
-            <label class="tap-field-hint">Pick up to 2.</label>
-            <div class="tap-grid" role="group" aria-label="What's pulling you toward CHEW" data-tap-group="pulling_toward_chew" data-required="true" data-max="2">
-              <label class="tap-option"><input type="checkbox" name="pulling_toward_chew" value="income_no_structure">Income without real structure</label>
-              <label class="tap-option"><input type="checkbox" name="pulling_toward_chew" value="home_property_goal">A home or property goal</label>
-              <label class="tap-option"><input type="checkbox" name="pulling_toward_chew" value="business_idea">A business idea or existing business</label>
-              <label class="tap-option"><input type="checkbox" name="pulling_toward_chew" value="stuck_debt_credit">Debt or credit that feels stuck</label>
-              <label class="tap-option"><input type="checkbox" name="pulling_toward_chew" value="real_education">Wanting real financial education</label>
-              <label class="tap-option"><input type="checkbox" name="pulling_toward_chew" value="past_program_failed">Tried other programs, it didn't stick</label>
-            </div>
-          </div>
+            <fieldset class="myv-q" data-q="10" hidden>
+              <h3>How soon are you trying to make a meaningful move?</h3>
+              <div class="myv-options" role="radiogroup" aria-label="How soon are you trying to make a meaningful move?">
+                <label class="myv-option"><input type="radio" name="timeline" value="now" required><span>Now</span></label>
+                <label class="myv-option"><input type="radio" name="timeline" value="within_30_days"><span>Within 30 days</span></label>
+                <label class="myv-option"><input type="radio" name="timeline" value="1_3_months"><span>1&ndash;3 months</span></label>
+                <label class="myv-option"><input type="radio" name="timeline" value="3_6_months"><span>3&ndash;6 months</span></label>
+                <label class="myv-option"><input type="radio" name="timeline" value="6_12_months"><span>6&ndash;12 months</span></label>
+                <label class="myv-option"><input type="radio" name="timeline" value="just_exploring"><span>Just exploring</span></label>
+              </div>
+            </fieldset>
 
-          <div class="tap-field">
-            <label class="tap-field-label">If it got hard, what would most likely make you stop?</label>
-            <div class="tap-grid" role="radiogroup" aria-label="What would make you stop" data-tap-group="stop_reason" data-required="true">
-              <label class="tap-option"><input type="radio" name="stop_reason" value="time">Running out of time</label>
-              <label class="tap-option"><input type="radio" name="stop_reason" value="money">Money getting tight</label>
-              <label class="tap-option"><input type="radio" name="stop_reason" value="doubt">Doubting it'll actually work</label>
-              <label class="tap-option"><input type="radio" name="stop_reason" value="life">Life getting in the way</label>
-              <label class="tap-option"><input type="radio" name="stop_reason" value="structure">Not liking structure or accountability</label>
-            </div>
-          </div>
+            <fieldset class="myv-q" data-q="11" hidden>
+              <h3>What kind of help are you looking for?</h3>
+              <div class="myv-options" role="radiogroup" aria-label="What kind of help are you looking for?">
+                <label class="myv-option"><input type="radio" name="help_type" value="understand_position" required><span>Help me understand my position</span></label>
+                <label class="myv-option"><input type="radio" name="help_type" value="clear_strategy"><span>Give me a clear strategy</span></label>
+                <label class="myv-option"><input type="radio" name="help_type" value="organize_pieces"><span>Help me organize the pieces</span></label>
+                <label class="myv-option"><input type="radio" name="help_type" value="what_to_do_next"><span>Show me what to do next</span></label>
+                <label class="myv-option"><input type="radio" name="help_type" value="ongoing_guidance"><span>Ongoing guidance/accountability</span></label>
+                <label class="myv-option"><input type="radio" name="help_type" value="not_sure"><span>Not sure yet</span></label>
+              </div>
+            </fieldset>
 
-          <div class="tap-field" style="margin-bottom:0;">
-            <label class="tap-field-label">Are you seeking guaranteed results?</label>
-            <div class="tap-grid tap-grid--2col" role="radiogroup" aria-label="Seeking guarantees" data-tap-group="seeking_guarantees" data-required="true">
-              <label class="tap-option"><input type="radio" name="seeking_guarantees" value="yes">Yes</label>
-              <label class="tap-option"><input type="radio" name="seeking_guarantees" value="no">No</label>
-            </div>
-            <div id="guarantee-note" class="tap-field-note" style="display:none;">
-              CHEW does not guarantee funding, approvals, or score changes &mdash; no legitimate
-              financial company can. If that's what you're looking for, our
-              <a href="philosophy.html" style="color:inherit; text-decoration:underline;">Philosophy</a>
-              page explains why, and what we offer instead. You're welcome to continue.
-            </div>
-          </div>
-        </fieldset>
+            <fieldset class="myv-q myv-q--contact" data-q="12" hidden>
+              <span class="eyebrow">Let's Save Your Starting Position</span>
+              <div class="form-field" style="margin-top:14px;">
+                <label for="full_name">Full name</label>
+                <input type="text" id="full_name" name="full_name" required autocomplete="name">
+              </div>
+              <div class="form-field">
+                <label for="email">Email address</label>
+                <input type="email" id="email" name="email" required autocomplete="email">
+              </div>
+              <div class="form-field" style="margin-bottom:0;">
+                <label for="phone">Phone <span style="font-weight:400; color:var(--text-faint);">(optional)</span></label>
+                <input type="tel" id="phone" name="phone" autocomplete="tel">
+              </div>
+            </fieldset>
 
-        <fieldset class="glass card apply-step" data-step="4" style="display:none;">
-          <span class="eyebrow">Step 4 of 4 &middot; Next Move</span>
-          <h3 style="margin-top:6px;">How to reach you.</h3>
-
-          <div class="form-field">
-            <label for="full_name">Full name</label>
-            <input type="text" id="full_name" name="full_name" required autocomplete="name">
-          </div>
-          <div class="form-field">
-            <label for="email">Email address</label>
-            <input type="email" id="email" name="email" required autocomplete="email">
-          </div>
-          <div class="form-field">
-            <label for="phone">Phone (optional)</label>
-            <input type="tel" id="phone" name="phone" autocomplete="tel">
-          </div>
-
-          <div class="tap-field">
-            <label class="tap-field-label">What's your timeline to get started?</label>
-            <div class="tap-grid tap-grid--2col" role="radiogroup" aria-label="Timeline" data-tap-group="timeline" data-required="true">
-              <label class="tap-option"><input type="radio" name="timeline" value="immediately">Immediately</label>
-              <label class="tap-option"><input type="radio" name="timeline" value="1_3_months">1&ndash;3 months</label>
-              <label class="tap-option"><input type="radio" name="timeline" value="3_6_months">3&ndash;6 months</label>
-              <label class="tap-option"><input type="radio" name="timeline" value="just_exploring">Just exploring</label>
-            </div>
           </div>
 
-          <div class="tap-field">
-            <label class="tap-field-label">How did you hear about CHEW?</label>
-            <label class="tap-field-hint">Optional.</label>
-            <div class="tap-grid" role="radiogroup" aria-label="Referral source" data-tap-group="referral_source">
-              <label class="tap-option"><input type="radio" name="referral_source" value="social">Instagram / social</label>
-              <label class="tap-option"><input type="radio" name="referral_source" value="friend">Friend or referral</label>
-              <label class="tap-option"><input type="radio" name="referral_source" value="search">Google search</label>
-              <label class="tap-option"><input type="radio" name="referral_source" value="podcast_youtube">Podcast / YouTube</label>
-              <label class="tap-option"><input type="radio" name="referral_source" value="other">Other</label>
-            </div>
+          <div class="btn-row myv-nav">
+            <button type="button" class="btn btn-outline" id="myv-back" style="display:none;">Back</button>
+            <button type="submit" class="btn btn-gold" id="apply-submit" style="display:none;">Save My Starting Position</button>
           </div>
-
-          <div class="form-field">
-            <label for="additional_info">Anything else we should know? <span style="font-weight:400; color:var(--text-faint);">(optional)</span></label>
-            <textarea id="additional_info" name="additional_info"></textarea>
-          </div>
-        </fieldset>
-
-        <div class="btn-row" style="margin-top:8px;">
-          <button type="button" class="btn btn-outline" id="apply-back" style="display:none;">Back</button>
-          <button type="button" class="btn btn-gold" id="apply-next">Continue</button>
-          <button type="submit" class="btn btn-gold" id="apply-submit" style="display:none;">Submit My Assessment</button>
+          <div class="form-status" role="status" id="apply-status"></div>
         </div>
-        <div class="form-status" role="status" id="apply-status"></div>
       </form>
 
-      <div id="apply-success" class="glass card text-center" style="display:none;">
-        <h3>Assessment received.</h3>
-        <p>Thank you for taking the time to be honest with us. We review every assessment
-        individually — you'll hear from us directly with a clear answer.</p>
+      <div id="apply-success" class="glass card" style="display:none;">
+        <span class="eyebrow">Your Starting Position Has Been Captured</span>
+        <dl class="myv-recap" id="myv-recap"></dl>
+        <p class="myv-enough">CHEW has enough to start.</p>
+        <p style="color:var(--text-muted);">We review every starting position individually &mdash; you'll hear
+        from us directly with a clear next step. No pressure, no obligation.</p>
       </div>
 
     </div>
@@ -306,125 +250,223 @@
 </main>
 
 <style>
-.step-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(242,238,228,0.18); }
-.step-dot.active { background: var(--gold-light); }
-.step-dot.done { background: var(--gold-deep); }
+.myv-section { padding-top: 20px; }
+.myv-progress { max-width: 420px; margin: 0 auto 28px; text-align: center; }
+.myv-progress-label { display: block; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-light); margin-bottom: 10px; }
+.myv-progress-bar { height: 3px; border-radius: 2px; background: rgba(242,238,228,0.12); overflow: hidden; }
+.myv-progress-fill { height: 100%; background: var(--gold-light); transition: width 0.4s ease; }
+
+.myv-card { padding: 40px 36px; }
+.myv-q h3 { margin: 0 0 22px; font-size: clamp(1.28rem, 2.4vw, 1.55rem); }
+
+.myv-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.myv-options--2col { grid-template-columns: repeat(2, 1fr); }
+.myv-option {
+  position: relative; display: flex; align-items: center; min-height: 58px; padding: 15px 18px;
+  border-radius: 12px; border: 1px solid var(--panel-border); background: rgba(255,250,240,0.02);
+  font-size: 0.92rem; line-height: 1.3; color: var(--text-muted); cursor: pointer; text-align: left;
+  transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease, transform 0.15s ease;
+}
+.myv-option input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.myv-option:hover { border-color: rgba(232,206,122,0.4); }
+.myv-option:active { transform: scale(0.985); }
+.myv-option.is-checked { border-color: var(--gold-light); background: rgba(201,162,39,0.12); color: var(--text); font-weight: 600; }
+
+.myv-q--contact input.is-invalid { border-color: #c97a5a; }
+.form-status.notice { background: rgba(201,162,39,0.08); color: var(--text); border: 1px solid rgba(232,206,122,0.25); }
+
+.myv-nav { justify-content: space-between; margin-top: 30px; }
+
+@keyframes myvEnter { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+.myv-q.myv-enter { animation: myvEnter 0.36s ease; }
+
+.myv-recap { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 20px; margin: 24px 0 28px; padding: 0; }
+.myv-recap dt { font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-light); margin-bottom: 4px; }
+.myv-recap dd { margin: 0; font-family: var(--font-display); font-size: 1.05rem; color: var(--text); }
+.myv-enough { font-family: var(--font-display); font-style: italic; font-size: 1.25rem; color: var(--gold-light); margin: 0 0 14px; }
+
+@media (max-width: 640px) {
+  .myv-card { padding: 28px 20px; }
+  .myv-options, .myv-options--2col { grid-template-columns: 1fr; }
+  .myv-option { min-height: 62px; font-size: 0.96rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .myv-q.myv-enter { animation: none; }
+  .myv-option, .myv-progress-fill { transition: none; }
+}
 </style>
 
 <script>
 (function () {
-  var steps = Array.prototype.slice.call(document.querySelectorAll('.apply-step'));
-  var dots = Array.prototype.slice.call(document.querySelectorAll('[data-step-dot]'));
-  var current = 1;
-  var total = steps.length;
+  var stage = document.getElementById('myv-stage');
+  var questions = Array.prototype.slice.call(stage.querySelectorAll('.myv-q'));
+  var totalPositions = questions.filter(function (q) { return !q.classList.contains('myv-q--contact'); }).length;
+  var current = 0;
+  var history = [];
 
-  function showStep(n) {
-    steps.forEach(function (el) {
-      el.style.display = (parseInt(el.getAttribute('data-step'), 10) === n) ? 'block' : 'none';
-    });
-    dots.forEach(function (dot) {
-      var dn = parseInt(dot.getAttribute('data-step-dot'), 10);
-      dot.classList.toggle('active', dn === n);
-      dot.classList.toggle('done', dn < n);
-    });
-    document.getElementById('apply-back').style.display = (n === 1) ? 'none' : 'inline-flex';
-    document.getElementById('apply-next').style.display = (n === total) ? 'none' : 'inline-flex';
-    document.getElementById('apply-submit').style.display = (n === total) ? 'inline-flex' : 'none';
-    window.scrollTo({ top: document.getElementById('apply-form').offsetTop - 100, behavior: 'smooth' });
+  var progressLabel = document.getElementById('myv-progress-label');
+  var progressFill = document.getElementById('myv-progress-fill');
+  var backBtn = document.getElementById('myv-back');
+  var submitBtn = document.getElementById('apply-submit');
+
+  function isContact(q) { return q.classList.contains('myv-q--contact'); }
+
+  function updateChrome(q) {
+    var qNum = parseInt(q.getAttribute('data-q'), 10);
+    if (isContact(q)) {
+      progressLabel.textContent = 'Last step';
+      progressFill.style.width = '100%';
+    } else {
+      progressLabel.textContent = 'Position ' + qNum + '/' + totalPositions;
+      progressFill.style.width = Math.round((qNum / (totalPositions + 1)) * 100) + '%';
+    }
+    // .btn's own display:inline-flex rule beats the [hidden] UA rule at
+    // equal specificity (author stylesheet wins ties) — set display
+    // directly rather than toggling the hidden property, or a "hidden"
+    // button stays visible and clickable.
+    backBtn.style.display = (history.length === 0) ? 'none' : 'inline-flex';
+    submitBtn.style.display = isContact(q) ? 'inline-flex' : 'none';
   }
 
-  // ---- Tap options: real radio/checkbox inputs under the hood, styled
-  // as tap cards. A change listener keeps a .is-checked class on the
-  // label (drives the visual state without relying on :has() support),
-  // and enforces an optional per-group tap ceiling (data-max) by
-  // disabling the remaining unchecked options once it's reached. ----
-  var tapGroups = Array.prototype.slice.call(document.querySelectorAll('[data-tap-group]'));
+  function show(index) {
+    questions.forEach(function (el) { el.hidden = true; el.classList.remove('myv-enter'); });
+    var q = questions[index];
+    q.hidden = false;
+    void q.offsetWidth;
+    q.classList.add('myv-enter');
+    updateChrome(q);
+    window.scrollTo({ top: document.getElementById('myv-progress').offsetTop - 90, behavior: 'smooth' });
+    current = index;
+  }
 
-  function refreshTapGroup(groupEl) {
-    var inputs = Array.prototype.slice.call(groupEl.querySelectorAll('input'));
-    inputs.forEach(function (input) {
-      input.closest('.tap-option').classList.toggle('is-checked', input.checked);
-    });
-    var max = parseInt(groupEl.getAttribute('data-max') || '0', 10);
-    if (max && inputs[0] && inputs[0].type === 'checkbox') {
-      var checkedCount = inputs.filter(function (i) { return i.checked; }).length;
-      inputs.forEach(function (input) {
-        var atCeiling = checkedCount >= max && !input.checked;
-        input.disabled = atCeiling;
-        input.closest('.tap-option').classList.toggle('is-disabled', atCeiling);
-      });
+  function goNext() {
+    if (current < questions.length - 1) {
+      history.push(current);
+      show(current + 1);
     }
   }
 
-  tapGroups.forEach(function (groupEl) {
-    groupEl.addEventListener('change', function () { refreshTapGroup(groupEl); });
-    refreshTapGroup(groupEl);
+  backBtn.addEventListener('click', function () {
+    if (history.length) show(history.pop());
   });
 
-  // Do you own a business? -> reveal the business-stage tap group only
-  // when the answer is yes; it's supporting detail, never required.
-  var businessStageField = document.getElementById('business-stage-field');
-  document.querySelectorAll('input[name="has_business"]').forEach(function (radio) {
-    radio.addEventListener('change', function () {
-      businessStageField.style.display = (radio.value === 'yes' && radio.checked) ? 'block' : 'none';
+  // Single-select "Position" questions auto-advance the moment an option
+  // is tapped — no separate Continue button, per the "tap -> next
+  // question animates in" flow. The one multi-field screen (name/email/
+  // phone) keeps the explicit Save button below instead.
+  //
+  // Bound on 'click' (delegated from the option label) rather than the
+  // radio's 'change' event: after using Back to revisit an answered
+  // question, tapping the *same* option again doesn't change its
+  // checked state, so no 'change' event fires — and with only an
+  // auto-advance and no Continue button, that would strand the visitor
+  // on the question with no way forward. A click always advances.
+  questions.forEach(function (q) {
+    if (isContact(q)) return;
+    q.addEventListener('click', function (e) {
+      // A click on a label bubbles once from wherever was actually
+      // clicked AND once more from the input the label forwards
+      // activation to (per the HTML label-association spec) — both
+      // reach this delegated listener. Only act on the latter, or
+      // every tap double-fires and skips a question.
+      if (e.target.tagName !== 'INPUT') return;
+      var option = e.target.closest('.myv-option');
+      if (!option) return;
+      window.setTimeout(function () {
+        option.parentElement.querySelectorAll('.myv-option').forEach(function (opt) {
+          opt.classList.toggle('is-checked', opt.querySelector('input').checked);
+        });
+      }, 0);
+      window.setTimeout(goNext, 260);
     });
   });
 
-  document.querySelectorAll('input[name="seeking_guarantees"]').forEach(function (radio) {
-    radio.addEventListener('change', function () {
-      document.getElementById('guarantee-note').style.display = (radio.value === 'yes' && radio.checked) ? 'block' : 'none';
-    });
-  });
+  show(0);
 
-  function currentStepValid() {
-    var stepEl = steps[current - 1];
+  // ---- Human-readable labels for the honest recap screen. Not a
+  // fabricated score — just what the applicant actually told CHEW,
+  // reflected back in the same words they tapped. ----
+  var LABELS = {
+    primary_move: {
+      money_organized: 'Get My Money Organized', credit_position: 'Strengthen My Credit Position',
+      business_growth: 'Build/Grow My Business', funding_ready: 'Get Funding-Ready',
+      prepare_home: 'Prepare for a Home', build_property: 'Build Toward Property',
+      income_career: 'Increase Income/Career', protect_building: 'Protect What I’m Building',
+      not_sure: 'Not Sure Yet',
+    },
+    income_range: {
+      under_25k: 'Under $25K', '25k_50k': '$25K–$50K', '50k_75k': '$50K–$75K',
+      '75k_100k': '$75K–$100K', '100k_150k': '$100K–$150K', '150k_250k': '$150K–$250K',
+      '250k_plus': '$250K+',
+    },
+    primary_barrier: {
+      cash_flow: 'Cash Flow', debt: 'Debt', credit_position: 'Credit Position',
+      savings_reserves: 'Savings/Reserves', income: 'Income', business_structure: 'Business Structure',
+      documentation: 'Documentation', funding_readiness: 'Funding Readiness',
+      dont_know: 'Not Sure Yet — CHEW Will Help Find It',
+    },
+    timeline: {
+      now: 'Now', within_30_days: 'Within 30 Days', '1_3_months': '1–3 Months',
+      '3_6_months': '3–6 Months', '6_12_months': '6–12 Months', just_exploring: 'Just Exploring',
+    },
+    business_status: {
+      no: 'No', idea_stage: 'Idea Stage', formed_no_revenue: 'Formed, No Revenue Yet',
+      under_50k_year: 'Operating Under $50K/yr', '50k_250k_year': '$50K–$250K/yr',
+      '250k_plus_year': '$250K+/yr',
+    },
+    credit_monitoring: {
+      yes_regularly: 'Yes — Regularly', sometimes: 'Sometimes', no: 'No',
+      not_sure_what_to_use: 'Not Sure What to Use',
+    },
+  };
+  var RECAP_ORDER = [
+    ['primary_move', 'Primary Move'],
+    ['income_range', 'Income'],
+    ['primary_barrier', 'Primary Barrier'],
+    ['timeline', 'Timeline'],
+    ['business_status', 'Business'],
+    ['credit_monitoring', 'Credit Monitoring'],
+  ];
 
-    var requiredGroups = stepEl.querySelectorAll('[data-tap-group][data-required="true"]');
-    for (var g = 0; g < requiredGroups.length; g++) {
-      var groupEl = requiredGroups[g];
-      var checkedCount = groupEl.querySelectorAll('input:checked').length;
-      if (checkedCount < 1) {
-        groupEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        return false;
-      }
-    }
+  var statusEl = document.getElementById('apply-status');
 
-    var textFields = stepEl.querySelectorAll('input[required], textarea[required]');
-    for (var i = 0; i < textFields.length; i++) {
-      var field = textFields[i];
-      if (!field.checkValidity()) {
-        field.reportValidity();
-        return false;
-      }
-    }
-    return true;
+  // Custom inline validation instead of the browser's native
+  // reportValidity() bubble — that bubble's auto-scroll-into-view
+  // fights with the .myv-enter transition and can throw the field
+  // out of view rather than to it.
+  function markInvalid(field, valid) {
+    field.classList.toggle('is-invalid', !valid);
   }
-
-  document.getElementById('apply-next').addEventListener('click', function () {
-    if (!currentStepValid()) return;
-    if (current < total) { current++; showStep(current); }
-  });
-
-  document.getElementById('apply-back').addEventListener('click', function () {
-    if (current > 1) { current--; showStep(current); }
+  document.querySelectorAll('.myv-q--contact input').forEach(function (field) {
+    field.addEventListener('input', function () { markInvalid(field, field.checkValidity()); });
   });
 
   document.getElementById('apply-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    if (!currentStepValid()) return;
+    var contactQ = questions[questions.length - 1];
+    var contactFields = contactQ.querySelectorAll('input[required]');
+    var firstInvalid = null;
+    for (var i = 0; i < contactFields.length; i++) {
+      var valid = contactFields[i].checkValidity();
+      markInvalid(contactFields[i], valid);
+      if (!valid && !firstInvalid) firstInvalid = contactFields[i];
+    }
+    if (firstInvalid) {
+      statusEl.textContent = 'Add your full name and a valid email to save your starting position.';
+      statusEl.classList.add('visible', 'notice');
+      firstInvalid.focus({ preventScroll: true });
+      firstInvalid.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return;
+    }
+    statusEl.textContent = '';
+    statusEl.classList.remove('visible', 'notice');
 
     var form = e.target;
     var formData = new FormData(form);
     var answers = {};
     formData.forEach(function (value, key) {
       if (key === 'full_name' || key === 'email' || key === 'phone') return;
-      if (Object.prototype.hasOwnProperty.call(answers, key)) {
-        // A repeated key means a checkbox group (multi-select) — collect as an array.
-        if (!Array.isArray(answers[key])) answers[key] = [answers[key]];
-        answers[key].push(value);
-      } else {
-        answers[key] = value;
-      }
+      answers[key] = value;
     });
 
     var payload = {
@@ -434,10 +476,8 @@
       answers: answers,
     };
 
-    var statusEl = document.getElementById('apply-status');
-    var submitBtn = document.getElementById('apply-submit');
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Submitting...';
+    submitBtn.textContent = 'Saving...';
 
     fetch('/api/submit-application', {
       method: 'POST',
@@ -450,18 +490,28 @@
       })
       .then(function () {
         form.style.display = 'none';
-        document.getElementById('step-progress').style.display = 'none';
+        document.getElementById('myv-progress').style.display = 'none';
+        var recap = document.getElementById('myv-recap');
+        recap.innerHTML = '';
+        RECAP_ORDER.forEach(function (pair) {
+          var key = pair[0], label = pair[1];
+          var value = answers[key];
+          var display = (LABELS[key] && LABELS[key][value]) || value;
+          if (!display) return;
+          var dt = document.createElement('dt'); dt.textContent = label;
+          var dd = document.createElement('dd'); dd.textContent = display;
+          recap.appendChild(dt); recap.appendChild(dd);
+        });
         document.getElementById('apply-success').style.display = 'block';
+        document.getElementById('apply-success').scrollIntoView({ block: 'start', behavior: 'smooth' });
       })
       .catch(function () {
-        statusEl.textContent = "Something went wrong submitting your assessment — please try again, or email leroyt@joinchew.com directly.";
+        statusEl.textContent = "Something went wrong saving your starting position — please try again, or email leroyt@joinchew.com directly.";
         statusEl.classList.add('success', 'visible');
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit My Assessment';
+        submitBtn.textContent = 'Save My Starting Position';
       });
   });
-
-  showStep(current);
 })();
 </script>
 
