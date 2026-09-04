@@ -452,6 +452,66 @@ async function sendMembershipReminderEmail({ to, name, firstChargeDate, portalUr
   });
 }
 
+// Sent to CHEW's operations inbox the moment a signature is durably
+// recorded — never gated on payment (a client may sign and never pay;
+// CHEW still needs the record). Contains the exact agreement text the
+// client saw (agreementHtml, from agreement_signatures.agreement_snapshot_html),
+// not just "someone signed something." No IP, user agent, database ids,
+// access tokens, or admin secret — those stay in the evidence tables, not
+// in an email body.
+async function sendOwnerSignedAgreementNotice({ fullName, email, phone, program, agreementVersion, signedAt, agreementHtml }) {
+  const resend = getClient();
+
+  return resend.emails.send({
+    from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
+    to: getAdminEmail(),
+    subject: `Signed CHEW Agreement — ${fullName} — ${program}`,
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 640px; margin: 0 auto; color: #1B1815;">
+        <h2 style="color: #8F7024;">Agreement signed.</h2>
+        <table style="width:100%; border-collapse:collapse; margin:16px 0; font-size:14px;">
+          <tr><td style="padding:6px 0; color:#8F7024; font-weight:bold; width:170px;">Client</td><td style="padding:6px 0;">${escapeHtml(fullName)}</td></tr>
+          <tr><td style="padding:6px 0; color:#8F7024; font-weight:bold;">Contact</td><td style="padding:6px 0;">${escapeHtml(email)}${phone ? ' &middot; ' + escapeHtml(phone) : ''}</td></tr>
+          <tr><td style="padding:6px 0; color:#8F7024; font-weight:bold;">Program</td><td style="padding:6px 0;">${escapeHtml(program)}</td></tr>
+          <tr><td style="padding:6px 0; color:#8F7024; font-weight:bold;">Agreement Version</td><td style="padding:6px 0;">${escapeHtml(agreementVersion)}</td></tr>
+          <tr><td style="padding:6px 0; color:#8F7024; font-weight:bold;">Signed</td><td style="padding:6px 0;">${new Date(signedAt).toLocaleString()}</td></tr>
+          <tr><td style="padding:6px 0; color:#8F7024; font-weight:bold;">Signature Status</td><td style="padding:6px 0;">Recorded</td></tr>
+          <tr><td style="padding:6px 0; color:#8F7024; font-weight:bold;">Payment Status</td><td style="padding:6px 0;">Not yet completed</td></tr>
+        </table>
+        <p style="font-weight:bold;">Signing the agreement does not mean payment has been completed. A separate enrollment notice will follow if and when Stripe confirms payment.</p>
+        <hr style="border:none; border-top:1px solid #ddd; margin:24px 0;">
+        <p style="font-size:13px; color:#666; text-transform:uppercase; letter-spacing:0.04em;">Exact agreement text signed</p>
+        <div style="font-size:14px;">${agreementHtml}</div>
+        <p style="margin-top: 32px; font-size: 13px; color: #666;">Internal notice — CHEW Admissions</p>
+      </div>
+    `,
+  });
+}
+
+// Sent to the client the moment their signature is durably recorded — a
+// retained copy is a professional courtesy, not something to withhold
+// until they've paid. Contains the exact same signed text as the owner
+// copy above.
+async function sendClientSignedAgreementCopyEmail({ to, name, program, agreementVersion, signedAt, agreementHtml }) {
+  const resend = getClient();
+
+  return resend.emails.send({
+    from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
+    to,
+    subject: 'Your CHEW Agreement Has Been Signed',
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 640px; margin: 0 auto; color: #1B1815;">
+        <h2 style="color: #8F7024;">Your CHEW agreement has been signed, ${name || 'there'}.</h2>
+        <p>This email is your copy of the exact CHEW LLC Client Services Agreement (${escapeHtml(program)}, version ${escapeHtml(agreementVersion)}) you signed on ${new Date(signedAt).toLocaleString()}. Keep it for your records.</p>
+        <p>Signing this agreement does not mean payment has been completed — you'll see your Deal Sheet next, and nothing is charged until you confirm payment through Stripe's secure checkout.</p>
+        <hr style="border:none; border-top:1px solid #ddd; margin:24px 0;">
+        <div style="font-size:14px;">${agreementHtml}</div>
+        <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
+      </div>
+    `,
+  });
+}
+
 module.exports = {
   sendConfirmationEmail,
   sendReminderEmail,
@@ -464,5 +524,7 @@ module.exports = {
   sendAdminBonusSessionNotice,
   sendOwnerEnrollmentNotice,
   sendMembershipReminderEmail,
+  sendOwnerSignedAgreementNotice,
+  sendClientSignedAgreementCopyEmail,
   TIER_LABELS,
 };

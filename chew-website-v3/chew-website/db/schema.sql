@@ -1071,3 +1071,55 @@ ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS owner_enrollment_notified
 -- per-event ledger this data model doesn't need.
 ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS remainder_customer_notified_at TIMESTAMPTZ;
 ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS remainder_owner_notified_at TIMESTAMPTZ;
+
+-- Contract Excellence pass: strengthens signature evidence and closes the
+-- commercial-term-drift gap found while auditing the checkout flow.
+--
+-- agreement_read_and_accepted -- the affirmative "I agree" checkbox was
+-- previously enforced only client-side (HTML `required`); api/sign-
+-- agreement.js now requires and stores it as a real fact, not an assumed
+-- one. NOT NULL with no default so it's impossible to insert a row
+-- without an explicit true/false (the API always sends one).
+--
+-- agreement_content_hash -- a SHA-256 of the exact rendered agreement
+-- text (lib/agreementText.js) for the signed tier, computed server-side
+-- at signature time. agreement_version is a label a future edit could
+-- forget to bump; this hash is deterministic proof of the literal text a
+-- given signature was shown, independent of version-bump discipline.
+--
+-- *_at_signing -- a snapshot of the real commercial terms (from
+-- lib/programs.js) at the moment of signature, so checkout can later
+-- verify nothing changed between signing and paying. See
+-- api/create-program-checkout-session.js: if live terms no longer match
+-- this snapshot, checkout is refused and a fresh signature is required --
+-- a client is never charged against terms they didn't actually see.
+ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS agreement_read_and_accepted BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS agreement_content_hash TEXT;
+ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS entry_amount_cents_at_signing INTEGER;
+ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS full_fee_cents_at_signing INTEGER;
+ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS remainder_amount_cents_at_signing INTEGER;
+ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS recurring_amount_cents_at_signing INTEGER;
+
+-- Immediate signed-agreement delivery (owner + client), with the same
+-- payment/notification-state separation doctrine already proven for
+-- Stripe webhook durability.
+--
+-- agreement_snapshot_html -- the exact rendered agreement text (from
+-- lib/agreementText.js) captured at signing time. agreement_content_hash
+-- (above) proves a text hasn't silently changed, but proving it isn't the
+-- same as being ABLE to reproduce it — lib/agreementText.js only holds
+-- the CURRENT version's text, so a future amendment would leave older
+-- signatures with a hash but nothing left to check it against. Storing
+-- the actual text makes every signature genuinely, permanently
+-- reproducible regardless of later edits — the real "immutable copy,"
+-- not merely tamper-evidence.
+--
+-- owner_agreement_notified_at / client_agreement_notified_at -- durable,
+-- independent notification-sent facts, same shape as the Stripe webhook's
+-- customer/owner notified_at columns: signing itself (durable the moment
+-- the row commits) is a different fact from either email actually being
+-- delivered, and each recipient's notification is claimed and retried
+-- independently of the other.
+ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS agreement_snapshot_html TEXT;
+ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS owner_agreement_notified_at TIMESTAMPTZ;
+ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS client_agreement_notified_at TIMESTAMPTZ;
