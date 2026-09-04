@@ -1016,3 +1016,28 @@ CREATE TABLE IF NOT EXISTS complaints (
 
 CREATE INDEX IF NOT EXISTS idx_complaints_status ON complaints (status);
 CREATE INDEX IF NOT EXISTS idx_complaints_category ON complaints (category);
+
+-- Admissions operations flow: the admin UI previously had one ambiguous
+-- decision_note textarea that was BOTH stored AND emailed to the applicant
+-- verbatim. That's now two explicitly separate fields:
+--   internal_note      -- CHEW-only operator note. NEVER emailed.
+--   applicant_message  -- optional message that MAY appear in the
+--                         applicant's decision email.
+-- Additive only. decision_note itself is left exactly as it was --
+-- untouched, not renamed, not dropped -- because historically it WAS the
+-- text emailed to the applicant, so reinterpreting it as "internal" would
+-- silently misrepresent old applicant-facing text as private operator
+-- notes. Existing decision/status/access_token fields are untouched.
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS internal_note TEXT;
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS applicant_message TEXT;
+
+-- One-time, idempotent backfill: any application already decided under the
+-- old single-field behavior had its decision_note text emailed out, so
+-- that history belongs in applicant_message -- never in internal_note.
+-- Only touches rows where applicant_message is still unset, so re-running
+-- this file (its own established convention -- see IF NOT EXISTS above) is
+-- always safe.
+UPDATE applications
+SET applicant_message = decision_note
+WHERE decision_note IS NOT NULL
+  AND applicant_message IS NULL;

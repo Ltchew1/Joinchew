@@ -27,6 +27,7 @@ const {
   sendMembershipWelcomeEmail,
   sendRemainderConfirmationEmail,
   sendAdminBonusSessionNotice,
+  sendOwnerEnrollmentNotice,
 } = require('../lib/email');
 
 // Vercel needs the raw request body (unparsed) to verify the Stripe signature.
@@ -73,7 +74,8 @@ module.exports = async (req, res) => {
         // and api/create-remainder-checkout-session.js).
         const phase = session.metadata?.phase;
         const purchaseResult = await query(
-          `SELECT id, access_token, tier, client_name, client_email, remainder_amount_cents
+          `SELECT id, access_token, tier, client_name, client_email, remainder_amount_cents,
+                  application_id, agreement_signature_id
            FROM program_purchases WHERE id = $1`,
           [purchaseId]
         );
@@ -100,6 +102,17 @@ module.exports = async (req, res) => {
               name: purchase.client_name,
               firstChargeDate: firstChargeAt,
             });
+
+            await sendOwnerEnrollmentNotice({
+              applicationId: purchase.application_id,
+              purchaseId: purchase.id,
+              fullName: purchase.client_name,
+              tier: purchase.tier,
+              amountPaidCents: session.amount_total,
+              paymentStatus: 'Entry fee paid — membership trialing',
+              signatureId: purchase.agreement_signature_id,
+              nextAction: 'Membership is active (trialing). No further payment action needed until the first monthly charge.',
+            });
           } else {
             await query(
               `UPDATE program_purchases SET entry_paid_at = now(), status = 'pending_remainder' WHERE id = $1`,
@@ -112,6 +125,17 @@ module.exports = async (req, res) => {
               tier: purchase.tier,
               remainderAmountCents: purchase.remainder_amount_cents,
               payRemainderUrl: `${process.env.SITE_URL}/pay-remainder.html?token=${encodeURIComponent(purchase.access_token)}`,
+            });
+
+            await sendOwnerEnrollmentNotice({
+              applicationId: purchase.application_id,
+              purchaseId: purchase.id,
+              fullName: purchase.client_name,
+              tier: purchase.tier,
+              amountPaidCents: session.amount_total,
+              paymentStatus: 'Entry fee paid — remainder pending',
+              signatureId: purchase.agreement_signature_id,
+              nextAction: `Remainder balance still owed. Client has a pay-remainder link for the rest.`,
             });
           }
         } else if (phase === 'remainder') {

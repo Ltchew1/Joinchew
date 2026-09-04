@@ -28,17 +28,45 @@
 </main>
 
 <style>
-  .app-card { padding: 24px; }
-  .app-meta { font-size: 0.85rem; color: var(--text-faint); margin-bottom: 12px; }
+  .app-card { padding: 24px; scroll-margin-top: 24px; }
+  .app-card.is-highlighted { border-color: var(--gold-light); box-shadow: 0 0 0 1px rgba(232,206,122,0.3); }
+  .app-top-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .app-meta { font-size: 0.85rem; color: var(--text-faint); }
+  .app-badge { display:inline-block; padding:4px 10px; border-radius:20px; font-size:0.72rem; font-weight:700; letter-spacing:0.03em; text-transform:uppercase; }
+  .app-badge--new { background: rgba(122,163,232,0.15); color: #9db8e8; }
+  .app-badge--review { background: rgba(201,162,39,0.15); color: var(--gold-light); }
+  .app-badge--decided { background: rgba(255,255,255,0.08); color: var(--text-muted); }
+  .app-badge--stage { background: rgba(95,163,122,0.15); color: #7fd9a4; }
+
+  .app-summary { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:10px 20px; margin:16px 0; padding:16px; background: rgba(0,0,0,0.15); border-radius: 8px; }
+  .app-summary dt { font-size:0.66rem; letter-spacing:0.08em; text-transform:uppercase; color: var(--gold-light); margin-bottom:3px; }
+  .app-summary dd { margin:0; font-size:0.92rem; color: var(--text); }
+
+  .app-section-toggle { cursor:pointer; color: var(--gold-light); font-size:0.85rem; margin-top:12px; display:inline-block; }
+  .app-answers-block { display:none; margin-top:10px; }
+  .app-answers-block dl { display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:8px 20px; margin:0; padding:14px; background: rgba(0,0,0,0.2); border-radius:8px; }
+  .app-answers-block dt { font-size:0.66rem; letter-spacing:0.06em; text-transform:uppercase; color: var(--text-faint); margin-bottom:2px; }
+  .app-answers-block dd { margin:0 0 6px; font-size:0.85rem; }
+
+  .app-analysis-block { display:none; margin-top:10px; padding:14px; background: rgba(201,162,39,0.05); border:1px solid rgba(201,162,39,0.18); border-radius:8px; }
+  .app-analysis-caveat { font-size:0.72rem; color: var(--gold-light); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px; display:block; }
   .app-score { display:inline-block; padding:4px 10px; border-radius:20px; font-size:0.8rem; font-weight:700; margin-right:8px; }
   .app-score.high { background: rgba(74,181,120,0.15); color: #7fd9a4; }
   .app-score.mid { background: rgba(201,162,39,0.15); color: var(--gold-light); }
   .app-score.low { background: rgba(196,74,74,0.15); color: #e08a8a; }
-  .answers-toggle { cursor:pointer; color: var(--gold-light); font-size:0.85rem; margin-top:10px; display:inline-block; }
-  .answers-block { display:none; margin-top:12px; font-size:0.85rem; white-space:pre-wrap; background: rgba(0,0,0,0.2); padding:14px; border-radius:8px; max-height:300px; overflow-y:auto; }
-  .decision-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+
+  .decision-fields { margin-top:18px; display:flex; flex-direction:column; gap:14px; }
+  .decision-field label { display:block; font-size:0.82rem; font-weight:600; margin-bottom:6px; }
+  .decision-field .field-hint { font-weight:400; color: var(--text-faint); }
+  .decision-field textarea { width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.03); color:var(--text); font-size:0.9rem; font-family:inherit; }
+  .decision-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
   .decision-row button { font-size:0.8rem; padding:8px 14px; }
   .decided-badge { display:inline-block; padding:4px 10px; border-radius:20px; font-size:0.78rem; background: rgba(255,255,255,0.08); }
+
+  .confirm-panel { margin-top:14px; padding:16px; border:1px solid var(--gold-light); border-radius:8px; background: rgba(201,162,39,0.06); display:none; }
+  .confirm-panel.is-visible { display:block; }
+  .confirm-panel p { margin:0 0 12px; font-size:0.9rem; }
+  .confirm-actions { display:flex; gap:10px; }
 </style>
 
 <script>
@@ -56,6 +84,38 @@
     { value: 'REAPPLY_LATER', label: 'Reapply Later' },
   ];
 
+  // Same label vocabulary as apply.html / lib/email.js, so the queue shows
+  // the words the applicant actually tapped, not raw machine values.
+  var ANSWER_LABELS = {
+    primary_move: { money_organized: 'Get My Money Organized', credit_position: 'Strengthen My Credit Position', business_growth: 'Build/Grow My Business', funding_ready: 'Get Funding-Ready', prepare_home: 'Prepare for a Home', build_property: 'Build Toward Property', income_career: 'Increase Income/Career', protect_building: 'Protect What I’m Building', not_sure: 'Not Sure Yet' },
+    income_type: { w2: 'W-2 / Job', business_self_employed: 'Business/Self-Employed', both: 'Both', fixed_benefit: 'Fixed/Benefit Income', inconsistent: 'Income Is Inconsistent', prefer_not_to_say: 'Prefer Not to Say' },
+    income_range: { under_25k: 'Under $25K', '25k_50k': '$25K–$50K', '50k_75k': '$50K–$75K', '75k_100k': '$75K–$100K', '100k_150k': '$100K–$150K', '150k_250k': '$150K–$250K', '250k_plus': '$250K+' },
+    savings_range: { under_1k: 'Under $1K', '1k_5k': '$1K–$5K', '5k_15k': '$5K–$15K', '15k_50k': '$15K–$50K', '50k_100k': '$50K–$100K', '100k_plus': '$100K+', prefer_not_to_say: 'Prefer Not to Say' },
+    debt_range: { none: 'None', under_5k: 'Under $5K', '5k_15k': '$5K–$15K', '15k_50k': '$15K–$50K', '50k_100k': '$50K–$100K', '100k_plus': '$100K+', not_sure: 'Not Sure' },
+    business_status: { no: 'No', idea_stage: 'Idea Stage', formed_no_revenue: 'Formed, No Revenue Yet', under_50k_year: 'Operating Under $50K/yr', '50k_250k_year': '$50K–$250K/yr', '250k_plus_year': '$250K+/yr' },
+    credit_monitoring: { yes_regularly: 'Yes — Regularly', sometimes: 'Sometimes', no: 'No', not_sure_what_to_use: 'Not Sure What to Use' },
+    primary_barrier: { cash_flow: 'Cash Flow', debt: 'Debt', credit_position: 'Credit Position', savings_reserves: 'Savings/Reserves', income: 'Income', business_structure: 'Business Structure', documentation: 'Documentation', funding_readiness: 'Funding Readiness', dont_know: 'Not Sure Yet' },
+    organization_level: { real_system: 'I Have a Real System', mostly_organized: 'Mostly Organized', some_organized: 'Some Things Are Organized', pretty_scattered: 'Pretty Scattered', need_system_from_scratch: 'I Need a System From Scratch' },
+    timeline: { now: 'Now', within_30_days: 'Within 30 Days', '1_3_months': '1–3 Months', '3_6_months': '3–6 Months', '6_12_months': '6–12 Months', just_exploring: 'Just Exploring' },
+    help_type: { understand_position: 'Help Me Understand My Position', clear_strategy: 'Give Me a Clear Strategy', organize_pieces: 'Help Me Organize the Pieces', what_to_do_next: 'Show Me What to Do Next', ongoing_guidance: 'Ongoing Guidance/Accountability', not_sure: 'Not Sure Yet' },
+  };
+  var SUMMARY_FIELDS = [
+    ['primary_move', 'Primary Move'], ['income_range', 'Income'], ['primary_barrier', 'Primary Barrier'],
+    ['timeline', 'Timeline'], ['business_status', 'Business'], ['credit_monitoring', 'Credit Monitoring'],
+  ];
+  var ALL_FIELDS = [
+    ['primary_move', 'Primary Move'], ['income_type', 'Income Type'], ['income_range', 'Income Range'],
+    ['savings_range', 'Savings Range'], ['debt_range', 'Debt Range'], ['business_status', 'Business Status'],
+    ['credit_monitoring', 'Credit Monitoring'], ['primary_barrier', 'Primary Barrier'],
+    ['organization_level', 'Organization Level'], ['timeline', 'Timeline'], ['help_type', 'Help Type'],
+  ];
+  function answerLabel(key, value) {
+    return (ANSWER_LABELS[key] && ANSWER_LABELS[key][value]) || value || '—';
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]; });
+  }
+
   function scoreClass(score) {
     if (score === null || score === undefined) return 'mid';
     if (score >= 75) return 'high';
@@ -63,59 +123,142 @@
     return 'low';
   }
 
+  // NEW / UNDER REVIEW / DECIDED — from applications.status, which the
+  // submit + scoring pipeline already sets ('submitted' -> 'scored'
+  // automatically right after AI scoring runs -> 'decided' once an admin
+  // sends a decision). No new column needed for this part.
+  function reviewBadge(app) {
+    if (app.status === 'decided') return '<span class="app-badge app-badge--decided">Decided</span>';
+    if (app.status === 'scored') return '<span class="app-badge app-badge--review">Under Review</span>';
+    return '<span class="app-badge app-badge--new">New</span>';
+  }
+
+  // Journey stage — derived read-only from three real signals written by
+  // other endpoints in this flow (see api/admin-applications.js): the
+  // application's own status/decision, the most recent agreement
+  // signature, and the most recent program purchase. "Program Selected"
+  // and "Deal Sheet Reviewed" are NOT separately shown here: the current
+  // architecture has no persisted event for either (select-program.html
+  // doesn't write anything; the deal sheet is a client-side reveal that's
+  // never POSTed) — the first real signal after a decision is the
+  // agreement signature itself, so that's reported honestly as
+  // "Agreement Signed" rather than implying stages that aren't tracked.
+  function journeyStage(app) {
+    if (app.purchase_status === 'complete' || app.membership_status === 'active' || app.membership_status === 'trialing') return 'Enrolled';
+    if (app.entry_paid_at) return 'Payment Completed';
+    if (app.agreement_signed_at) return 'Agreement Signed';
+    if (app.decision === 'ACCEPT' || app.decision === 'ACCEPT_WITH_CONDITIONS') return 'Accepted';
+    if (app.status === 'decided') return 'Decision Sent';
+    if (app.status === 'scored') return 'Under Review';
+    return 'Starting Position Submitted';
+  }
+
   function renderApplication(app) {
     var card = document.createElement('div');
     card.className = 'glass card app-card';
+    card.id = 'app-' + app.id;
 
     var decided = app.status === 'decided';
-    var scoreHtml = '';
+    var a = app.answers || {};
+
+    var summaryHtml = '<dl class="app-summary">' + SUMMARY_FIELDS.map(function (f) {
+      return '<div><dt>' + f[1] + '</dt><dd>' + esc(answerLabel(f[0], a[f[0]])) + '</dd></div>';
+    }).join('') + '</dl>';
+
+    var allAnswersHtml = '<dl>' + ALL_FIELDS.map(function (f) {
+      return '<dt>' + f[1] + '</dt><dd>' + esc(answerLabel(f[0], a[f[0]])) + '</dd>';
+    }).join('') + '</dl>';
+
+    var scoreHtml;
     if (app.ai_error) {
-      scoreHtml = '<span class="app-score low">AI scoring failed</span>';
+      scoreHtml = '<span class="app-score low">AI scoring failed</span><p style="color:#e08a8a; font-size:0.85rem;">' + esc(app.ai_error) + '</p>';
     } else if (app.ai_score !== null && app.ai_score !== undefined) {
       scoreHtml = '<span class="app-score ' + scoreClass(app.ai_score) + '">Score: ' + app.ai_score + '</span>' +
-        '<span class="app-score ' + scoreClass(app.ai_score) + '">' + (app.ai_recommendation || '') + '</span>';
+        '<span class="app-score ' + scoreClass(app.ai_score) + '">' + esc(app.ai_recommendation || '') + '</span>' +
+        (app.ai_rationale ? '<p style="margin-top:10px;"><strong>Rationale:</strong> ' + esc(app.ai_rationale) + '</p>' : '') +
+        (app.ai_one_flag ? '<p><strong>Biggest risk:</strong> ' + esc(app.ai_one_flag) + '</p>' : '') +
+        (app.ai_one_strength ? '<p><strong>Biggest asset:</strong> ' + esc(app.ai_one_strength) + '</p>' : '');
     } else {
       scoreHtml = '<span class="app-score mid">Scoring pending</span>';
     }
 
-    var rationaleHtml = app.ai_rationale ? '<p style="margin-top:10px;"><strong>Rationale:</strong> ' + app.ai_rationale + '</p>' : '';
-    var flagHtml = app.ai_one_flag ? '<p><strong>Biggest risk:</strong> ' + app.ai_one_flag + '</p>' : '';
-    var strengthHtml = app.ai_one_strength ? '<p><strong>Biggest asset:</strong> ' + app.ai_one_strength + '</p>' : '';
-    var errorHtml = app.ai_error ? '<p style="color:#e08a8a;">' + app.ai_error + '</p>' : '';
-
     var decisionHtml;
     if (decided) {
-      decisionHtml = '<div class="decision-row"><span class="decided-badge">Decided: ' + app.decision + ' on ' + new Date(app.decided_at).toLocaleDateString() + '</span></div>';
+      var sentMsg = app.applicant_message ? '<p style="margin-top:8px; font-size:0.85rem; color:var(--text-faint);">Message sent: “' + esc(app.applicant_message) + '”</p>' : '';
+      decisionHtml = '<div class="decision-row"><span class="decided-badge">Decided: ' + esc(app.decision) + ' on ' + new Date(app.decided_at).toLocaleDateString() + '</span></div>' + sentMsg;
     } else {
-      decisionHtml = '<div class="form-field" style="margin-top:14px;"><label>Optional note (included in email)</label><textarea class="decision-note" rows="2"></textarea></div>' +
+      decisionHtml =
+        '<div class="decision-fields">' +
+          '<div class="decision-field"><label>Internal CHEW Note <span class="field-hint">&mdash; only CHEW can see this.</span></label><textarea class="internal-note" rows="2"></textarea></div>' +
+          '<div class="decision-field"><label>Message to Applicant <span class="field-hint">&mdash; this will be included in the decision email.</span></label><textarea class="applicant-message" rows="2"></textarea></div>' +
+        '</div>' +
         '<div class="decision-row">' +
         DECISIONS.map(function (d) {
-          return '<button type="button" class="btn btn-outline btn-sm decision-btn" data-decision="' + d.value + '" data-id="' + app.id + '">' + d.label + '</button>';
+          return '<button type="button" class="btn btn-outline btn-sm decision-btn" data-decision="' + d.value + '" data-label="' + d.label + '">' + d.label + '</button>';
         }).join('') +
-        '</div>';
+        '</div>' +
+        '<div class="confirm-panel" id="confirm-' + app.id + '"></div>';
     }
 
     card.innerHTML =
+      '<div class="app-top-row">' + reviewBadge(app) + '<span class="app-badge app-badge--stage">' + journeyStage(app) + '</span></div>' +
       '<div class="app-meta">#' + app.id + ' &middot; Submitted ' + new Date(app.created_at).toLocaleString() + '</div>' +
-      '<h3 style="margin-bottom:4px;">' + app.full_name + '</h3>' +
-      '<div class="app-meta">' + app.email + (app.phone ? ' &middot; ' + app.phone : '') + '</div>' +
-      '<div style="margin-top:10px;">' + scoreHtml + '</div>' +
-      rationaleHtml + flagHtml + strengthHtml + errorHtml +
-      '<span class="answers-toggle">Show full application &darr;</span>' +
-      '<div class="answers-block">' + JSON.stringify(app.answers, null, 2) + '</div>' +
+      '<h3 style="margin-bottom:4px;">' + esc(app.full_name) + '</h3>' +
+      '<div class="app-meta">' + esc(app.email) + (app.phone ? ' &middot; ' + esc(app.phone) : '') + '</div>' +
+      summaryHtml +
+      '<span class="app-section-toggle" data-toggle="answers">Show all 11 answers &darr;</span>' +
+      '<div class="app-answers-block" data-block="answers">' + allAnswersHtml + '</div>' +
+      '<br>' +
+      '<span class="app-section-toggle" data-toggle="analysis">Internal CHEW analysis &darr;</span>' +
+      '<div class="app-analysis-block" data-block="analysis">' +
+        '<span class="app-analysis-caveat">Internal decision support only &mdash; not verified fact, never shown to applicants</span>' +
+        scoreHtml +
+      '</div>' +
       decisionHtml;
 
-    card.querySelector('.answers-toggle').addEventListener('click', function () {
-      var block = card.querySelector('.answers-block');
-      var open = block.style.display === 'block';
-      block.style.display = open ? 'none' : 'block';
-      this.textContent = open ? 'Show full application ↓' : 'Hide full application ↑';
+    card.querySelectorAll('[data-toggle]').forEach(function (toggle) {
+      toggle.addEventListener('click', function () {
+        var block = card.querySelector('[data-block="' + toggle.getAttribute('data-toggle') + '"]');
+        var open = block.style.display === 'block';
+        block.style.display = open ? 'none' : 'block';
+      });
     });
 
     if (!decided) {
+      var confirmPanel = card.querySelector('.confirm-panel');
       card.querySelectorAll('.decision-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
-          sendDecision(app.id, btn.getAttribute('data-decision'), card.querySelector('.decision-note').value, card);
+          var decisionValue = btn.getAttribute('data-decision');
+          var decisionLabel = btn.getAttribute('data-label');
+          var internalNote = card.querySelector('.internal-note').value;
+          var applicantMessage = card.querySelector('.applicant-message').value;
+
+          // Deliberately no reference to internalNote anywhere below this
+          // line — this preview is what the applicant's email will
+          // effectively say, and the internal note must never appear in
+          // it, even as a passing mention.
+          confirmPanel.innerHTML =
+            '<p><strong>Applicant:</strong> ' + esc(app.full_name) + ' (' + esc(app.email) + ')<br>' +
+            '<strong>Decision:</strong> ' + esc(decisionLabel) + '<br>' +
+            '<strong>Message they will receive:</strong><br>' +
+            (applicantMessage
+              ? '<em>' + esc(applicantMessage) + '</em>'
+              : '<span style="color:var(--text-faint);">(no additional message &mdash; standard ' + esc(decisionLabel) + ' email only)</span>') +
+            '</p>' +
+            '<div class="confirm-actions">' +
+              '<button type="button" class="btn btn-gold btn-sm confirm-send">Confirm &amp; Send</button>' +
+              '<button type="button" class="btn btn-outline btn-sm confirm-cancel">Cancel</button>' +
+            '</div>';
+          confirmPanel.classList.add('is-visible');
+          confirmPanel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+
+          confirmPanel.querySelector('.confirm-cancel').addEventListener('click', function () {
+            confirmPanel.classList.remove('is-visible');
+            confirmPanel.innerHTML = '';
+          });
+          confirmPanel.querySelector('.confirm-send').addEventListener('click', function () {
+            sendDecision(app.id, decisionValue, internalNote, applicantMessage, card, confirmPanel);
+          });
         });
       });
     }
@@ -123,14 +266,15 @@
     return card;
   }
 
-  function sendDecision(id, decision, note, card) {
+  function sendDecision(id, decision, internalNote, applicantMessage, card, confirmPanel) {
     var buttons = card.querySelectorAll('.decision-btn');
     buttons.forEach(function (b) { b.disabled = true; });
+    confirmPanel.innerHTML = '<p>Sending&hellip;</p>';
 
     fetch('/api/send-decision', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ secret: secret, id: id, decision: decision, note: note }),
+      body: JSON.stringify({ secret: secret, id: id, decision: decision, internalNote: internalNote, applicantMessage: applicantMessage }),
     })
       .then(function (res) {
         if (!res.ok) throw new Error('Failed to send decision');
@@ -143,6 +287,8 @@
         statusEl.textContent = 'Failed to send decision for application #' + id + '. Please try again.';
         statusEl.classList.add('visible');
         buttons.forEach(function (b) { b.disabled = false; });
+        confirmPanel.classList.remove('is-visible');
+        confirmPanel.innerHTML = '';
       });
   }
 
@@ -171,6 +317,14 @@
         data.applications.forEach(function (app) {
           listEl.appendChild(renderApplication(app));
         });
+
+        if (window.location.hash && window.location.hash.indexOf('#app-') === 0) {
+          var target = document.querySelector(window.location.hash);
+          if (target) {
+            target.classList.add('is-highlighted');
+            window.setTimeout(function () { target.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 80);
+          }
+        }
       })
       .catch(function (err) {
         statusEl.textContent = err.message;

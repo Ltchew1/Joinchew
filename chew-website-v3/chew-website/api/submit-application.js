@@ -12,7 +12,7 @@
 const crypto = require('crypto');
 const { query } = require('../lib/db');
 const { scoreApplication } = require('../lib/scoring');
-const { sendApplicationReceivedEmail } = require('../lib/email');
+const { sendStartingPositionConfirmationEmail, sendOwnerNewApplicationNotice } = require('../lib/email');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -71,10 +71,33 @@ module.exports = async (req, res) => {
       await query(`UPDATE applications SET ai_error = $1 WHERE id = $2`, [scoringErr.message, applicationId]);
     }
 
+    // The reported bug: no code path previously sent any internal
+    // notification at all on submission — this was simply never built,
+    // not a broken existing send. Owner notification is attempted first
+    // (it's the one that actually closes the original bug), then the
+    // applicant confirmation — both best-effort. The application row
+    // already exists at this point, so neither send is allowed to turn a
+    // successful submission into a reported failure: a saved application
+    // is a successful application, full stop. A visitor who saw a false
+    // "submission failed" here would resubmit and create a duplicate row
+    // for information CHEW already has.
     try {
-      await sendApplicationReceivedEmail({ to: email, name: fullName });
+      await sendOwnerNewApplicationNotice({
+        applicationId,
+        fullName: String(fullName).trim(),
+        email: String(email).trim(),
+        phone: phone ? String(phone).trim() : null,
+        answers,
+        reviewUrl: `${process.env.SITE_URL}/admin-applications.html#app-${applicationId}`,
+      });
     } catch (emailErr) {
-      console.error(`Acknowledgment email failed for application ${applicationId}:`, emailErr.message);
+      console.error(`OWNER_NOTIFICATION_FAILED application=${applicationId}:`, emailErr.message);
+    }
+
+    try {
+      await sendStartingPositionConfirmationEmail({ to: email, name: fullName, answers });
+    } catch (emailErr) {
+      console.error(`APPLICANT_CONFIRMATION_FAILED application=${applicationId}:`, emailErr.message);
     }
 
     return res.status(200).json({ id: applicationId, status: 'received' });

@@ -5,9 +5,24 @@
 // this endpoint never sends the AI's raw recommendation automatically.
 // Requires ADMIN_SECRET, DATABASE_URL, RESEND_API_KEY, FROM_EMAIL.
 //
-// POST /api/send-decision.js  { secret, id, decision, note }
+// POST /api/send-decision.js
+//   { secret, id, decision, internalNote, applicantMessage }
+//
+// internalNote     -> database (applications.internal_note) / admin only,
+//                      NEVER inserted into the outgoing applicant email.
+// applicantMessage -> database (applications.applicant_message), MAY
+//                      appear in the applicant's decision email.
+// Deliberately two separate fields, not one ambiguous "note" — a prior
+// version stored a single note and emailed that same text verbatim,
+// which meant anything an admin typed as an internal reminder to
+// themselves was also sent to the applicant.
+//
+// Idempotent: an application can only be decided once. A double-click,
+// browser retry, or network retry against an already-decided application
+// is a no-op that returns the existing decision rather than re-sending
+// the email, re-inviting the portal, or overwriting the stored decision.
 
-const { query } = require('../lib/db');
+const { getPool } = require('../lib/db');
 const { sendDecisionEmail } = require('../lib/email');
 const { createPortalInvitation } = require('../lib/clerk');
 const { VALID_RECOMMENDATIONS } = require('../lib/scoring');
@@ -24,7 +39,7 @@ module.exports = async (req, res) => {
     return res.status(503).json({ error: 'Admin access is not configured yet.' });
   }
 
-  const { secret, id, decision, note } = req.body || {};
+  const { secret, id, decision, internalNote, applicantMessage } = req.body || {};
 
   if (secret !== process.env.ADMIN_SECRET) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -33,18 +48,43 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'A valid application id and decision are required.' });
   }
 
+  const cleanApplicantMessage = applicantMessage ? String(applicantMessage).slice(0, 2000) : '';
+  const cleanInternalNote = internalNote ? String(internalNote).slice(0, 4000) : '';
+
+  // Double-click / browser-retry / network-retry protection: hold a
+  // Postgres row lock (SELECT ... FOR UPDATE) on this application for the
+  // whole decide-and-send, and only flip status to 'decided' after the
+  // email actually succeeds. A concurrent duplicate request blocks on the
+  // same lock, then — once this transaction commits — sees status already
+  // 'decided' and returns the idempotent response below instead of
+  // sending a second email or recording a conflicting decision. If the
+  // email send throws, the transaction rolls back and status is left
+  // exactly as it was, so a genuine retry after a real failure still works.
+  const client = await getPool().connect();
   try {
-    const result = await query(`SELECT full_name, email, access_token FROM applications WHERE id = $1`, [id]);
+    await client.query('BEGIN');
+
+    const result = await client.query(
+      `SELECT full_name, email, access_token, status, decision
+       FROM applications WHERE id = $1 FOR UPDATE`,
+      [id]
+    );
     const application = result.rows[0];
     if (!application) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Application not found.' });
+    }
+
+    if (application.status === 'decided') {
+      await client.query('ROLLBACK');
+      return res.status(200).json({ id, status: 'decided', decision: application.decision, alreadyDecided: true });
     }
 
     await sendDecisionEmail({
       to: application.email,
       name: application.full_name,
       decision,
-      note: note ? String(note).slice(0, 2000) : '',
+      applicantMessage: cleanApplicantMessage,
       selectProgramUrl: `${process.env.SITE_URL}/select-program.html?token=${encodeURIComponent(application.access_token)}`,
     });
 
@@ -59,16 +99,20 @@ module.exports = async (req, res) => {
       }
     }
 
-    await query(
+    await client.query(
       `UPDATE applications
-       SET decision = $1, decision_note = $2, status = 'decided', decided_at = now()
-       WHERE id = $3`,
-      [decision, note || null, id]
+       SET decision = $1, internal_note = $2, applicant_message = $3, status = 'decided', decided_at = now()
+       WHERE id = $4`,
+      [decision, cleanInternalNote || null, cleanApplicantMessage || null, id]
     );
+    await client.query('COMMIT');
 
     return res.status(200).json({ id, status: 'decided' });
   } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
     console.error('send-decision error:', err.message);
     return res.status(500).json({ error: 'Unable to send decision.' });
+  } finally {
+    client.release();
   }
 };
