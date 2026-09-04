@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Position | CHEW</title>
-<meta name="description" content="See your stand, plan your next move. How CHEW thinks about position — where you are, what matters, what's in the way, and the next move.">
+<meta name="description" content="See where you stand, understand what matters, know what moves next. The CHEW economic situation room — how CHEW thinks about position, illustratively.">
 <link rel="canonical" href="https://www.joinchew.com/my-position.html">
 <meta property="og:title" content="My Position | CHEW">
-<meta property="og:description" content="How CHEW thinks about position — where you are, what matters, what's in the way, and the next move.">
+<meta property="og:description" content="See where you stand. Understand what matters. Know what moves next.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="CHEW">
 <meta name="twitter:card" content="summary">
@@ -16,7 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="mp-page">
 <header class="site-header">
   <div class="container">
     <a href="index.html" class="brand">
@@ -42,144 +42,196 @@
 </header>
 
 <main>
-  <section class="page-hero" style="padding-bottom:0;">
-    <div class="hero-glow"></div>
-    <div class="grid-lines"></div>
-    <div class="container" style="position:relative;">
-      <a href="index.html#cx-portals" class="cx-room-close" style="position:static; margin:0 0 20px;">
-        <span aria-hidden="true">&larr;</span> Back to the Board
-      </a>
+<section class="mp-stage">
+  <div class="mp-env" aria-hidden="true">
+    <div class="hx-searchlight" data-parallax="0.04"></div>
+    <svg class="mp-grid-topology" preserveAspectRatio="none" viewBox="0 0 100 100">
+      <line x1="0" y1="20" x2="100" y2="20"/><line x1="0" y1="40" x2="100" y2="40"/>
+      <line x1="0" y1="60" x2="100" y2="60"/><line x1="0" y1="80" x2="100" y2="80"/>
+      <line x1="20" y1="0" x2="20" y2="100"/><line x1="40" y1="0" x2="40" y2="100"/>
+      <line x1="60" y1="0" x2="60" y2="100" class="mp-grid-accent"/><line x1="80" y1="0" x2="80" y2="100"/>
+    </svg>
+    <svg class="hx-hero-trace" viewBox="0 0 1200 700" preserveAspectRatio="none">
+      <path class="hx-hero-trace-path" d="M 20,600 C 260,600 300,300 600,300 S 940,80 1180,80" />
+      <path class="hx-hero-trace-pulse" d="M 20,600 C 260,600 300,300 600,300 S 940,80 1180,80" />
+    </svg>
+  </div>
+
+  <div class="container mp-layout">
+    <div class="mp-identity">
       <span class="eyebrow">My Position</span>
-      <h1 style="max-width:22ch;">See your stand. Plan your next move.</h1>
-      <p class="max-prose" style="font-size:1.05rem; margin-top:16px;">
-        Understand where you are across what matters most. Identify what's helping, what's
-        holding, and where the next opportunity lives.
-      </p>
+      <h1>See where you stand.<br>Understand what matters.<br>Know what moves next.</h1>
+      <p class="mp-doctrine">A plan is only as good as the position it starts from.</p>
+      <p class="mp-explain">CHEW doesn't start with advice. It starts by locating where you actually are — the real facts, before any strategy gets built on top of them.</p>
+      <p class="mp-signature">CHEW doesn't start with advice.<br>CHEW starts with position.</p>
     </div>
-  </section>
 
-  <section class="section">
-    <div class="container">
-      <div class="text-center max-prose mx-auto" data-reveal>
-        <span class="eyebrow">How CHEW Thinks</span>
-        <h2>Every plan starts the same way &mdash; with where you actually are.</h2>
-      </div>
-      <div class="path-flow">
-        <div class="path-step" data-reveal style="--reveal-delay:0.05s;">
-          <span class="path-dot"></span>
-          <h4>Where You Are</h4>
-          <p>An honest read on your credit, cash flow, and goals &mdash; no judgment, just the facts.</p>
-        </div>
-        <span class="path-arrow" aria-hidden="true">&rarr;</span>
-        <div class="path-step" data-reveal style="--reveal-delay:0.1s;">
-          <span class="path-dot"></span>
-          <h4>What Matters</h4>
-          <p>Not everything at once &mdash; the one or two things actually holding your next move back.</p>
-        </div>
-        <span class="path-arrow" aria-hidden="true">&rarr;</span>
-        <div class="path-step" data-reveal style="--reveal-delay:0.15s;">
-          <span class="path-dot"></span>
-          <h4>Next Move</h4>
-          <p>A specific, sequenced action &mdash; not a hundred tips you'll never get to.</p>
-        </div>
-        <span class="path-arrow" aria-hidden="true">&rarr;</span>
-        <div class="path-step" data-reveal style="--reveal-delay:0.2s;">
-          <span class="path-dot"></span>
-          <h4>Target</h4>
-          <p>The outcome you're actually building toward, kept in view the whole time.</p>
-        </div>
+    <div class="mp-board" id="mp-board">
+      <svg class="mp-routes" id="mp-routes" aria-hidden="true"></svg>
+
+      <div class="mp-locator" id="mp-locator">
+        <div class="mp-locator-glow" aria-hidden="true"></div>
+        <img src="assets/icon-my-position-pin.png" alt="The CHEW position locator" width="366" height="400">
+        <span class="mp-locator-label">You Are Here</span>
       </div>
 
-      <div class="glass card intel-card" data-reveal>
-        <span class="intel-label">An illustrative example &mdash; not a live alert</span>
-        <blockquote>&ldquo;Your goal isn't limited by the thing you thought it was.&rdquo;</blockquote>
-        <p class="intel-explain">
-          Sometimes the real blocker isn't the one at the top of your mind. Part of what CHEW
-          is built to do is help you see the actual constraint &mdash; not just the obvious one.
-        </p>
-      </div>
-    </div>
-  </section>
+      <button type="button" class="mp-node" style="grid-area:current;" aria-expanded="false"
+        data-title="Current Position" data-chip="Public Example"
+        data-what="The real starting facts — income, savings, debt, obligations — before anything else gets decided."
+        data-why="Every other point on this board is measured against this one; get it wrong and the sequence drifts."
+        data-need="The facts Make Your Move actually collects. No guessing, no assumptions."
+        data-connects="Feeds directly into What Matters and Barrier — this is the baseline everything else compares against.">
+        <span class="mp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="10"/><path d="M19,11 L16,16 L13,21 L16,16 Z" stroke-linejoin="round"/></svg></span>
+        <span class="mp-node-label">Current Position</span>
+        <span class="mp-node-chip">Public Example</span>
+      </button>
 
-  <section class="section reroute-scene">
-    <div class="container">
-      <div class="max-prose mx-auto" data-reveal>
-        <span class="reroute-scene-label">Path Reconstruction</span>
-        <h2>Plans change. Intelligence should too.</h2>
-        <p class="text-center" style="font-size:1.02rem;">
-          A denial, a new expense, an opportunity you didn't expect &mdash; real plans get
-          knocked off course. CHEW is built to notice and adjust the sequence, not leave you
-          holding a plan that no longer fits your situation.
-        </p>
-      </div>
-      <div class="reroute-wrap" data-reveal>
-        <svg class="reroute-visual" viewBox="0 0 540 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram showing a plan being interrupted partway and rerouting to a new path">
-          <path class="path-line" d="M40,100 L240,100"/>
-          <path class="path-line" d="M240,100 L500,100" style="opacity:0.3;"/>
-          <path class="path-line reroute" d="M240,100 C340,100 380,160 500,160"/>
-          <circle cx="40" cy="100" r="7" fill="var(--text-faint)"/>
-          <circle cx="500" cy="100" r="6" fill="var(--panel-border)" opacity="0.5"/>
-          <g class="node-disrupt"><circle cx="240" cy="100" r="10"/></g>
-          <circle class="intelligence-pulse" cx="500" cy="160" r="9" fill="var(--gold-light)"/>
-          <text x="40" y="128" style="font-family:var(--font-body); font-size:10.5px; fill:var(--text-muted); text-anchor:middle;">Start</text>
-          <text x="240" y="78" style="font-family:var(--font-body); font-size:10.5px; fill:var(--gold-light); text-anchor:middle;">Something changes</text>
-          <text x="500" y="128" style="font-family:var(--font-body); font-size:10.5px; fill:var(--text-faint); text-anchor:middle;">Old plan</text>
-          <text x="500" y="186" style="font-family:var(--font-body); font-size:10.5px; fill:var(--gold-light); text-anchor:middle;">New path</text>
-        </svg>
-      </div>
-    </div>
-  </section>
+      <button type="button" class="mp-node" style="grid-area:matters;" aria-expanded="false"
+        data-title="What Matters" data-chip="Needs a Fact"
+        data-what="Not every fact carries equal weight — the one or two that actually move your specific goal."
+        data-why="Most advice treats every number as equally urgent. CHEW doesn't."
+        data-need="A stated goal, plus the position facts that goal actually depends on."
+        data-connects="Determines which Barrier is real and which Next Move is worth sequencing first.">
+        <span class="mp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,6 V24" stroke-linecap="round"/><path d="M9,24 H23" stroke-linecap="round"/><path d="M6,11 H26" stroke-linecap="round"/><path d="M6,11 L3,17 A3.5,3.5 0 0 0 9,17 Z" stroke-linejoin="round"/><path d="M26,11 L23,17 A3.5,3.5 0 0 0 29,17 Z" stroke-linejoin="round"/></svg></span>
+        <span class="mp-node-label">What Matters</span>
+        <span class="mp-node-chip">Needs a Fact</span>
+      </button>
 
-  <section class="section section--panel">
-    <div class="container">
-      <div class="text-center max-prose mx-auto" data-reveal>
-        <span class="eyebrow">For Clients</span>
-        <h2>Every serious builder needs a secret weapon.</h2>
-        <p style="font-size:1.02rem;">
-          Once CHEW understands where you are and where you're trying to go, the experience
-          gets personal. Your plan. Your blockers. Your opportunities. Your sequence. Your next
-          move. Your recovery route. Your advantage.
-        </p>
-      </div>
-      <div class="secret-grid">
-        <div class="glass card secret-tile" data-reveal style="--reveal-delay:0.02s;">
-          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" stroke="var(--gold-light)" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="var(--gold-light)" stroke-width="1.6"/></svg>
-          <h4>Your Mission</h4>
-        </div>
-        <div class="glass card secret-tile" data-reveal style="--reveal-delay:0.06s;">
-          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" stroke="var(--gold-light)" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="var(--gold-light)" stroke-width="1.6"/></svg>
-          <h4>Your Position</h4>
-        </div>
-        <div class="glass card secret-tile" data-reveal style="--reveal-delay:0.1s;">
-          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" stroke="var(--gold-light)" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="var(--gold-light)" stroke-width="1.6"/></svg>
-          <h4>Your Blind Spots</h4>
-        </div>
-        <div class="glass card secret-tile" data-reveal style="--reveal-delay:0.14s;">
-          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" stroke="var(--gold-light)" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="var(--gold-light)" stroke-width="1.6"/></svg>
-          <h4>Your Advantages</h4>
-        </div>
-        <div class="glass card secret-tile" data-reveal style="--reveal-delay:0.18s;">
-          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" stroke="var(--gold-light)" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="var(--gold-light)" stroke-width="1.6"/></svg>
-          <h4>Your Next Move</h4>
-        </div>
-        <div class="glass card secret-tile" data-reveal style="--reveal-delay:0.22s;">
-          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" stroke="var(--gold-light)" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="var(--gold-light)" stroke-width="1.6"/></svg>
-          <h4>Your Plan B</h4>
-        </div>
-        <div class="glass card secret-tile" data-reveal style="--reveal-delay:0.26s;">
-          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" stroke="var(--gold-light)" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="var(--gold-light)" stroke-width="1.6"/></svg>
-          <h4>What CHEW Is Watching</h4>
-        </div>
-      </div>
-      <p class="text-center" style="font-size:0.82rem; color:var(--text-faint); margin-top:28px;" data-reveal>
-        Built as you go &mdash; these deepen as your relationship with CHEW does.
-      </p>
-      <div class="btn-row" style="justify-content:center; margin-top:28px;" data-reveal>
-        <a href="apply.html" class="btn btn-gold">Build My Position &rarr;</a>
-      </div>
+      <button type="button" class="mp-node" style="grid-area:barrier;" aria-expanded="false"
+        data-title="Barrier" data-chip="Needs a Fact"
+        data-what="The specific thing standing between where you are and the next real step — not a general feeling of being stuck."
+        data-why="A move built around the wrong barrier solves a problem you don't actually have."
+        data-need="Current Position and What Matters together — the barrier is where those two collide."
+        data-connects="Directly shapes the Next Move — resolving the real barrier is usually the whole sequence.">
+        <span class="mp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M8,6 V26 M24,6 V26" stroke-linecap="round"/><path d="M6,12 H26" stroke-linecap="round"/><path d="M6,20 H26" stroke-linecap="round" opacity="0.5"/></svg></span>
+        <span class="mp-node-label">Barrier</span>
+        <span class="mp-node-chip">Needs a Fact</span>
+      </button>
+
+      <button type="button" class="mp-node" style="grid-area:nextmove;" aria-expanded="false"
+        data-title="Next Move" data-chip="Needs a Fact"
+        data-what="The one specific, sequenced action worth taking next — not a hundred tips you'll never get to."
+        data-why="Clarity on one move is what actually gets acted on. A long list rarely does."
+        data-need="A named barrier, and a stated target to sequence toward."
+        data-connects="This is what a Play in the Playbook actually becomes, once real facts are known.">
+        <span class="mp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,27 C16,27 24,18 24,12 A8,8 0 1 0 8,12 C8,18 16,27 16,27 Z" stroke-linejoin="round"/><circle cx="16" cy="12" r="3"/></svg></span>
+        <span class="mp-node-label">Next Move</span>
+        <span class="mp-node-chip">Needs a Fact</span>
+      </button>
+
+      <button type="button" class="mp-node" style="grid-area:unlock;" aria-expanded="false"
+        data-title="Potential Unlock" data-chip="Needs a Fact"
+        data-what="What legitimately becomes available once a real barrier is actually resolved — never a promised outcome."
+        data-why="Seeing what's genuinely unlocked, not guaranteed, is what makes a next move worth taking."
+        data-need="A barrier that's been legitimately resolved — verified, not assumed."
+        data-connects="Ties the Next Move back to the Target — the &quot;why&quot; underneath the sequence.">
+        <span class="mp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="13" cy="12" r="6"/><path d="M13,18 V27 M13,22 H18 M13,26 H16" stroke-linecap="round"/></svg></span>
+        <span class="mp-node-label">Potential Unlock</span>
+        <span class="mp-node-chip">Needs a Fact</span>
+      </button>
+
+      <button type="button" class="mp-node" style="grid-area:target;" aria-expanded="false"
+        data-title="Target" data-chip="Public Example"
+        data-what="The real outcome the whole sequence is actually building toward, kept in view the whole time."
+        data-why="Without a named target, every move is just activity, not progress toward something."
+        data-need="A stated goal — one of the first things Make Your Move actually captures."
+        data-connects="Everything else on this board — position, barrier, next move — is measured against this one point.">
+        <span class="mp-node-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="10"/><circle cx="16" cy="16" r="5"/><circle cx="16" cy="16" r="1.2" fill="currentColor" stroke="none"/></svg></span>
+        <span class="mp-node-label">Target</span>
+        <span class="mp-node-chip">Public Example</span>
+      </button>
     </div>
-  </section>
+
+    <div class="mp-rail">
+      <span class="mp-rail-state">Position Intelligence<br>Requires Real Facts</span>
+      <ul class="mp-rail-list">
+        <li class="mp-rail-item">
+          <span class="mp-rail-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M8,4 V28" stroke-linecap="round"/><path d="M8,5 L24,9 L8,15 Z" stroke-linejoin="round"/></svg></span>
+          <span class="mp-rail-name">Your Mission</span>
+        </li>
+        <li class="mp-rail-item">
+          <span class="mp-rail-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,27 C16,27 24,18 24,12 A8,8 0 1 0 8,12 C8,18 16,27 16,27 Z" stroke-linejoin="round"/><circle cx="16" cy="12" r="3"/></svg></span>
+          <span class="mp-rail-name">Your Position</span>
+        </li>
+        <li class="mp-rail-item">
+          <span class="mp-rail-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M5,16 C5,16 10,9 16,9 C22,9 27,16 27,16 C27,16 22,23 16,23 C10,23 5,16 5,16 Z" stroke-linejoin="round"/><line x1="7" y1="8" x2="25" y2="24" stroke-linecap="round"/></svg></span>
+          <span class="mp-rail-name">Your Blind Spots</span>
+        </li>
+        <li class="mp-rail-item">
+          <span class="mp-rail-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,5 L18,14 L27,16 L18,18 L16,27 L14,18 L5,16 L14,14 Z" stroke-linejoin="round"/></svg></span>
+          <span class="mp-rail-name">Your Advantages</span>
+        </li>
+        <li class="mp-rail-item">
+          <span class="mp-rail-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M6,16 H24" stroke-linecap="round"/><path d="M18,9 L25,16 L18,23" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="mp-rail-name">Your Next Move</span>
+        </li>
+        <li class="mp-rail-item">
+          <span class="mp-rail-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16,5 V14" stroke-linecap="round"/><path d="M16,14 L9,27 M16,14 L23,27" stroke-linecap="round"/></svg></span>
+          <span class="mp-rail-name">Your Plan B</span>
+        </li>
+        <li class="mp-rail-item">
+          <span class="mp-rail-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="2" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="7" stroke-dasharray="4 3"/><circle cx="16" cy="16" r="12" stroke-dasharray="3 4" opacity="0.5"/></svg></span>
+          <span class="mp-rail-name">What CHEW Is Watching</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="mp-path" id="mp-path" data-reveal>
+  <div class="container">
+    <span class="eyebrow">Path Reconstruction</span>
+    <h2>Plans change. CHEW rebuilds the sequence.</h2>
+    <div class="mp-path-visual">
+      <svg viewBox="0 0 1000 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram: an original route is disrupted, the route breaks, CHEW reconciles, and a new route forms toward the target">
+        <circle class="mp-path-node-start" cx="60" cy="140" r="6"/>
+        <path class="mp-path-line is-gold" data-draw d="M60,140 L265,140"/>
+        <g class="mp-path-node-disrupt"><circle cx="265" cy="140" r="10"/></g>
+
+        <path class="mp-path-line is-titanium" data-draw d="M275,142 C320,150 335,158 355,162"/>
+        <path class="mp-path-line is-titanium" data-draw d="M400,170 C440,178 460,172 480,168"/>
+
+        <g class="mp-path-node-reconcile"><circle cx="560" cy="163" r="11"/></g>
+        <path class="mp-path-line is-gold" data-draw d="M572,158 C650,130 760,90 872,80"/>
+        <circle class="mp-path-node-end" cx="880" cy="79" r="6"/>
+
+        <text x="60" y="168" class="mp-path-beat-label is-titanium">ORIGINAL ROUTE</text>
+        <text x="265" y="118" class="mp-path-beat-label is-gold">SOMETHING CHANGES</text>
+        <text x="420" y="198" class="mp-path-beat-label is-titanium">OLD ROUTE BREAKS</text>
+        <text x="560" y="140" class="mp-path-beat-label is-gold">CHEW RECONCILES</text>
+        <text x="880" y="56" class="mp-path-beat-label is-gold">NEW ROUTE FORMS</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="mp-move">
+  <div class="container">
+    <p>Ready to give CHEW your real starting facts? <a href="apply.html">Build My Position &rarr;</a></p>
+  </div>
+</section>
 </main>
+
+<!-- A direct <body> child, not nested in <main> — <main> carries the
+     sitewide `position:relative; z-index:1` base rule (styles.css),
+     which traps any z-index inside it below the fixed header's
+     z-index:50 no matter how high the drawer's own z-index is set.
+     Living outside <main> lets the drawer's z-index compete directly
+     against the header at the body level, so it (and its close
+     button, which sits in the same screen region as the header) is
+     actually clickable above it. -->
+<div class="mp-drawer" id="mp-drawer" hidden>
+  <div class="mp-drawer-scrim" data-drawer-close></div>
+  <div class="mp-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="mp-drawer-title">
+    <button type="button" class="mp-drawer-close" data-drawer-close aria-label="Close">&times;</button>
+    <span class="mp-drawer-chip" id="mp-drawer-chip"></span>
+    <h3 id="mp-drawer-title"></h3>
+    <div class="mp-drawer-section"><span class="mp-drawer-label">What This Means</span><p id="mp-drawer-what"></p></div>
+    <div class="mp-drawer-section"><span class="mp-drawer-label">Why It Matters</span><p id="mp-drawer-why"></p></div>
+    <div class="mp-drawer-section"><span class="mp-drawer-label">What CHEW Would Need</span><p id="mp-drawer-need"></p></div>
+    <div class="mp-drawer-section"><span class="mp-drawer-label">How It Connects</span><p id="mp-drawer-connects"></p></div>
+  </div>
+</div>
 
 <footer class="site-footer">
   <div class="container">

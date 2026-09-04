@@ -969,57 +969,9 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 .lifemap-mobile-item.is-connected { opacity: 1 !important; border-color: var(--panel-border-soft); }
 .lifemap-mobile-item.is-connected .lifemap-mobile-dot { background: var(--gold); border-color: var(--gold); }
 
-/* ---------- The Path: where you are → target ---------- */
-.path-flow { display: flex; align-items: flex-start; justify-content: center; gap: 4px; flex-wrap: wrap; margin-top: 44px; }
-.path-step { display: flex; flex-direction: column; align-items: center; text-align: center; width: 158px; }
-.path-step .path-dot {
-  width: 13px; height: 13px; border-radius: 50%; background: var(--gold-light);
-  box-shadow: 0 0 14px rgba(201,162,39,0.5); margin-bottom: 16px;
-}
-.path-step h4 { font-family: var(--font-display); font-size: 1rem; color: var(--text); margin: 0 0 6px; }
-.path-step p { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
-.path-arrow { color: var(--gold); font-size: 1.3rem; opacity: 0.45; align-self: center; margin-top: 4px; }
-@media (max-width: 760px) {
-  .path-flow { flex-direction: column; }
-  .path-arrow { transform: rotate(90deg); margin: 2px 0; }
-}
-
-/* ---------- Illustrative intelligence example (never a live alert) ---------- */
-.intel-card { max-width: 580px; margin: 36px auto 0; padding: 32px 34px; }
-.intel-card .intel-label {
-  font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--text-faint); margin-bottom: 16px; display: block;
-}
-.intel-card blockquote {
-  margin: 0; font-family: var(--font-display); font-size: 1.3rem;
-  color: var(--gold-light); font-style: normal; line-height: 1.35;
-}
-.intel-card .intel-explain { margin-top: 16px; font-size: 0.95rem; color: var(--text-muted); }
-
-/* ---------- Reroute concept (plans change, intelligence should too) ---------- */
-.reroute-wrap { display: flex; justify-content: center; margin: 40px 0 4px; }
-.reroute-visual { width: 100%; max-width: 540px; height: auto; }
-.reroute-visual .path-line { fill: none; stroke: var(--panel-border); stroke-width: 2; stroke-linecap: round; }
-.reroute-visual .path-line.reroute { stroke: var(--gold); stroke-dasharray: 7 7; animation: dash-flow 2.4s linear infinite; }
-@keyframes dash-flow { to { stroke-dashoffset: -28; } }
-.reroute-visual .node-disrupt circle { fill: rgba(201,162,39,0.16); stroke: var(--gold); stroke-width: 1.5; }
-.reroute-visual .node-disrupt text, .reroute-visual .node-plain text {
-  font-family: var(--font-body); font-size: 10.5px; fill: var(--text-muted); text-anchor: middle;
-}
-@media (prefers-reduced-motion: reduce) { .reroute-visual .path-line.reroute { animation: none; } }
-
-/* ---------- Secret weapon teaser: real categories, nothing fabricated ---------- */
-.secret-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 36px; }
-@media (max-width: 900px) { .secret-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 560px) { .secret-grid { grid-template-columns: 1fr; } }
-.secret-tile { padding: 24px 16px; text-align: center; }
-.secret-tile .lock-icon { width: 16px; height: 16px; margin: 0 auto 12px; opacity: 0.55; }
-.secret-tile h4 {
-  font-size: 0.9rem; margin: 0; color: var(--text); filter: blur(2.2px);
-  opacity: 0.55; user-select: none; transition: filter 0.4s ease, opacity 0.4s ease;
-}
-.secret-tile:hover h4 { filter: blur(1.1px); opacity: 0.8; }
-@media (hover: none) { .secret-tile h4 { filter: blur(1.4px); opacity: 0.7; } }
+/* ---------- The old My Position page (.path-flow/.intel-card/
+   .reroute-*/.secret-grid) was fully replaced by the .mp-* situation-
+   room system further below and none of it is referenced anymore. ---------- */
 
 /* ---------- Intelligence Pulse: signature reveal motion ---------- */
 .intelligence-pulse { animation: intelligence-pulse 2.6s ease-in-out infinite; }
@@ -2934,45 +2886,8 @@ legend { font-weight: 600; font-size: 0.9rem; padding: 0 8px; color: var(--text)
 .scene-statement p em { color: var(--gold-light); font-style: normal; }
 @media (max-width: 640px) { .scene-statement { padding: 88px 0; } }
 
-/* ---- Reroute scene: "a plan interrupted, a new path drawn" — the
-   diagram stops being a small illustration inside a section and
-   becomes the section. The reroute line draws itself in once the
-   scene is in view (stroke-dashoffset reveal keyed off the parent's
-   .is-visible class from the existing [data-reveal] observer — never
-   applied to the observed element itself, so it can't repeat the
-   clip-path/IntersectionObserver bug found in Slice 2b). ---- */
-.reroute-scene {
-  padding: 148px 0;
-  position: relative;
-  overflow: hidden;
-  background: radial-gradient(ellipse 70% 60% at 82% 20%, rgba(201,162,39,0.07), transparent 60%), var(--black-soft);
-}
-/* .reroute-wrap already carries [data-reveal]; its own .is-visible
-   class (opacity/transform only, no clip-path) drives the line-draw
-   below via stroke-dashoffset on a child SVG path — this doesn't
-   touch the observed element's rendered area, so it can't reproduce
-   the IntersectionObserver regression found in Slice 2b. */
-.reroute-scene-label {
-  text-align: center; font-size: 0.72rem; letter-spacing: 0.3em; text-transform: uppercase;
-  color: var(--text-faint); margin-bottom: 18px;
-}
-.reroute-scene h2 { text-align: center; max-width: 22ch; margin: 0 auto 8px; }
-.reroute-scene .max-prose { margin: 0 auto; }
-.reroute-wrap { display: flex; justify-content: center; margin: 56px 0 4px; }
-.reroute-visual { width: 100%; max-width: 640px; height: auto; }
-.reroute-visual .path-line.reroute {
-  stroke-dasharray: 340;
-  stroke-dashoffset: 340;
-  transition: stroke-dashoffset 1.4s cubic-bezier(.16,1,.3,1) 0.2s;
-}
-.reroute-wrap.is-visible .reroute-visual .path-line.reroute {
-  stroke-dashoffset: 0;
-  animation: dash-flow 2.4s linear 1.6s infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .reroute-wrap .reroute-visual .path-line.reroute { stroke-dashoffset: 0; transition: none; }
-  .reroute-wrap.is-visible .reroute-visual .path-line.reroute { animation: none; }
-}
+/* ---- The old My Position "reroute scene" was replaced by the
+   .mp-path Path Reconstruction system further below. ---- */
 
 /* ---- Destinations opening: the "what's next" cards stop reading as
    a locked feature grid and start reading as points appearing on a
@@ -4852,3 +4767,242 @@ body.wp-drawer-locked { overflow: hidden; }
    .tap-option) built for apply.html's first tap-based pass was
    superseded by the .myv-* one-question-per-screen system defined
    inline in apply.html itself, and isn't referenced anywhere now. ---- */
+
+/* ============================================================
+   MY POSITION — the economic situation room. One continuous
+   environment (not stacked marketing sections): identity column,
+   the canonical locator + a spatial Position Board around it, and
+   a seven-layer Position Intelligence rail, all inside one staged
+   scene, closing with a Path Reconstruction signature sequence.
+   ============================================================ */
+
+/* ---- One integrated nav, same treatment as the Worlds/World-page
+   system: the header floats transparent over the environment
+   instead of sitting above it as a second bar. ---- */
+.mp-page .site-header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  background: rgba(8,8,9,0.32); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(232,206,122,0.14);
+}
+
+.mp-stage {
+  position: relative; overflow: hidden; background: var(--black);
+  padding: 148px 0 96px;
+}
+.mp-env { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.mp-grid-topology { position: absolute; inset: -4%; width: 108%; height: 108%; opacity: 0.5; }
+.mp-grid-topology line { stroke: rgba(139,141,144,0.16); stroke-width: 1; }
+.mp-grid-topology .mp-grid-accent { stroke: rgba(201,162,39,0.12); }
+.mp-env .hx-searchlight { background: radial-gradient(ellipse 50% 60% at 50% 42%, rgba(232,206,122,0.12), transparent 70%); }
+
+.mp-layout {
+  position: relative; z-index: 1;
+  display: grid; grid-template-columns: 0.86fr 1.5fr 1fr; gap: 28px; align-items: center;
+}
+
+/* ---- LEFT: identity / doctrine ---- */
+.mp-identity h1 { font-size: clamp(2rem, 2.9vw, 2.7rem); margin: 10px 0 16px; }
+.mp-identity .eyebrow { display: block; }
+.mp-doctrine {
+  font-family: var(--font-display); font-style: italic; color: var(--gold-light);
+  font-size: 1.05rem; margin: 0 0 14px; max-width: 30ch;
+}
+.mp-explain { color: var(--text-muted); font-size: 0.95rem; max-width: 34ch; margin-bottom: 22px; }
+.mp-signature { font-size: 0.76rem; letter-spacing: 0.04em; color: var(--text-faint); line-height: 1.7; }
+
+/* ---- CENTER: the Position Board. The locator spans the two middle
+   rows so it reads as materially larger than any station — nodes
+   support it, they never compete with it. ---- */
+.mp-board {
+  position: relative; display: grid; margin: 0 auto; max-width: 620px;
+  grid-template-columns: 1fr 1.35fr 1fr;
+  grid-template-areas:
+    ".        current  ."
+    "matters  locator  barrier"
+    "nextmove locator  unlock"
+    ".        target   .";
+  column-gap: 16px; row-gap: 16px; align-items: center;
+}
+.mp-routes { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; overflow: visible; }
+.mp-routes path { fill: none; stroke: rgba(139,141,144,0.28); stroke-width: 1; transition: stroke 0.4s ease, stroke-width 0.4s ease; }
+.mp-routes path.is-lit { stroke: var(--gold-light); stroke-width: 1.5; filter: drop-shadow(0 0 5px rgba(201,162,39,0.55)); }
+
+.mp-locator {
+  grid-area: locator; position: relative; z-index: 1; justify-self: center;
+  display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 6px;
+}
+.mp-locator-glow {
+  position: absolute; inset: -30%; z-index: -1; border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,162,39,0.22), transparent 68%);
+}
+.mp-locator img { width: 100%; max-width: 220px; height: auto; filter: drop-shadow(0 10px 30px rgba(0,0,0,0.55)); }
+@media (prefers-reduced-motion: no-preference) { .mp-locator img { animation: mpLocatorPulse 5.5s ease-in-out infinite; } }
+@keyframes mpLocatorPulse {
+  0%, 100% { filter: drop-shadow(0 10px 30px rgba(0,0,0,0.55)) drop-shadow(0 0 14px rgba(201,162,39,0.18)); }
+  50% { filter: drop-shadow(0 10px 30px rgba(0,0,0,0.55)) drop-shadow(0 0 30px rgba(201,162,39,0.4)); }
+}
+.mp-locator-label { font-size: 0.66rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold-light); }
+.mp-env.is-active .hx-searchlight { transition: opacity 0.5s ease; opacity: 1.4; }
+
+.mp-node {
+  position: relative; z-index: 1; cursor: pointer; text-align: center; color: var(--text);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  min-height: 108px; padding: 16px 12px; border-radius: 4px;
+  border: 1px solid rgba(139,141,144,0.3); background: linear-gradient(160deg, rgba(255,250,240,0.04), rgba(8,8,9,0.6));
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+.mp-node[style*="current"], .mp-node[style*="target"] { min-height: 96px; }
+.mp-node:hover { border-color: rgba(232,206,122,0.4); transform: translateY(-2px); }
+.mp-node.is-active { border-color: var(--gold-light); box-shadow: 0 0 22px rgba(201,162,39,0.2); }
+.mp-node-icon { width: 30px; height: 30px; color: var(--titanium-light); }
+.mp-node.is-active .mp-node-icon, .mp-node:hover .mp-node-icon { color: var(--gold-light); }
+.mp-node-icon svg { width: 100%; height: 100%; stroke: currentColor; stroke-width: 1.3; fill: none; }
+.mp-node-label { font-family: var(--font-display); font-size: 0.9rem; line-height: 1.2; }
+.mp-node-chip {
+  font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint);
+  border: 1px solid rgba(139,141,144,0.3); border-radius: 999px; padding: 3px 9px;
+}
+
+/* ---- RIGHT: Position Intelligence rail — one connected system,
+   never seven identical locked cards. ---- */
+.mp-rail { position: relative; z-index: 1; padding-left: 4px; }
+.mp-rail-state {
+  display: block; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--gold-light); line-height: 1.7; margin-bottom: 22px; padding-bottom: 14px;
+  border-bottom: 1px solid var(--panel-border-soft);
+}
+.mp-rail-list { list-style: none; margin: 0; padding: 0; position: relative; }
+.mp-rail-list::before {
+  content: ''; position: absolute; left: 14px; top: 6px; bottom: 6px; width: 1px;
+  background: linear-gradient(180deg, rgba(232,206,122,0.35), rgba(139,141,144,0.15));
+}
+.mp-rail-item { position: relative; display: flex; align-items: center; gap: 14px; padding: 11px 0; }
+.mp-rail-icon {
+  position: relative; z-index: 1; flex-shrink: 0; width: 29px; height: 29px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; color: var(--titanium-light);
+  background: var(--black); border: 1px solid rgba(139,141,144,0.35);
+}
+.mp-rail-icon svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 1.4; fill: none; }
+.mp-rail-name { font-family: var(--font-display); font-size: 0.88rem; color: var(--text); }
+
+@media (max-width: 1180px) {
+  .mp-layout { grid-template-columns: 1fr; }
+  .mp-identity { text-align: center; max-width: 56ch; margin: 0 auto 40px; }
+  .mp-doctrine, .mp-signature { margin-left: auto; margin-right: auto; }
+  .mp-board { margin-bottom: 44px; }
+  .mp-rail { max-width: 620px; margin: 0 auto; padding-left: 0; }
+  .mp-rail-state { text-align: center; }
+  .mp-rail-list { columns: 2; column-gap: 28px; }
+  .mp-rail-list::before { display: none; }
+  .mp-rail-item { break-inside: avoid; }
+}
+@media (max-width: 640px) {
+  .mp-stage { padding: 112px 0 64px; }
+  .mp-board {
+    grid-template-columns: 1fr; row-gap: 12px; max-width: 420px;
+    grid-template-areas: "locator" "current" "matters" "barrier" "nextmove" "unlock" "target";
+  }
+  .mp-locator { order: -1; margin-bottom: 6px; }
+  .mp-locator img { max-width: 170px; }
+  .mp-routes { display: none; }
+  .mp-node { flex-direction: row; justify-content: flex-start; text-align: left; min-height: 0; padding: 14px 16px; gap: 14px; }
+  .mp-node-icon { width: 26px; height: 26px; flex-shrink: 0; }
+  .mp-node-chip { margin-left: auto; }
+  /* Adjustment 3: mobile must stay ONE connected system — a vertical
+     spine with seven small stations — never a 2-column card wall. */
+  .mp-rail-list { columns: 1; max-width: 320px; margin: 0 auto; }
+  .mp-rail-list::before { display: block; left: 14px; }
+  .mp-rail-item { padding: 9px 0; }
+}
+
+/* ---- Drawer: same mechanics as the Worlds Intelligence Drawer,
+   distinct id/class so both systems can exist on the site at once. ---- */
+.mp-drawer { position: fixed; inset: 0; z-index: 90; }
+.mp-drawer[hidden] { display: none; }
+body.mp-drawer-locked { overflow: hidden; }
+.mp-drawer-scrim { position: absolute; inset: 0; background: rgba(4,4,5,0.6); backdrop-filter: blur(2px); opacity: 0; transition: opacity 0.3s ease; }
+.mp-drawer.is-open .mp-drawer-scrim { opacity: 1; }
+.mp-drawer-panel {
+  position: absolute; top: 0; right: 0; height: 100%; width: min(420px, 92vw);
+  background: linear-gradient(160deg, #131110, #08080a);
+  border-left: 1px solid rgba(139,141,144,0.35);
+  box-shadow: -24px 0 60px rgba(0,0,0,0.5);
+  padding: 96px 32px 40px; overflow-y: auto;
+  transform: translateX(100%); transition: transform 0.42s cubic-bezier(.22,1,.36,1);
+}
+.mp-drawer.is-open .mp-drawer-panel { transform: translateX(0); }
+.mp-drawer-close {
+  position: absolute; top: 28px; right: 28px; width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--panel-border); background: transparent; color: var(--text-muted);
+  font-size: 1.3rem; line-height: 1; cursor: pointer; transition: border-color 0.3s ease, color 0.3s ease;
+}
+.mp-drawer-close:hover { border-color: var(--gold-light); color: var(--gold-light); }
+.mp-drawer-chip {
+  display: inline-block; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--titanium-light); border: 1px solid rgba(139,141,144,0.4); border-radius: 999px;
+  padding: 4px 11px; margin-bottom: 14px;
+}
+.mp-drawer-panel h3 { font-size: 1.5rem; margin: 0 0 22px; }
+.mp-drawer-section { margin-bottom: 18px; }
+.mp-drawer-label { display: block; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-light); opacity: 0.85; margin-bottom: 6px; }
+.mp-drawer-section p { margin: 0; font-size: 0.9rem; line-height: 1.6; color: var(--text-muted); }
+@media (max-width: 640px) {
+  .mp-drawer-panel {
+    top: auto; right: 0; left: 0; bottom: 0; height: auto; max-height: 82vh; width: auto;
+    border-left: none; border-top: 1px solid rgba(139,141,144,0.35); border-radius: 20px 20px 0 0;
+    padding: 40px 24px 36px; transform: translateY(100%);
+  }
+  .mp-drawer.is-open .mp-drawer-panel { transform: translateY(0); }
+  .mp-drawer-close { top: 16px; right: 16px; }
+}
+
+/* ---- Path Reconstruction: a signature sequence, not a small
+   inline diagram — the break reads titanium/charcoal, the
+   reconciliation and rebuilt route read gold. Draws on once via
+   the shared [data-reveal] -> .is-visible flow; reduced-motion
+   renders the fully-drawn end-state immediately. ---- */
+.mp-path { padding: 88px 0 96px; background: var(--black-soft); border-top: 1px solid var(--panel-border-soft); }
+.mp-path .eyebrow, .mp-path h2 { text-align: center; }
+.mp-path h2 { max-width: 26ch; margin: 8px auto 40px; }
+.mp-path-visual { max-width: 940px; margin: 0 auto; }
+.mp-path-visual svg { width: 100%; height: auto; }
+.mp-path-beat-label { font-family: var(--font-body); font-size: 11px; text-anchor: middle; }
+.mp-path-beat-label.is-gold { fill: var(--gold-light); }
+.mp-path-beat-label.is-titanium { fill: var(--titanium-light); }
+.mp-path-line { fill: none; stroke-linecap: round; }
+.mp-path-line.is-gold { stroke: var(--gold); stroke-width: 2; }
+.mp-path-line.is-titanium { stroke: var(--titanium); stroke-width: 2; }
+.mp-path-node-start { fill: var(--titanium-light); }
+.mp-path-node-disrupt { fill: rgba(201,162,39,0.14); stroke: var(--gold-light); stroke-width: 1.5; }
+.mp-path-node-reconcile {
+  fill: rgba(201,162,39,0.18); stroke: var(--gold-light); stroke-width: 1.5;
+  opacity: 1; transform-box: fill-box; transform-origin: center;
+}
+.mp-path-node-end { fill: var(--gold-light); }
+@media (prefers-reduced-motion: no-preference) {
+  .mp-path-line[data-draw] {
+    stroke-dasharray: var(--len, 300); stroke-dashoffset: var(--len, 300);
+    transition: stroke-dashoffset 1.1s ease; transition-delay: var(--draw-delay, 0s);
+  }
+  .mp-path.is-visible .mp-path-line[data-draw] { stroke-dashoffset: 0; }
+  .mp-path-node-reconcile {
+    opacity: 0; transform: scale(0.5);
+    transition: opacity 0.5s ease, transform 0.5s ease; transition-delay: 1.5s;
+  }
+  .mp-path.is-visible .mp-path-node-reconcile {
+    opacity: 1; transform: scale(1);
+    animation: mpReconcilePulse 2.4s ease-in-out 2s infinite;
+  }
+}
+@keyframes mpReconcilePulse { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+
+/* ---- A slim, subordinate Make Your Move transition — never a
+   giant sales CTA. ---- */
+.mp-move { padding: 30px 0; text-align: center; background: var(--black); }
+.mp-move p { margin: 0; font-size: 0.92rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.mp-move a { color: var(--gold-light); font-weight: 600; text-transform: none; letter-spacing: normal; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mp-node, .mp-drawer-panel, .mp-drawer-scrim, .mp-locator img { transition: none; animation: none; }
+}
