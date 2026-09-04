@@ -43,16 +43,28 @@ module.exports = async (req, res) => {
               a.status, a.decision, a.internal_note, a.applicant_message, a.decided_at, a.created_at,
               sig.tier AS agreement_tier, sig.signed_at AS agreement_signed_at,
               pp.tier AS purchase_tier, pp.entry_paid_at, pp.status AS purchase_status,
-              pp.membership_status
+              pp.membership_status, pp.initial_payment_paid_at, pp.paid_in_full_at,
+              rec.id AS recommendation_id, rec.version AS recommendation_version, rec.status AS recommendation_status,
+              rec.primary_tier AS recommendation_primary_tier, rec.sent_at AS recommendation_sent_at,
+              rec.viewed_at AS recommendation_viewed_at, rec.scope_review_requested_at AS recommendation_scope_review_requested_at,
+              sel.selected_tier, sel.selected_payment_plan
        FROM applications a
        LEFT JOIN LATERAL (
          SELECT tier, signed_at FROM agreement_signatures
          WHERE application_id = a.id ORDER BY signed_at DESC LIMIT 1
        ) sig ON true
        LEFT JOIN LATERAL (
-         SELECT tier, entry_paid_at, status, membership_status FROM program_purchases
-         WHERE application_id = a.id ORDER BY created_at DESC LIMIT 1
+         SELECT tier, entry_paid_at, status, membership_status, initial_payment_paid_at, paid_in_full_at
+         FROM program_purchases WHERE application_id = a.id ORDER BY created_at DESC LIMIT 1
        ) pp ON true
+       LEFT JOIN LATERAL (
+         SELECT id, version, status, primary_tier, sent_at, viewed_at, scope_review_requested_at
+         FROM engagement_recommendations WHERE application_id = a.id ORDER BY version DESC LIMIT 1
+       ) rec ON true
+       LEFT JOIN LATERAL (
+         SELECT selected_tier, selected_payment_plan FROM engagement_selections
+         WHERE application_id = a.id ORDER BY created_at DESC LIMIT 1
+       ) sel ON true
        ORDER BY (a.status = 'decided') ASC, a.created_at DESC`
     );
     return res.status(200).json({ applications: result.rows });

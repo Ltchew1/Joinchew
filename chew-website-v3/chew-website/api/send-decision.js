@@ -89,7 +89,6 @@ module.exports = async (req, res) => {
       name: application.full_name,
       decision,
       applicantMessage: cleanApplicantMessage,
-      selectProgramUrl: `${process.env.SITE_URL}/select-program.html?token=${encodeURIComponent(application.access_token)}`,
     });
 
     if (PORTAL_DECISIONS.includes(decision)) {

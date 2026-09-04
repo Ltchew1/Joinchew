@@ -113,6 +113,8 @@
       <div class="deal-sheet" id="deal-sheet" hidden style="max-width:780px;">
         <div class="deal-sheet-eyebrow">Know the deal before you pay.</div>
         <div class="deal-sheet-grid">
+          <div class="deal-sheet-row" id="ds-focus-areas-row" hidden><span class="ds-label">CHEW is focused on</span><span class="ds-value" id="ds-focus-areas"></span></div>
+          <div class="deal-sheet-row" id="ds-why-fits-row" hidden><span class="ds-label">Why this fits</span><span class="ds-value" id="ds-why-fits"></span></div>
           <div class="deal-sheet-row"><span class="ds-label">You're buying</span><span class="ds-value" id="ds-product"></span></div>
           <div class="deal-sheet-row"><span class="ds-label">You're paying</span><span class="ds-value ds-value--price" id="ds-price"></span></div>
           <div class="deal-sheet-row"><span class="ds-label">Billing</span><span class="ds-value" id="ds-billing"></span></div>
@@ -138,20 +140,32 @@
 (function () {
   var params = new URLSearchParams(window.location.search);
   var token = params.get('token') || '';
-  var tier = params.get('tier') || '';
-  var planParam = params.get('plan') || '';
-  var ONE_TIME_TIERS = ['focused_builder', 'infrastructure', 'advanced_infrastructure', 'executive'];
   var tierLabels = {
     focused_builder: 'Focused Builder', infrastructure: 'Infrastructure',
     advanced_infrastructure: 'Advanced Infrastructure', executive: 'Executive Advisory', membership: 'Membership',
   };
-  var isOneTime = ONE_TIME_TIERS.indexOf(tier) !== -1;
-  // paymentPlanType travels with the tier from select-program.html's
-  // Pay in Full / Monthly Plan toggle — required for one-time engagements,
-  // ignored for membership, which keeps its own separate entry+recurring
-  // model. See api/sign-agreement.js, which validates this server-side too.
-  var paymentPlanType = isOneTime && (planParam === 'pay_in_full' || planParam === 'monthly') ? planParam : null;
+  // Same 9-slug taxonomy as lib/focusAreas.js and recommendation.html —
+  // small and stable enough that a client-side copy (rather than a
+  // dedicated API call just for labels) matches this codebase's existing
+  // convention for label maps like ANSWER_LABELS.
+  var FOCUS_AREA_LABELS = {
+    financial_organization: 'FINANCIAL ORGANIZATION', credit_intelligence: 'CREDIT INTELLIGENCE',
+    cash_flow_banking: 'CASH FLOW & BANKING', business_foundation: 'BUSINESS FOUNDATION',
+    funding_readiness: 'FUNDING READINESS', income_opportunity: 'INCOME & OPPORTUNITY',
+    property_readiness: 'PROPERTY READINESS', protection_risk: 'PROTECTION & RISK',
+    decision_sequencing: 'DECISION SEQUENCING',
+  };
+  // Deliberately NOT read from the URL — tier and payment plan are
+  // determined entirely by the applicant's server-recorded selection
+  // (see api/select-engagement.js, api/select-payment-plan.js), fetched
+  // below via /api/recommendation. This is the client-side half of the
+  // CHEW Recommendation Engine's approved-option gate; api/sign-agreement.js
+  // enforces the real boundary regardless of anything this page sends.
+  var tier = null;
+  var paymentPlanType = null;
+  var isOneTime = true;
   var dealData = null;
+  var recommendationData = null;
 
   var loadStatus = document.getElementById('load-status');
   var content = document.getElementById('agreement-content');
@@ -174,34 +188,46 @@
     loadStatus.style.display = 'block';
   }
 
-  if (!token || !tier || !tierLabels[tier]) {
-    showLoadError('This page requires a valid program-selection link. Please start from your acceptance email.');
-    return;
-  }
-  if (isOneTime && !paymentPlanType) {
-    showLoadError('Please choose Pay in Full or the Monthly Plan before signing. Return to the engagement page: ' +
-      'select-program.html?token=' + encodeURIComponent(token));
+  if (!token) {
+    showLoadError('This page requires a valid link. Please start from your acceptance email.');
     return;
   }
 
-  Promise.all([
-    fetch('/api/application-summary?token=' + encodeURIComponent(token)).then(function (res) {
-      if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to load your application.'); });
+  fetch('/api/recommendation?token=' + encodeURIComponent(token))
+    .then(function (res) {
+      if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to load your recommendation.'); });
       return res.json();
-    }),
-    fetch('/api/agreement-text?tier=' + encodeURIComponent(tier)).then(function (res) {
-      if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to load the agreement text.'); });
-      return res.json();
-    }),
-    fetch('/api/deal-sheet?tier=' + encodeURIComponent(tier)).then(function (res) {
-      if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to load pricing.'); });
-      return res.json();
-    }),
-  ])
+    })
+    .then(function (rec) {
+      recommendationData = rec;
+      if (!rec.activeSelection || !rec.activeSelection.selectedTier) {
+        window.location = 'recommendation.html?token=' + encodeURIComponent(token);
+        return Promise.reject(new Error('redirecting'));
+      }
+      if (!rec.activeSelection.selectedPaymentPlan) {
+        window.location = 'recommendation.html?token=' + encodeURIComponent(token) + '#choose-payment';
+        return Promise.reject(new Error('redirecting'));
+      }
+      tier = rec.activeSelection.selectedTier;
+      paymentPlanType = rec.activeSelection.selectedPaymentPlan;
+      dealData = tier === rec.primaryTier ? rec.primaryDeal : rec.alternativeDeal;
+      isOneTime = true;
+
+      return Promise.all([
+        fetch('/api/application-summary?token=' + encodeURIComponent(token)).then(function (res) {
+          if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to load your application.'); });
+          return res.json();
+        }),
+        fetch('/api/agreement-text?tier=' + encodeURIComponent(tier)).then(function (res) {
+          if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to load the agreement text.'); });
+          return res.json();
+        }),
+      ]);
+    })
     .then(function (results) {
+      if (!results) return; // redirecting away
       var appData = results[0];
       var agreementData = results[1];
-      dealData = results[2];
 
       nameInput.value = appData.fullName || '';
       document.getElementById('sa-identity-name').textContent = appData.fullName || '—';
@@ -257,8 +283,15 @@
       content.style.display = 'grid';
     })
     .catch(function (err) {
+      if (err.message === 'redirecting') return;
       showLoadError(err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.');
     });
+
+  function showStaleRecommendationError(el) {
+    el.innerHTML = 'CHEW updated your recommendation. <a href="recommendation.html?token=' +
+      encodeURIComponent(token) + '" style="color:#8F7024; font-weight:bold;">Review the latest recommendation &rarr;</a>';
+    el.style.display = 'block';
+  }
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
@@ -270,17 +303,32 @@
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        token: token, tier: tier, signedName: nameInput.value, agreedToTerms: agreeCheckbox.checked === true,
-        paymentPlanType: paymentPlanType,
+        token: token, signedName: nameInput.value, agreedToTerms: agreeCheckbox.checked === true,
       }),
     })
       .then(function (res) {
-        if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to record signature.'); });
+        if (!res.ok) return res.json().then(function (data) {
+          var err = new Error(data.error || 'Unable to record signature.');
+          err.code = data.code;
+          throw err;
+        });
         return res.json();
       })
       .then(function (data) {
         pendingSignatureId = data.signatureId;
         var deal = dealData;
+
+        var focusAreasRow = document.getElementById('ds-focus-areas-row');
+        var whyFitsRow = document.getElementById('ds-why-fits-row');
+        if (recommendationData && recommendationData.focusAreas && recommendationData.focusAreas.length) {
+          document.getElementById('ds-focus-areas').textContent = recommendationData.focusAreas
+            .map(function (slug) { return FOCUS_AREA_LABELS[slug] || slug; }).join(' · ');
+          focusAreasRow.hidden = false;
+        }
+        if (recommendationData && recommendationData.clientFacingReason) {
+          document.getElementById('ds-why-fits').textContent = recommendationData.clientFacingReason;
+          whyFitsRow.hidden = false;
+        }
 
         // Exact terms of the plan the client is about to pay, not a
         // generic price line — same numbers /api/create-program-checkout-session.js
@@ -316,8 +364,12 @@
         dealSheet.scrollIntoView({ behavior: 'smooth', block: 'start' });
       })
       .catch(function (err) {
-        signStatus.textContent = err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.';
-        signStatus.style.display = 'block';
+        if (err.code === 'RECOMMENDATION_UPDATED') {
+          showStaleRecommendationError(signStatus);
+        } else {
+          signStatus.textContent = err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.';
+          signStatus.style.display = 'block';
+        }
         signBtn.disabled = false;
         signBtn.textContent = 'Sign & Continue to Payment';
       });
@@ -341,18 +393,26 @@
     fetch('/api/create-program-checkout-session', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ token: token, tier: tier, signatureId: pendingSignatureId }),
+      body: JSON.stringify({ token: token, signatureId: pendingSignatureId }),
     })
       .then(function (res) {
-        if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Checkout failed'); });
+        if (!res.ok) return res.json().then(function (data) {
+          var err = new Error(data.error || 'Checkout failed');
+          err.code = data.code;
+          throw err;
+        });
         return res.json();
       })
       .then(function (data) {
         window.location = data.url;
       })
       .catch(function (err) {
-        dealSheetStatus.textContent = err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.';
-        dealSheetStatus.style.display = 'block';
+        if (err.code === 'RECOMMENDATION_UPDATED') {
+          showStaleRecommendationError(dealSheetStatus);
+        } else {
+          dealSheetStatus.textContent = err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.';
+          dealSheetStatus.style.display = 'block';
+        }
         dealSheetPay.disabled = false;
         dealSheetBack.disabled = false;
         dealSheetPay.textContent = 'Proceed to Payment';

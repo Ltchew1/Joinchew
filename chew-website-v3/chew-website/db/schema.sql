@@ -1204,3 +1204,126 @@ CREATE TABLE IF NOT EXISTS program_purchase_installments (
   created_at            TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_program_purchase_installments_purchase ON program_purchase_installments (purchase_id);
+
+-- ============================================================
+-- CHEW Recommendation Engine
+-- ============================================================
+-- Separates three previously-collapsed decisions: (A) admissions
+-- (applications.decision, unchanged), (B) scope — what engagement level
+-- an accepted applicant's position actually requires, decided by a human
+-- CHEW admin and recorded here, and (C) the client's own purchase choice
+-- among ONLY the options CHEW approved (engagement_selections below).
+-- Prior to this, api/sign-agreement.js and api/create-program-checkout-
+-- session.js accepted ANY of the four one-time tiers from ANY accepted
+-- applicant with no approval record to check against — this is the
+-- schema that makes "approved" a real, checkable fact for the first time.
+--
+-- Versioned and separate from `applications` (not bolted-on columns) so
+-- CHEW can revise a recommendation later while preserving exactly what
+-- the client actually saw and signed against at the time — the same
+-- evidence-preservation doctrine already used for agreement_signatures'
+-- *_at_signing snapshot columns.
+
+CREATE TABLE IF NOT EXISTS engagement_recommendations (
+  id                     SERIAL PRIMARY KEY,
+  application_id         INTEGER NOT NULL REFERENCES applications (id),
+  version                INTEGER NOT NULL,
+  status                 TEXT NOT NULL DEFAULT 'draft'
+                           CHECK (status IN ('draft', 'sent', 'superseded', 'withdrawn')),
+  primary_tier           TEXT NOT NULL
+                           CHECK (primary_tier IN ('focused_builder', 'infrastructure', 'advanced_infrastructure', 'executive')),
+  alternative_tier       TEXT
+                           CHECK (alternative_tier IN ('focused_builder', 'infrastructure', 'advanced_infrastructure', 'executive')),
+  -- A lower-scope alternative is a narrower starting point, never a
+  -- discount on the same scope — enforced structurally, not just by
+  -- convention: an alternative_tier cannot exist without a human-
+  -- approved explanation of what it does and doesn't include.
+  focus_areas            JSONB NOT NULL DEFAULT '[]',
+  client_facing_reason   TEXT NOT NULL,
+  client_facing_summary  TEXT,
+  alternative_tradeoff   TEXT,
+  created_by             TEXT,
+  created_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
+  sent_at                TIMESTAMPTZ,
+  viewed_at              TIMESTAMPTZ,
+  superseded_at          TIMESTAMPTZ,
+  scope_review_requested_at TIMESTAMPTZ,
+  scope_review_message   TEXT,
+  CHECK (alternative_tier IS NULL OR alternative_tier <> primary_tier),
+  CHECK (alternative_tier IS NULL OR alternative_tradeoff IS NOT NULL),
+  UNIQUE (application_id, version)
+);
+CREATE INDEX IF NOT EXISTS idx_engagement_recommendations_application ON engagement_recommendations (application_id);
+-- "Only one non-superseded SENT recommendation may be active for an
+-- application at one time" and "one editable draft in flight at a time" —
+-- both enforced at the database level, not merely by application code
+-- discipline, via partial unique indexes (same technique idx_active_slot
+-- already uses on bookings elsewhere in this file).
+CREATE UNIQUE INDEX IF NOT EXISTS idx_engagement_recommendations_one_sent
+  ON engagement_recommendations (application_id) WHERE status = 'sent';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_engagement_recommendations_one_draft
+  ON engagement_recommendations (application_id) WHERE status = 'draft';
+
+-- Conditions live on the recommendation, not on `applications` — a
+-- recommendation may carry zero, one, or several. Once a recommendation
+-- is SENT, condition_text and blocking are treated as immutable
+-- historical fact by every API that touches this table (no endpoint ever
+-- accepts an update to either field) — only `satisfied`/`satisfied_at`/
+-- `satisfied_by` ever change post-send. A substantive change to wording
+-- or blocking classification requires a new recommendation version.
+CREATE TABLE IF NOT EXISTS recommendation_conditions (
+  id                SERIAL PRIMARY KEY,
+  recommendation_id INTEGER NOT NULL REFERENCES engagement_recommendations (id),
+  condition_text    TEXT NOT NULL,
+  blocking          BOOLEAN NOT NULL DEFAULT TRUE,
+  satisfied         BOOLEAN NOT NULL DEFAULT FALSE,
+  satisfied_at      TIMESTAMPTZ,
+  satisfied_by      TEXT,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_recommendation_conditions_recommendation ON recommendation_conditions (recommendation_id);
+
+-- The client's own purchase-decision evidence, deliberately separate from
+-- the recommendation (CHEW's evidence) and from agreement_signatures (the
+-- binding commercial record) — this table exists only to distinguish
+-- "recommendation viewed" from "engagement selected" from "payment option
+-- selected" from "agreement signed" as honestly different, separately
+-- timestamped facts, per the directive's explicit instruction not to
+-- collapse them.
+CREATE TABLE IF NOT EXISTS engagement_selections (
+  id                        SERIAL PRIMARY KEY,
+  application_id            INTEGER NOT NULL REFERENCES applications (id),
+  recommendation_id         INTEGER NOT NULL REFERENCES engagement_recommendations (id),
+  recommendation_version    INTEGER NOT NULL,
+  selected_tier             TEXT NOT NULL
+                              CHECK (selected_tier IN ('focused_builder', 'infrastructure', 'advanced_infrastructure', 'executive')),
+  selected_at               TIMESTAMPTZ NOT NULL DEFAULT now(),
+  selected_payment_plan     TEXT CHECK (selected_payment_plan IN ('pay_in_full', 'monthly')),
+  payment_plan_selected_at  TIMESTAMPTZ,
+  superseded_at             TIMESTAMPTZ,
+  created_at                TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_engagement_selections_application ON engagement_selections (application_id);
+CREATE INDEX IF NOT EXISTS idx_engagement_selections_recommendation ON engagement_selections (recommendation_id);
+-- "One current active pre-signature selection per active recommendation."
+CREATE UNIQUE INDEX IF NOT EXISTS idx_engagement_selections_one_active
+  ON engagement_selections (recommendation_id) WHERE superseded_at IS NULL;
+
+-- Binds the commercial record to the specific recommendation version the
+-- client actually saw and was approved against. Nullable — historical
+-- signatures signed before this migration have no recommendation and
+-- remain valid; application code (api/sign-agreement.js) requires this
+-- binding for every NEW signature going forward.
+ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS recommendation_id INTEGER REFERENCES engagement_recommendations (id);
+ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS recommendation_version INTEGER;
+
+-- Follow-up reminder claim columns — same doctrine as every other
+-- *_reminder_sent/*_notified_at column in this schema: a durable,
+-- claim-once fact so a cron re-run never double-sends. One column per
+-- distinct follow-up nudge (see api/send-recommendation-reminders.js):
+-- recommendation sent but not viewed, viewed but no engagement selected,
+-- engagement selected but not yet signed. No fake urgency/countdown is
+-- ever computed from these — they only gate a single honest reminder.
+ALTER TABLE engagement_recommendations ADD COLUMN IF NOT EXISTS not_viewed_reminder_sent_at TIMESTAMPTZ;
+ALTER TABLE engagement_recommendations ADD COLUMN IF NOT EXISTS no_selection_reminder_sent_at TIMESTAMPTZ;
+ALTER TABLE engagement_recommendations ADD COLUMN IF NOT EXISTS not_signed_reminder_sent_at TIMESTAMPTZ;

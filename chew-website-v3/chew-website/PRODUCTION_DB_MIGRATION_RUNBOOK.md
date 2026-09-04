@@ -76,6 +76,25 @@ is already the file's own top-to-bottom order, listed here for visibility):
 11. **Run `db/seed-feature-flags.sql` immediately after** — the table
     alone is not sufficient; `/api/intelligence-demo` needs its seeded
     `intelligence_demo` row present with `status = 'live'`.
+12. **CHEW Recommendation Engine** — new tables `engagement_recommendations`,
+    `recommendation_conditions`, `engagement_selections`; new columns
+    `agreement_signatures.recommendation_id`,
+    `agreement_signatures.recommendation_version`; the three follow-up
+    reminder claim columns on `engagement_recommendations`
+    (`not_viewed_reminder_sent_at`, `no_selection_reminder_sent_at`,
+    `not_signed_reminder_sent_at`); the two partial unique indexes
+    enforcing "at most one sent recommendation" and "at most one draft"
+    per application (`idx_engagement_recommendations_one_sent`,
+    `idx_engagement_recommendations_one_draft`); and the partial unique
+    index enforcing "at most one active pre-signature selection per
+    recommendation" (`idx_engagement_selections_one_active`). **Deploy
+    this schema step before deploying any of the application code that
+    depends on it** — `api/sign-agreement.js` and
+    `api/create-program-checkout-session.js` now require the approved-
+    option gate these tables provide and will error on every request
+    without them (no code path silently falls back to the old
+    unrestricted-tier behavior — that would defeat the entire point of
+    this migration).
 
 ## After migration — verify individually (do not stop at "the file ran without error")
 
@@ -138,6 +157,36 @@ SELECT table_name FROM information_schema.tables WHERE table_name = 'feature_fla
 SELECT slug, status, public_teaser_enabled FROM feature_flags ORDER BY slug;
 -- expect: 12 rows total (see db/seed-feature-flags.sql), including
 -- slug='intelligence_demo' with status='live'
+
+-- 9. CHEW Recommendation Engine tables
+SELECT table_name FROM information_schema.tables
+WHERE table_name IN ('engagement_recommendations', 'recommendation_conditions', 'engagement_selections');
+-- expect: 3 rows
+
+-- 10. agreement_signatures recommendation binding columns
+SELECT column_name FROM information_schema.columns
+WHERE table_name = 'agreement_signatures' AND column_name IN ('recommendation_id', 'recommendation_version');
+-- expect: 2 rows
+
+-- 11. Follow-up reminder claim columns
+SELECT column_name FROM information_schema.columns
+WHERE table_name = 'engagement_recommendations'
+  AND column_name IN ('not_viewed_reminder_sent_at', 'no_selection_reminder_sent_at', 'not_signed_reminder_sent_at');
+-- expect: 3 rows
+
+-- 12. The three partial unique indexes that make "approved option" a real,
+--     database-enforced fact rather than just application-code discipline
+SELECT indexname FROM pg_indexes
+WHERE indexname IN ('idx_engagement_recommendations_one_sent', 'idx_engagement_recommendations_one_draft', 'idx_engagement_selections_one_active');
+-- expect: 3 rows
+
+-- 13. engagement_recommendations CHECK constraints (status enum, tier enums,
+--     alternative-requires-tradeoff, alternative-differs-from-primary)
+SELECT conname, pg_get_constraintdef(oid) FROM pg_constraint
+WHERE conrelid = 'engagement_recommendations'::regclass AND contype = 'c';
+-- expect: 5 rows (status, primary_tier, alternative_tier, and the two
+-- unnamed CHECKs -- alternative_tier <> primary_tier, and
+-- alternative_tier IS NULL OR alternative_tradeoff IS NOT NULL)
 ```
 
 Only once every query above returns its expected result:
@@ -148,8 +197,16 @@ Only once every query above returns its expected result:
 13. Only then deploy the application code from this branch that reads the
     new columns/tables (`api/stripe-webhook.js`,
     `api/create-program-checkout-session.js`, `api/sign-agreement.js`,
-    etc.) — deploying code before the schema exists is the exact ordering
-    mistake this runbook exists to prevent.
+    `api/save-recommendation.js`, `api/admin-recommendation.js`,
+    `api/recommendation.js`, `api/recommendation-viewed.js`,
+    `api/select-engagement.js`, `api/select-payment-plan.js`,
+    `api/request-scope-review.js`, `api/recommendation-conditions.js`,
+    `api/send-recommendation-reminders.js`, etc.) — deploying code before
+    the schema exists is the exact ordering mistake this runbook exists
+    to prevent, and for the Recommendation Engine specifically it means
+    every request to these routes fails outright rather than silently
+    falling back to the old unrestricted-tier behavior this migration
+    exists to close.
 
 ## What this runbook does not cover
 

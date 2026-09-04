@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your CHEW Recommendation</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .rec-section { max-width: 720px; margin: 0 auto 48px; }
+  .rec-section:last-child { margin-bottom: 0; }
+  .rec-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gold-light); margin-bottom: 10px; display: block; }
+  .rec-focus-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .rec-focus-pill {
+    display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+    letter-spacing: 0.03em; background: rgba(201,162,39,0.12); border: 1px solid rgba(201,162,39,0.3); color: var(--gold-light);
+  }
+  .rec-condition { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.92rem; }
+  .rec-condition:last-child { border-bottom: none; }
+  .rec-condition-badge { flex: 0 0 auto; padding: 2px 8px; border-radius: 10px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+  .rec-condition-badge.blocking { background: rgba(196,74,74,0.18); color: #e08a8a; }
+  .rec-condition-badge.satisfied { background: rgba(74,181,120,0.18); color: #7fd9a4; }
+  .rec-condition-badge.optional { background: rgba(255,255,255,0.08); color: var(--text-muted); }
+  .rec-condition.is-satisfied .rec-condition-text { text-decoration: line-through; color: var(--text-faint); }
+
+  .rec-engagement-card { padding: 28px; margin-bottom: 20px; }
+  .rec-engagement-card h3 { margin-top: 0; }
+  .rec-engagement-meta { list-style: none; padding: 0; margin: 16px 0; font-size: 0.9rem; color: var(--text-dim, rgba(255,255,255,0.75)); }
+  .rec-engagement-meta li { padding: 4px 0; }
+  .rec-engagement-meta li strong { color: var(--text); font-weight: 600; }
+  .rec-tradeoff { margin: 14px 0; padding: 14px 16px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 0.9rem; border-left: 3px solid var(--gold-light); }
+
+  .plan-toggle { display: flex; gap: 8px; margin: 16px 0; flex-wrap: wrap; }
+  .plan-option { flex: 1 1 auto; min-width: 140px; cursor: pointer; border: 1px solid var(--panel-border, rgba(255,255,255,0.14)); border-radius: 10px; padding: 10px 12px; transition: border-color 0.2s, background 0.2s; }
+  .plan-option:hover { border-color: var(--gold); }
+  .plan-option input { position: absolute; opacity: 0; pointer-events: none; }
+  .plan-option .plan-option-label { font-weight: 600; font-size: 0.9rem; display: block; }
+  .plan-option .plan-option-detail { font-size: 0.8rem; color: var(--text-dim, rgba(255,255,255,0.65)); margin-top: 2px; display: block; }
+  .plan-option.is-selected { border-color: var(--gold-light); background: rgba(201,162,39,0.1); }
+
+  .rec-scope-review { margin-top: 8px; }
+  .rec-scope-review textarea {
+    width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.03); color: var(--text); font-size: 0.9rem; font-family: inherit; margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="brand">
+      <img src="assets/chew-logo-monument.png" alt="CHEW" width="40" height="40">
+    </a>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="hero-glow"></div>
+    <div class="container" style="position:relative;">
+      <span class="eyebrow">Your CHEW Recommendation</span>
+      <h1 id="rec-your-move" style="max-width:26ch;">We reviewed your Starting Position.</h1>
+      <p class="max-prose" style="font-size:1.05rem; margin-top:16px;">
+        CHEW doesn't hand every accepted applicant the same package. We look at your actual position first,
+        then recommend the right level of structure for it. Here's what we found.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div id="rec-status" class="status-note" style="display:none; max-width:720px; margin:0 auto 32px;"></div>
+
+      <div id="rec-content" style="display:none;">
+
+        <div class="rec-section" id="rec-what-chew-sees-section" hidden>
+          <span class="rec-label">What CHEW Sees</span>
+          <p id="rec-what-chew-sees" style="font-size:1rem; line-height:1.7;"></p>
+        </div>
+
+        <div class="rec-section" id="rec-what-needs-section" hidden>
+          <span class="rec-label">What Needs to Happen</span>
+          <div class="glass card" id="rec-conditions-list"></div>
+        </div>
+
+        <div class="rec-section">
+          <span class="rec-label">Your CHEW Focus Areas</span>
+          <div class="rec-focus-pills" id="rec-focus-pills"></div>
+        </div>
+
+        <div class="rec-section">
+          <span class="rec-label">Recommended Engagement</span>
+          <div class="glass card rec-engagement-card" id="rec-primary-card">
+            <h3 id="rec-primary-label"></h3>
+            <p id="rec-primary-reason" style="font-size:0.96rem; line-height:1.65;"></p>
+            <ul class="rec-engagement-meta" id="rec-primary-meta"></ul>
+            <p class="ds-value ds-value--price" id="rec-primary-price" style="margin:14px 0 2px;"></p>
+            <div class="plan-toggle" id="rec-primary-plan-toggle" role="radiogroup" aria-label="Payment option"></div>
+            <div id="rec-primary-select-status" class="status-note" style="display:none; margin:12px 0;"></div>
+            <button type="button" class="btn btn-gold" id="rec-primary-select-btn" style="margin-top:8px; width:100%; justify-content:center;">Choose This Engagement</button>
+          </div>
+        </div>
+
+        <div class="rec-section" id="rec-alternative-section" hidden>
+          <span class="rec-label">Another Approved Path</span>
+          <div class="glass card rec-engagement-card" id="rec-alternative-card">
+            <h3 id="rec-alternative-label"></h3>
+            <div class="rec-tradeoff" id="rec-alternative-tradeoff"></div>
+            <ul class="rec-engagement-meta" id="rec-alternative-meta"></ul>
+            <p class="ds-value ds-value--price" id="rec-alternative-price" style="margin:14px 0 2px;"></p>
+            <div class="plan-toggle" id="rec-alternative-plan-toggle" role="radiogroup" aria-label="Payment option"></div>
+            <div id="rec-alternative-select-status" class="status-note" style="display:none; margin:12px 0;"></div>
+            <button type="button" class="btn btn-outline" id="rec-alternative-select-btn" style="margin-top:8px; width:100%; justify-content:center;">Choose This Approved Path</button>
+          </div>
+        </div>
+
+        <div class="rec-section" id="choose-payment"></div>
+
+        <div class="rec-section" style="text-align:center; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08);">
+          <p style="font-size:0.88rem; color:var(--text-faint); margin-bottom:12px;">
+            Think you need less, more, or something changed? You can ask CHEW to take another look.
+          </p>
+          <button type="button" class="btn btn-outline" id="rec-scope-review-toggle">Request a Scope Review</button>
+          <div class="rec-scope-review" id="rec-scope-review-form" hidden>
+            <textarea id="rec-scope-review-message" rows="3" placeholder="Tell CHEW what changed or what you're wondering about (optional)"></textarea>
+            <button type="button" class="btn btn-gold" id="rec-scope-review-submit">Send Request</button>
+            <div id="rec-scope-review-status" class="status-note" style="display:none; margin-top:10px;"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var token = params.get('token') || '';
+
+  var FOCUS_AREA_LABELS = {
+    financial_organization: 'FINANCIAL ORGANIZATION', credit_intelligence: 'CREDIT INTELLIGENCE',
+    cash_flow_banking: 'CASH FLOW & BANKING', business_foundation: 'BUSINESS FOUNDATION',
+    funding_readiness: 'FUNDING READINESS', income_opportunity: 'INCOME & OPPORTUNITY',
+    property_readiness: 'PROPERTY READINESS', protection_risk: 'PROTECTION & RISK',
+    decision_sequencing: 'DECISION SEQUENCING',
+  };
+
+  var statusEl = document.getElementById('rec-status');
+  var contentEl = document.getElementById('rec-content');
+
+  function showStatus(message) {
+    statusEl.textContent = message;
+    statusEl.style.display = 'block';
+  }
+  function fmt(cents) {
+    return '$' + Math.round(cents / 100).toLocaleString('en-US');
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  if (!token) {
+    showStatus('This page requires a valid link. Please start from your acceptance email.');
+    return;
+  }
+
+  var recData = null;
+
+  function buildPlanToggle(container, deal, name) {
+    container.innerHTML =
+      '<label class="plan-option is-selected">' +
+        '<input type="radio" name="' + name + '" value="pay_in_full" checked>' +
+        '<span class="plan-option-label">Pay in Full</span>' +
+        '<span class="plan-option-detail">' + fmt(deal.totalCents) + ' today</span>' +
+      '</label>' +
+      '<label class="plan-option">' +
+        '<input type="radio" name="' + name + '" value="monthly">' +
+        '<span class="plan-option-label">Monthly Plan</span>' +
+        '<span class="plan-option-detail">' + fmt(deal.monthly.initialCents) + ' initial + ' + deal.monthly.installmentCount + ' &times; ' + fmt(deal.monthly.installmentCents) + '/mo</span>' +
+      '</label>';
+    var radios = container.querySelectorAll('input[type="radio"]');
+    radios.forEach(function (radio) {
+      radio.addEventListener('change', function () {
+        container.querySelectorAll('.plan-option').forEach(function (label) { label.classList.remove('is-selected'); });
+        radio.closest('.plan-option').classList.add('is-selected');
+      });
+    });
+  }
+
+  function buildMetaList(deal) {
+    return '<li><strong>' + deal.deliverable + '</strong></li>' +
+      '<li>' + deal.sessionCount + ' 1:1 sessions (' + deal.sessionMinutes + ' min each) over up to ' + deal.durationDays + ' days</li>' +
+      '<li>' + deal.documentReviewEvents + ' document review event' + (deal.documentReviewEvents === 1 ? '' : 's') + '</li>' +
+      '<li>' + deal.advisoryAccess + '</li>';
+  }
+
+  function selectedPlanValue(container) {
+    var checked = container.querySelector('input[type="radio"]:checked');
+    return checked ? checked.value : 'pay_in_full';
+  }
+
+  function handleSelectionError(err, statusEl) {
+    if (err.code === 'BLOCKING_CONDITIONS_UNSATISFIED') {
+      statusEl.textContent = 'One or more conditions need to be satisfied before you can choose an engagement. See "What Needs to Happen" above.';
+    } else if (err.code === 'RECOMMENDATION_UPDATED') {
+      statusEl.innerHTML = 'CHEW updated your recommendation. <a href="javascript:location.reload()" style="color:#8F7024; font-weight:bold;">Reload to see the latest &rarr;</a>';
+    } else {
+      statusEl.textContent = err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.';
+    }
+    statusEl.style.display = 'block';
+  }
+
+  function wireChooseButton(btn, statusElId, tier, planToggleEl) {
+    var statusElLocal = document.getElementById(statusElId);
+    btn.addEventListener('click', function () {
+      statusElLocal.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      fetch('/api/select-engagement', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ token: token, tier: tier }),
+      })
+        .then(function (res) {
+          if (!res.ok) return res.json().then(function (d) { var e = new Error(d.error); e.code = d.code; throw e; });
+          return res.json();
+        })
+        .then(function () {
+          return fetch('/api/select-payment-plan', {
+            method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ token: token, paymentPlan: selectedPlanValue(planToggleEl) }),
+          });
+        })
+        .then(function (res) {
+          if (!res.ok) return res.json().then(function (d) { var e = new Error(d.error); e.code = d.code; throw e; });
+          return res.json();
+        })
+        .then(function () {
+          window.location = 'sign-agreement.html?token=' + encodeURIComponent(token);
+        })
+        .catch(function (err) {
+          handleSelectionError(err, statusElLocal);
+          btn.disabled = false;
+          btn.textContent = btn.id === 'rec-alternative-select-btn' ? 'Choose This Approved Path' : 'Choose This Engagement';
+        });
+    });
+  }
+
+  fetch('/api/recommendation?token=' + encodeURIComponent(token))
+    .then(function (res) {
+      if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to load your recommendation.'); });
+      return res.json();
+    })
+    .then(function (rec) {
+      recData = rec;
+
+      document.getElementById('rec-your-move').textContent = rec.yourMove
+        ? 'Your move: ' + rec.yourMove + '.'
+        : 'We reviewed your Starting Position.';
+
+      if (rec.whatChewSees) {
+        document.getElementById('rec-what-chew-sees').textContent = rec.whatChewSees;
+        document.getElementById('rec-what-chew-sees-section').hidden = false;
+      }
+
+      if (rec.conditions && rec.conditions.length) {
+        var condHtml = '';
+        rec.conditions.forEach(function (c) {
+          var badgeClass = c.satisfied ? 'satisfied' : (c.blocking ? 'blocking' : 'optional');
+          var badgeText = c.satisfied ? 'Satisfied' : (c.blocking ? 'Required' : 'Optional');
+          condHtml += '<div class="rec-condition' + (c.satisfied ? ' is-satisfied' : '') + '">' +
+            '<span class="rec-condition-badge ' + badgeClass + '">' + badgeText + '</span>' +
+            '<span class="rec-condition-text">' + esc(c.text) + '</span></div>';
+        });
+        document.getElementById('rec-conditions-list').innerHTML = condHtml;
+        document.getElementById('rec-what-needs-section').hidden = false;
+      }
+
+      var pillsHtml = (rec.focusAreas || []).map(function (slug) {
+        return '<span class="rec-focus-pill">' + (FOCUS_AREA_LABELS[slug] || slug) + '</span>';
+      }).join('');
+      document.getElementById('rec-focus-pills').innerHTML = pillsHtml;
+
+      document.getElementById('rec-primary-label').textContent = rec.primaryDeal.label;
+      document.getElementById('rec-primary-reason').textContent = rec.clientFacingReason;
+      document.getElementById('rec-primary-meta').innerHTML = buildMetaList(rec.primaryDeal);
+      document.getElementById('rec-primary-price').textContent = fmt(rec.primaryDeal.totalCents) + ' total investment';
+      var primaryPlanToggle = document.getElementById('rec-primary-plan-toggle');
+      buildPlanToggle(primaryPlanToggle, rec.primaryDeal, 'plan-primary');
+      wireChooseButton(document.getElementById('rec-primary-select-btn'), 'rec-primary-select-status', rec.primaryTier, primaryPlanToggle);
+
+      if (rec.alternativeTier && rec.alternativeDeal) {
+        document.getElementById('rec-alternative-label').textContent = rec.alternativeDeal.label;
+        document.getElementById('rec-alternative-tradeoff').textContent = rec.alternativeTradeoff;
+        document.getElementById('rec-alternative-meta').innerHTML = buildMetaList(rec.alternativeDeal);
+        document.getElementById('rec-alternative-price').textContent = fmt(rec.alternativeDeal.totalCents) + ' total investment';
+        var altPlanToggle = document.getElementById('rec-alternative-plan-toggle');
+        buildPlanToggle(altPlanToggle, rec.alternativeDeal, 'plan-alternative');
+        wireChooseButton(document.getElementById('rec-alternative-select-btn'), 'rec-alternative-select-status', rec.alternativeTier, altPlanToggle);
+        document.getElementById('rec-alternative-section').hidden = false;
+      }
+
+      contentEl.style.display = 'block';
+
+      // Claim the "actually viewed" fact only after a successful render —
+      // never as a GET side effect (see api/recommendation.js / api/recommendation-viewed.js).
+      fetch('/api/recommendation-viewed', {
+        method: 'PATCH', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ token: token }),
+      }).catch(function () { /* best-effort, not shown to the client */ });
+    })
+    .catch(function (err) {
+      showStatus(err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.');
+    });
+
+  var scopeToggle = document.getElementById('rec-scope-review-toggle');
+  var scopeForm = document.getElementById('rec-scope-review-form');
+  var scopeSubmit = document.getElementById('rec-scope-review-submit');
+  var scopeStatus = document.getElementById('rec-scope-review-status');
+  var scopeMessage = document.getElementById('rec-scope-review-message');
+
+  scopeToggle.addEventListener('click', function () {
+    scopeForm.hidden = !scopeForm.hidden;
+  });
+  scopeSubmit.addEventListener('click', function () {
+    scopeStatus.style.display = 'none';
+    scopeSubmit.disabled = true;
+    scopeSubmit.textContent = 'Sending...';
+    fetch('/api/request-scope-review', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ token: token, message: scopeMessage.value }),
+    })
+      .then(function (res) {
+        if (!res.ok) return res.json().then(function (d) { throw new Error(d.error); });
+        return res.json();
+      })
+      .then(function () {
+        scopeStatus.textContent = 'Sent — CHEW will follow up with you directly.';
+        scopeStatus.style.display = 'block';
+        scopeSubmit.textContent = 'Sent';
+      })
+      .catch(function (err) {
+        scopeStatus.textContent = err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.';
+        scopeStatus.style.display = 'block';
+        scopeSubmit.disabled = false;
+        scopeSubmit.textContent = 'Send Request';
+      });
+  });
+})();
+</script>
+
+<footer class="site-footer">
+  <div class="container">
+    <a href="index.html" class="footer-mini-brand">
+      <img src="assets/chew-logo-monument.png" alt="CHEW" width="48" height="48">
+    </a>
+    <div class="footer-legal">
+      <span>&copy; 2026 CHEW LLC. All rights reserved.</span>
+      <span>CHEW LLC is a financial education and business-infrastructure company. CHEW does not provide credit repair services, does not promise or guarantee funding, approvals, score changes, or removal of information, and does not provide legal, tax, or investment advice. Results depend on individual circumstances, participation, and third-party decisions. See our <a href="disclaimer.html" style="color:inherit;">disclaimer</a>.</span>
+    </div>
+  </div>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>

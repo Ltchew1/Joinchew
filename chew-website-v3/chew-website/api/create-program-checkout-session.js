@@ -4,11 +4,20 @@
 // accepted applicant's chosen engagement and payment plan. Reached from
 // sign-agreement.html immediately after a signature is recorded — requires
 // a valid signatureId (see api/sign-agreement.js) tied to this application,
-// tier, AND payment plan, so no checkout session can be created without a
-// matching signed agreement for the exact terms being charged.
-// select-program.html -> sign-agreement.html -> here, all reached via the
-// link in the applicant's ACCEPT / ACCEPT_WITH_CONDITIONS decision email
-// (see lib/email.js DECISION_CONTENT and api/send-decision.js).
+// so no checkout session can be created without a matching signed
+// agreement for the exact terms being charged. recommendation.html ->
+// sign-agreement.html -> here, all reached via the applicant's token from
+// their "Your CHEW Recommendation Is Ready" email
+// (see lib/email.js sendRecommendationReadyEmail and api/save-recommendation.js).
+//
+// Deliberately does NOT accept tier from the client — read from the
+// signature row itself (server truth set by api/sign-agreement.js), same
+// doctrine that file documents. This is the checkout-side half of the
+// CHEW Recommendation Engine's approved-option gate (directive: "Checkout
+// must verify: signed agreement + recommendation id/version + approved
+// tier + client selection + payment-plan selection all agree. Any
+// mismatch: BLOCK PAYMENT.") — re-verified independently here rather than
+// trusted from the signing step, in case anything changed in between.
 //
 // Two payment options, same total price either way (see lib/programs.js):
 //   pay_in_full — one Checkout Session charges the full price today.
@@ -30,6 +39,7 @@ const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const { query } = require('../lib/db');
 const { getProgram, isOneTimeTier } = require('../lib/programs');
+const { getRecommendationById, isTierApproved } = require('../lib/recommendations');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -38,9 +48,37 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { token, tier, signatureId } = req.body || {};
+    const { token, signatureId } = req.body || {};
     if (!token) return res.status(400).json({ error: 'Missing application token.' });
     if (!signatureId) return res.status(400).json({ error: 'Please sign the Client Services Agreement first.' });
+
+    const appResult = await query(
+      `SELECT id, full_name, email, decision FROM applications WHERE access_token = $1`,
+      [token]
+    );
+    const application = appResult.rows[0];
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found.' });
+    }
+    if (!['ACCEPT', 'ACCEPT_WITH_CONDITIONS'].includes(application.decision)) {
+      return res.status(403).json({ error: 'This application has not been accepted.' });
+    }
+
+    const signatureResult = await query(
+      `SELECT id, tier, payment_plan_type_at_signing, total_contract_amount_at_signing,
+              initial_payment_amount_at_signing, installment_amount_at_signing, installment_count_at_signing,
+              recommendation_id, recommendation_version
+       FROM agreement_signatures WHERE id = $1 AND application_id = $2`,
+      [signatureId, application.id]
+    );
+    const signature = signatureResult.rows[0];
+    if (!signature) {
+      return res.status(403).json({ error: 'Please sign the Client Services Agreement first.' });
+    }
+
+    // tier comes from the signature row (server truth set by
+    // api/sign-agreement.js), never from the client — see file header.
+    const tier = signature.tier;
 
     let program;
     try {
@@ -59,32 +97,44 @@ module.exports = async (req, res) => {
 
     const oneTime = isOneTimeTier(tier);
 
-    const appResult = await query(
-      `SELECT id, full_name, email, decision FROM applications WHERE access_token = $1`,
-      [token]
-    );
-    const application = appResult.rows[0];
-    if (!application) {
-      return res.status(404).json({ error: 'Application not found.' });
-    }
-    if (!['ACCEPT', 'ACCEPT_WITH_CONDITIONS'].includes(application.decision)) {
-      return res.status(403).json({ error: 'This application has not been accepted.' });
-    }
-
-    const signatureResult = await query(
-      `SELECT id, payment_plan_type_at_signing, total_contract_amount_at_signing,
-              initial_payment_amount_at_signing, installment_amount_at_signing, installment_count_at_signing
-       FROM agreement_signatures WHERE id = $1 AND application_id = $2 AND tier = $3`,
-      [signatureId, application.id, tier]
-    );
-    const signature = signatureResult.rows[0];
-    if (!signature) {
-      return res.status(403).json({ error: 'Please sign the Client Services Agreement first.' });
-    }
-
     const paymentPlanType = signature.payment_plan_type_at_signing;
     if (oneTime && !['pay_in_full', 'monthly'].includes(paymentPlanType)) {
       return res.status(403).json({ error: 'Please sign the Client Services Agreement first.' });
+    }
+
+    // Checkout gate: signed agreement + recommendation id/version +
+    // approved tier + client selection + payment-plan selection must all
+    // still agree right now — re-verified independently here rather than
+    // assumed still true from signing time. Any mismatch blocks payment.
+    if (oneTime) {
+      if (!signature.recommendation_id) {
+        return res.status(403).json({ error: 'This signature is not bound to an active CHEW recommendation.' });
+      }
+      const recommendation = await getRecommendationById(signature.recommendation_id);
+      if (!recommendation || recommendation.status !== 'sent') {
+        return res.status(409).json({
+          error: 'CHEW updated your recommendation. Review the latest recommendation before continuing.',
+          code: 'RECOMMENDATION_UPDATED',
+        });
+      }
+      if (!isTierApproved(recommendation, tier)) {
+        return res.status(403).json({ error: 'That engagement is no longer approved for this application.' });
+      }
+
+      const selectionResult = await query(
+        `SELECT recommendation_id, selected_tier, selected_payment_plan, superseded_at
+         FROM engagement_selections WHERE application_id = $1 ORDER BY created_at DESC LIMIT 1`,
+        [application.id]
+      );
+      const selection = selectionResult.rows[0];
+      const selectionAgrees = selection
+        && !selection.superseded_at
+        && selection.recommendation_id === signature.recommendation_id
+        && selection.selected_tier === tier
+        && selection.selected_payment_plan === paymentPlanType;
+      if (!selectionAgrees) {
+        return res.status(403).json({ error: 'Your selection no longer matches your signed agreement. Please review your recommendation again.' });
+      }
     }
 
     // Term-drift guard: the client saw specific commercial terms (and a
@@ -142,7 +192,7 @@ module.exports = async (req, res) => {
     const sessionConfig = {
       customer_email: application.email,
       success_url: `${process.env.SITE_URL}/booking-confirmed.html?program=1&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.SITE_URL}/select-program.html?token=${encodeURIComponent(token)}&cancelled=true`,
+      cancel_url: `${process.env.SITE_URL}/recommendation.html?token=${encodeURIComponent(token)}&cancelled=true`,
     };
 
     let session;

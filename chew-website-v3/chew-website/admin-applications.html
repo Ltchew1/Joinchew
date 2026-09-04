@@ -29,6 +29,7 @@
       </div>
 
       <div id="queue-status" class="status-note" style="margin-top:16px;"></div>
+      <div id="pipeline-filters" style="margin-top:20px; display:flex; flex-wrap:wrap; gap:6px;"></div>
       <div id="queue-list" style="margin-top:24px; display:flex; flex-direction:column; gap:20px;"></div>
     </div>
   </section>
@@ -44,6 +45,7 @@
   .app-badge--review { background: rgba(201,162,39,0.15); color: var(--gold-light); }
   .app-badge--decided { background: rgba(255,255,255,0.08); color: var(--text-muted); }
   .app-badge--stage { background: rgba(95,163,122,0.15); color: #7fd9a4; }
+  .app-badge--pipeline { background: rgba(122,163,232,0.15); color: #9db8e8; }
 
   .app-summary { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:10px 20px; margin:16px 0; padding:16px; background: rgba(0,0,0,0.15); border-radius: 8px; }
   .app-summary dt { font-size:0.66rem; letter-spacing:0.08em; text-transform:uppercase; color: var(--gold-light); margin-bottom:3px; }
@@ -74,6 +76,42 @@
   .confirm-panel.is-visible { display:block; }
   .confirm-panel p { margin:0 0 12px; font-size:0.9rem; }
   .confirm-actions { display:flex; gap:10px; }
+
+  .scope-toggle { cursor:pointer; color: var(--gold-light); font-size:0.85rem; margin-top:12px; display:inline-block; }
+  .scope-panel { display:none; margin-top:14px; padding:18px; border:1px solid rgba(201,162,39,0.25); border-radius:10px; background: rgba(201,162,39,0.04); }
+  .scope-panel.is-open { display:block; }
+  .scope-field { margin-bottom:16px; }
+  .scope-field label { display:block; font-size:0.82rem; font-weight:600; margin-bottom:6px; }
+  .scope-field .field-hint { font-weight:400; color: var(--text-faint); }
+  .scope-field select, .scope-field textarea {
+    width:100%; padding:9px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15);
+    background:rgba(255,255,255,0.03); color:var(--text); font-size:0.88rem; font-family:inherit;
+  }
+  .scope-field select { -webkit-appearance:none; appearance:none; }
+  .scope-focus-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:8px; }
+  .scope-focus-grid label { display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:400; cursor:pointer; }
+  .scope-condition-row { display:flex; gap:8px; align-items:flex-start; margin-bottom:8px; }
+  .scope-condition-row input[type="text"] {
+    flex:1; padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.15);
+    background:rgba(255,255,255,0.03); color:var(--text); font-size:0.85rem; font-family:inherit;
+  }
+  .scope-condition-row label { display:flex; align-items:center; gap:5px; font-size:0.78rem; white-space:nowrap; color:var(--text-faint); }
+  .scope-condition-remove { background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:1.1rem; line-height:1; padding:4px 8px; }
+  .scope-actions { display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; }
+  .scope-existing-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.72rem; font-weight:700; text-transform:uppercase; margin-bottom:12px; }
+  .scope-existing-badge.draft { background: rgba(122,163,232,0.15); color: #9db8e8; }
+  .scope-existing-badge.sent { background: rgba(74,181,120,0.15); color: #7fd9a4; }
+  .scope-focus-pill {
+    display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: 600;
+    background: rgba(201,162,39,0.12); border: 1px solid rgba(201,162,39,0.3); color: var(--gold-light); margin: 0 6px 6px 0;
+  }
+
+  .pipeline-filter-chip {
+    padding: 5px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em;
+    border: 1px solid rgba(255,255,255,0.15); background: none; color: var(--text-muted); cursor: pointer;
+  }
+  .pipeline-filter-chip:hover { color: var(--text); border-color: rgba(255,255,255,0.3); }
+  .pipeline-filter-chip.is-active { background: rgba(201,162,39,0.15); border-color: var(--gold-light); color: var(--gold-light); }
 </style>
 
 <script>
@@ -89,6 +127,8 @@
   var CLERK_JS_VERSION = '6.31.0';
   var statusEl = document.getElementById('queue-status');
   var listEl = document.getElementById('queue-list');
+  var filterEl = document.getElementById('pipeline-filters');
+  var activePipelineFilter = 'ALL';
   var accessForm = document.getElementById('access-form');
   var accessError = document.getElementById('access-error');
   var signInBtn = document.getElementById('admin-sign-in');
@@ -173,6 +213,24 @@
     { value: 'REAPPLY_LATER', label: 'Reapply Later' },
   ];
 
+  // Same 4 one-time tiers lib/programs.js's ONE_TIME_TIERS defines —
+  // Membership is deliberately never offered here (locked doctrine:
+  // graduates-only, never a first-time recommendation).
+  var SCOPE_TIERS = [
+    { value: 'focused_builder', label: 'Focused Builder' },
+    { value: 'infrastructure', label: 'Infrastructure' },
+    { value: 'advanced_infrastructure', label: 'Advanced Infrastructure' },
+    { value: 'executive', label: 'Executive Advisory' },
+  ];
+  // Same locked 9-slug taxonomy as lib/focusAreas.js.
+  var SCOPE_FOCUS_AREAS = [
+    ['financial_organization', 'FINANCIAL ORGANIZATION'], ['credit_intelligence', 'CREDIT INTELLIGENCE'],
+    ['cash_flow_banking', 'CASH FLOW & BANKING'], ['business_foundation', 'BUSINESS FOUNDATION'],
+    ['funding_readiness', 'FUNDING READINESS'], ['income_opportunity', 'INCOME & OPPORTUNITY'],
+    ['property_readiness', 'PROPERTY READINESS'], ['protection_risk', 'PROTECTION & RISK'],
+    ['decision_sequencing', 'DECISION SEQUENCING'],
+  ];
+
   // Same label vocabulary as apply.html / lib/email.js, so the queue shows
   // the words the applicant actually tapped, not raw machine values.
   var ANSWER_LABELS = {
@@ -233,13 +291,283 @@
   // agreement signature itself, so that's reported honestly as
   // "Agreement Signed" rather than implying stages that aren't tracked.
   function journeyStage(app) {
-    if (app.purchase_status === 'complete' || app.membership_status === 'active' || app.membership_status === 'trialing') return 'Enrolled';
-    if (app.entry_paid_at) return 'Payment Completed';
+    // initial_payment_paid_at/paid_in_full_at cover the recommendation-
+    // engine's payment-plan purchases; entry_paid_at remains for purchases
+    // made under the older entry+remainder model — a row is only ever
+    // populated under the model that actually created it, so checking
+    // both is additive, not a guess.
+    if (app.purchase_status === 'complete' || app.membership_status === 'active' || app.membership_status === 'trialing' || app.paid_in_full_at) return 'Paid';
+    if (app.entry_paid_at || app.initial_payment_paid_at) return 'Payment Completed';
     if (app.agreement_signed_at) return 'Agreement Signed';
     if (app.decision === 'ACCEPT' || app.decision === 'ACCEPT_WITH_CONDITIONS') return 'Accepted';
     if (app.status === 'decided') return 'Decision Sent';
     if (app.status === 'scored') return 'Under Review';
     return 'Starting Position Submitted';
+  }
+
+  // The CHEW Recommendation Engine's own sub-pipeline, shown as a second
+  // badge alongside journeyStage() above — only meaningful for accepted
+  // applications that haven't reached a signed agreement yet (once
+  // signed, journeyStage()'s own states take over; nothing here is
+  // re-derived once real payment/agreement facts exist, so this never
+  // contradicts them). Every state below is read directly off a
+  // persisted timestamp/column — never inferred or guessed (directive:
+  // "Do not fake a state without persisted evidence").
+  function recommendationPipelineStage(app) {
+    if (!(app.decision === 'ACCEPT' || app.decision === 'ACCEPT_WITH_CONDITIONS')) return null;
+    if (app.agreement_signed_at) return null;
+    if (!app.recommendation_status) return 'SCOPE NEEDED';
+    if (app.recommendation_status === 'draft') return 'RECOMMENDATION DRAFT';
+    if (app.recommendation_status === 'superseded' || app.recommendation_status === 'withdrawn') return 'SCOPE NEEDED';
+    // status === 'sent' from here down
+    if (app.recommendation_scope_review_requested_at) return 'SCOPE REVIEW REQUESTED';
+    if (app.selected_payment_plan) return 'AWAITING SIGNATURE';
+    if (app.selected_tier) return 'ENGAGEMENT SELECTED';
+    if (app.recommendation_viewed_at) return 'RECOMMENDATION VIEWED';
+    return 'RECOMMENDATION SENT';
+  }
+
+  var PIPELINE_FILTERS = [
+    'ALL', 'NEEDS REVIEW', 'SCOPE NEEDED', 'RECOMMENDATION DRAFT', 'RECOMMENDATION SENT',
+    'RECOMMENDATION VIEWED', 'SCOPE REVIEW REQUESTED', 'ENGAGEMENT SELECTED', 'AWAITING SIGNATURE',
+    'AGREEMENT SIGNED', 'AWAITING PAYMENT', 'PAID',
+  ];
+  // A single overall pipeline label per application, used only for
+  // filtering (the card itself still shows the more specific badges).
+  // "NEEDS REVIEW" covers anything pre-decision (New/Under Review);
+  // everything else maps directly to a real persisted signal already
+  // computed above.
+  function overallPipelineLabel(app) {
+    if (app.status !== 'decided') return 'NEEDS REVIEW';
+    var recStage = recommendationPipelineStage(app);
+    if (recStage) return recStage;
+    var stage = journeyStage(app);
+    if (stage === 'Agreement Signed') return 'AGREEMENT SIGNED';
+    if (stage === 'Payment Completed') return 'AWAITING PAYMENT';
+    if (stage === 'Paid') return 'PAID';
+    return null; // decided but not ACCEPT/ACCEPT_WITH_CONDITIONS (waitlisted etc.) -- no pipeline filter applies
+  }
+
+  function scopeTierLabel(v) {
+    var m = SCOPE_TIERS.filter(function (t) { return t.value === v; })[0];
+    return m ? m.label : v;
+  }
+
+  function buildScopeToggleHtml(app) {
+    return '<span class="scope-toggle" data-app="' + app.id + '">CHEW Recommendation (Scope Builder) &darr;</span>' +
+      '<div class="scope-panel" id="scope-panel-' + app.id + '"></div>';
+  }
+
+  // Lazy-loads the applicant's current recommendation state on first
+  // expand — GET /api/admin-recommendation, admin-authed. Not fetched for
+  // every card on page load; only when an operator actually opens it.
+  function wireScopeBuilder(card, app) {
+    var toggle = card.querySelector('.scope-toggle');
+    var panel = card.querySelector('.scope-panel');
+    var loaded = false;
+
+    toggle.addEventListener('click', function () {
+      if (panel.classList.contains('is-open')) { panel.classList.remove('is-open'); return; }
+      panel.classList.add('is-open');
+      if (loaded) return;
+      loaded = true;
+      panel.innerHTML = '<p style="font-size:0.85rem; color:var(--text-faint);">Loading…</p>';
+
+      getAuthToken().then(function (token) {
+        return fetch('/api/admin-recommendation?applicationId=' + encodeURIComponent(app.id), {
+          headers: { authorization: 'Bearer ' + (token || '') },
+        });
+      }).then(function (res) {
+        if (!res.ok) return res.json().then(function (d) { throw new Error(d.error || 'Unable to load recommendation.'); });
+        return res.json();
+      }).then(function (data) {
+        if (data.recommendation && !data.editingDraft && data.recommendation.status === 'sent') {
+          renderScopeReadOnly(panel, app, data.recommendation, data.conditions);
+        } else {
+          var formConditions = (data.conditions || []).map(function (c) { return { text: c.condition_text, blocking: c.blocking }; });
+          renderScopeForm(panel, app, data.recommendation, formConditions);
+        }
+      }).catch(function (err) {
+        loaded = false;
+        panel.innerHTML = '<p style="color:#e08a8a; font-size:0.85rem;">' + esc(err.message || 'Unable to load recommendation.') + '</p>';
+      });
+    });
+  }
+
+  // A currently-SENT recommendation with no in-progress draft: shown as a
+  // read-only summary. Condition wording/blocking are never editable here
+  // — only satisfied status, via its own independent PATCH call (see file
+  // header doctrine: substantive changes require a new version instead).
+  function renderScopeReadOnly(panel, app, rec, conditions) {
+    var focusHtml = (rec.focus_areas || []).map(function (slug) {
+      var m = SCOPE_FOCUS_AREAS.filter(function (f) { return f[0] === slug; })[0];
+      return '<span class="scope-focus-pill">' + esc(m ? m[1] : slug) + '</span>';
+    }).join('');
+
+    var condHtml = (conditions || []).map(function (c) {
+      var badge = c.blocking
+        ? '<em style="color:#e08a8a; font-style:normal; font-size:0.72rem;">(BLOCKING)</em>'
+        : '<em style="color:var(--text-faint); font-style:normal; font-size:0.72rem;">(optional)</em>';
+      return '<div class="scope-condition-row" style="align-items:center;">' +
+        '<span style="flex:1; font-size:0.85rem;' + (c.satisfied ? ' text-decoration:line-through; color:var(--text-faint);' : '') + '">' +
+          esc(c.condition_text) + ' ' + badge +
+        '</span>' +
+        '<label><input type="checkbox" class="scope-cond-satisfied" data-condition-id="' + c.id + '"' + (c.satisfied ? ' checked' : '') + '> Satisfied</label>' +
+      '</div>';
+    }).join('');
+
+    panel.innerHTML =
+      '<span class="scope-existing-badge sent">Sent &mdash; v' + rec.version + '</span>' +
+      '<p style="font-size:0.9rem;"><strong>Primary:</strong> ' + esc(scopeTierLabel(rec.primary_tier)) + '</p>' +
+      (rec.alternative_tier ? '<p style="font-size:0.9rem;"><strong>Alternative:</strong> ' + esc(scopeTierLabel(rec.alternative_tier)) + '</p>' : '') +
+      '<p style="font-size:0.9rem;"><strong>Why this fits:</strong> ' + esc(rec.client_facing_reason) + '</p>' +
+      (focusHtml ? '<div style="margin:10px 0;">' + focusHtml + '</div>' : '') +
+      (condHtml ? '<div class="scope-field"><label>Conditions</label>' + condHtml + '</div>' : '') +
+      (rec.scope_review_requested_at ? '<p style="font-size:0.85rem; color:var(--gold-light);">Scope review requested ' + new Date(rec.scope_review_requested_at).toLocaleString() + (rec.scope_review_message ? ': “' + esc(rec.scope_review_message) + '”' : '') + '</p>' : '') +
+      '<div class="scope-form-status status-note" style="display:none; margin-top:10px;"></div>' +
+      '<div class="scope-actions"><button type="button" class="btn btn-outline btn-sm scope-revise-btn">Revise This Recommendation (New Version)</button></div>';
+
+    panel.querySelectorAll('.scope-cond-satisfied').forEach(function (cb) {
+      cb.addEventListener('change', function () {
+        var conditionId = cb.getAttribute('data-condition-id');
+        var satisfied = cb.checked;
+        var statusEl = panel.querySelector('.scope-form-status');
+        cb.disabled = true;
+        getAuthToken().then(function (token) {
+          return fetch('/api/recommendation-conditions', {
+            method: 'PATCH',
+            headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (token || '') },
+            body: JSON.stringify({ conditionId: Number(conditionId), satisfied: satisfied }),
+          });
+        }).then(function (res) {
+          if (!res.ok) return res.json().then(function (d) { throw new Error(d.error || 'Unable to update condition.'); });
+          return res.json();
+        }).then(function () {
+          cb.disabled = false;
+          cb.closest('.scope-condition-row').querySelector('span').style.textDecoration = satisfied ? 'line-through' : 'none';
+        }).catch(function (err) {
+          cb.checked = !satisfied;
+          cb.disabled = false;
+          statusEl.textContent = err.message || 'Something went wrong.';
+          statusEl.style.display = 'block';
+        });
+      });
+    });
+
+    panel.querySelector('.scope-revise-btn').addEventListener('click', function () {
+      var formConditions = (conditions || []).map(function (c) { return { text: c.condition_text, blocking: c.blocking }; });
+      renderScopeForm(panel, app, rec, formConditions);
+    });
+  }
+
+  // The editable Scope Builder form — used for a brand-new recommendation,
+  // an in-progress draft, or starting a new version from a sent one
+  // (via the "Revise" button above). Saving always goes through
+  // POST /api/save-recommendation, which enforces version/draft
+  // bookkeeping server-side — this form never guesses a version number.
+  function renderScopeForm(panel, app, rec, conditionsForForm) {
+    var primaryOptions = SCOPE_TIERS.map(function (t) {
+      return '<option value="' + t.value + '"' + (rec && rec.primary_tier === t.value ? ' selected' : '') + '>' + t.label + '</option>';
+    }).join('');
+    var altOptions = '<option value="">None</option>' + SCOPE_TIERS.map(function (t) {
+      return '<option value="' + t.value + '"' + (rec && rec.alternative_tier === t.value ? ' selected' : '') + '>' + t.label + '</option>';
+    }).join('');
+    var focusAreasSelected = (rec && rec.focus_areas) || [];
+    var focusHtml = SCOPE_FOCUS_AREAS.map(function (f) {
+      var checked = focusAreasSelected.indexOf(f[0]) !== -1 ? ' checked' : '';
+      return '<label><input type="checkbox" class="scope-focus-checkbox" value="' + f[0] + '"' + checked + '> ' + f[1] + '</label>';
+    }).join('');
+    var badgeVersion = rec ? (rec.version || 0) + (rec.status === 'sent' ? 1 : 0) : 1;
+
+    panel.innerHTML =
+      '<span class="scope-existing-badge draft">' + (rec && rec.status === 'draft' ? 'Editing Draft &mdash; v' + badgeVersion : 'New Recommendation &mdash; v' + badgeVersion) + '</span>' +
+      '<div class="scope-field"><label>Primary Recommended Engagement</label><select class="scope-primary-tier">' + primaryOptions + '</select></div>' +
+      '<div class="scope-field"><label>Approved Alternative <span class="field-hint">&mdash; optional, narrower starting point</span></label><select class="scope-alternative-tier">' + altOptions + '</select></div>' +
+      '<div class="scope-field" data-role="tradeoff-wrap"' + (rec && rec.alternative_tier ? '' : ' hidden') + '><label>Alternative Tradeoff <span class="field-hint">&mdash; required if an alternative is offered; what\'s NOT included vs. the primary</span></label><textarea class="scope-alternative-tradeoff" rows="2">' + esc(rec ? rec.alternative_tradeoff || '' : '') + '</textarea></div>' +
+      '<div class="scope-field"><label>CHEW Focus Areas</label><div class="scope-focus-grid">' + focusHtml + '</div></div>' +
+      '<div class="scope-field"><label>What CHEW Sees <span class="field-hint">&mdash; optional, human-authored summary; never raw AI output</span></label><textarea class="scope-summary" rows="2">' + esc(rec ? rec.client_facing_summary || '' : '') + '</textarea></div>' +
+      '<div class="scope-field"><label>Why This Fits <span class="field-hint">&mdash; required, this is what the applicant reads</span></label><textarea class="scope-reason" rows="3">' + esc(rec ? rec.client_facing_reason || '' : '') + '</textarea></div>' +
+      '<div class="scope-field"><label>Conditions <span class="field-hint">&mdash; optional</span></label><div class="scope-conditions-list"></div><button type="button" class="btn btn-outline btn-sm scope-add-condition">+ Add Condition</button></div>' +
+      '<div class="scope-form-status status-note" style="display:none;"></div>' +
+      '<div class="scope-actions"><button type="button" class="btn btn-outline scope-save-draft">Save Draft</button><button type="button" class="btn btn-gold scope-approve-send">Approve &amp; Send</button></div>';
+
+    var condList = panel.querySelector('.scope-conditions-list');
+    function addConditionRow(text, blocking) {
+      var row = document.createElement('div');
+      row.className = 'scope-condition-row';
+      row.innerHTML =
+        '<input type="text" class="cond-text" placeholder="e.g. Provide a completed business formation questionnaire" value="' + esc(text || '') + '">' +
+        '<label><input type="checkbox" class="cond-blocking"' + (blocking !== false ? ' checked' : '') + '> Blocking</label>' +
+        '<button type="button" class="scope-condition-remove" aria-label="Remove condition">&times;</button>';
+      row.querySelector('.scope-condition-remove').addEventListener('click', function () { row.remove(); });
+      condList.appendChild(row);
+    }
+    (conditionsForForm || []).forEach(function (c) { addConditionRow(c.text, c.blocking); });
+    panel.querySelector('.scope-add-condition').addEventListener('click', function () { addConditionRow('', true); });
+
+    panel.querySelector('.scope-alternative-tier').addEventListener('change', function () {
+      panel.querySelector('[data-role="tradeoff-wrap"]').hidden = !this.value;
+    });
+    panel.querySelector('.scope-primary-tier').addEventListener('change', function () {
+      var altSelect = panel.querySelector('.scope-alternative-tier');
+      if (altSelect.value === this.value) {
+        altSelect.value = '';
+        panel.querySelector('[data-role="tradeoff-wrap"]').hidden = true;
+      }
+    });
+
+    function collectForm() {
+      return {
+        primaryTier: panel.querySelector('.scope-primary-tier').value,
+        alternativeTier: panel.querySelector('.scope-alternative-tier').value || null,
+        focusAreas: Array.prototype.slice.call(panel.querySelectorAll('.scope-focus-checkbox:checked')).map(function (cb) { return cb.value; }),
+        clientFacingReason: panel.querySelector('.scope-reason').value.trim(),
+        clientFacingSummary: panel.querySelector('.scope-summary').value.trim() || null,
+        alternativeTradeoff: panel.querySelector('.scope-alternative-tradeoff').value.trim() || null,
+        conditions: Array.prototype.slice.call(panel.querySelectorAll('.scope-condition-row')).map(function (row) {
+          return { text: row.querySelector('.cond-text').value.trim(), blocking: row.querySelector('.cond-blocking').checked };
+        }).filter(function (c) { return c.text; }),
+      };
+    }
+
+    function submitScope(action, btn) {
+      var statusEl = panel.querySelector('.scope-form-status');
+      var data = collectForm();
+      statusEl.style.display = 'none';
+      btn.disabled = true;
+      var originalText = btn.textContent;
+      btn.textContent = action === 'send' ? 'Sending…' : 'Saving…';
+
+      getAuthToken().then(function (token) {
+        return fetch('/api/save-recommendation', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (token || '') },
+          body: JSON.stringify({
+            applicationId: app.id, action: action, primaryTier: data.primaryTier, alternativeTier: data.alternativeTier,
+            focusAreas: data.focusAreas, clientFacingReason: data.clientFacingReason,
+            clientFacingSummary: data.clientFacingSummary, alternativeTradeoff: data.alternativeTradeoff,
+            conditions: data.conditions,
+          }),
+        });
+      }).then(function (res) {
+        return res.json().then(function (body) { if (!res.ok) throw new Error(body.error || 'Unable to save.'); return body; });
+      }).then(function (result) {
+        statusEl.textContent = action === 'send'
+          ? 'Recommendation v' + result.version + ' sent to the applicant.'
+          : 'Draft saved.';
+        statusEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }).catch(function (err) {
+        statusEl.textContent = err.message || 'Something went wrong — please try again.';
+        statusEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = originalText;
+      });
+    }
+
+    panel.querySelector('.scope-save-draft').addEventListener('click', function () { submitScope('draft', this); });
+    panel.querySelector('.scope-approve-send').addEventListener('click', function () { submitScope('send', this); });
   }
 
   function renderApplication(app) {
@@ -275,6 +603,9 @@
     if (decided) {
       var sentMsg = app.applicant_message ? '<p style="margin-top:8px; font-size:0.85rem; color:var(--text-faint);">Message sent: “' + esc(app.applicant_message) + '”</p>' : '';
       decisionHtml = '<div class="decision-row"><span class="decided-badge">Decided: ' + esc(app.decision) + ' on ' + new Date(app.decided_at).toLocaleDateString() + '</span></div>' + sentMsg;
+      if (app.decision === 'ACCEPT' || app.decision === 'ACCEPT_WITH_CONDITIONS') {
+        decisionHtml += buildScopeToggleHtml(app);
+      }
     } else {
       decisionHtml =
         '<div class="decision-fields">' +
@@ -289,8 +620,12 @@
         '<div class="confirm-panel" id="confirm-' + app.id + '"></div>';
     }
 
+    var pipelineStage = recommendationPipelineStage(app);
+    card.setAttribute('data-pipeline', overallPipelineLabel(app) || '');
+
     card.innerHTML =
-      '<div class="app-top-row">' + reviewBadge(app) + '<span class="app-badge app-badge--stage">' + journeyStage(app) + '</span></div>' +
+      '<div class="app-top-row">' + reviewBadge(app) + '<span class="app-badge app-badge--stage">' + journeyStage(app) + '</span>' +
+      (pipelineStage ? '<span class="app-badge app-badge--pipeline">' + pipelineStage + '</span>' : '') + '</div>' +
       '<div class="app-meta">#' + app.id + ' &middot; Submitted ' + new Date(app.created_at).toLocaleString() + '</div>' +
       '<h3 style="margin-bottom:4px;">' + esc(app.full_name) + '</h3>' +
       '<div class="app-meta">' + esc(app.email) + (app.phone ? ' &middot; ' + esc(app.phone) : '') + '</div>' +
@@ -352,6 +687,10 @@
       });
     }
 
+    if (decided && (app.decision === 'ACCEPT' || app.decision === 'ACCEPT_WITH_CONDITIONS')) {
+      wireScopeBuilder(card, app);
+    }
+
     return card;
   }
 
@@ -404,6 +743,27 @@
     if (listEl.children.length > 0) highlightFromHash();
   });
 
+  function applyPipelineFilter(label) {
+    activePipelineFilter = label;
+    filterEl.querySelectorAll('.pipeline-filter-chip').forEach(function (chip) {
+      chip.classList.toggle('is-active', chip.getAttribute('data-filter') === label);
+    });
+    listEl.querySelectorAll('.app-card').forEach(function (card) {
+      var matches = label === 'ALL' || card.getAttribute('data-pipeline') === label;
+      card.style.display = matches ? '' : 'none';
+    });
+  }
+
+  function renderPipelineFilters() {
+    filterEl.innerHTML = PIPELINE_FILTERS.map(function (label) {
+      return '<button type="button" class="pipeline-filter-chip' + (label === activePipelineFilter ? ' is-active' : '') + '" data-filter="' + label + '">' + label + '</button>';
+    }).join('');
+    filterEl.querySelectorAll('.pipeline-filter-chip').forEach(function (chip) {
+      chip.addEventListener('click', function () { applyPipelineFilter(chip.getAttribute('data-filter')); });
+    });
+    applyPipelineFilter(activePipelineFilter);
+  }
+
   function loadQueue() {
     accessForm.style.display = 'none';
     statusEl.textContent = 'Loading...';
@@ -433,12 +793,14 @@
         statusEl.style.display = 'none';
         if (!data.applications || data.applications.length === 0) {
           listEl.innerHTML = '<p style="color:var(--text-faint);">No applications yet.</p>';
+          filterEl.innerHTML = '';
           return;
         }
         data.applications.forEach(function (app) {
           listEl.appendChild(renderApplication(app));
         });
 
+        renderPipelineFilters();
         highlightFromHash();
       })
       .catch(function (err) {

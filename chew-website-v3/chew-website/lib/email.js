@@ -211,12 +211,17 @@ async function sendOwnerNewApplicationNotice({ applicationId, fullName, email, p
 
 const DECISION_CONTENT = {
   ACCEPT: {
-    subject: 'Welcome to CHEW',
-    heading: (name) => `You're in, ${name || 'there'}.`,
-    body: (selectProgramUrl) => `
+    subject: "You've been accepted to continue with CHEW",
+    heading: (name) => `You've been accepted, ${name || 'there'}.`,
+    body: () => `
       <p>After reviewing your application, we're glad to move forward with you.</p>
-      <p style="font-weight:bold;">You're invited to continue with CHEW.</p>
-      <p><a href="${selectProgramUrl}" style="color: #8F7024; font-weight: bold;">Continue &rarr;</a></p>
+      <p>CHEW is now reviewing the Starting Position you submitted to determine the
+      appropriate engagement scope for where you are. We don't hand every accepted
+      applicant the same package — we look at your actual position first, then
+      recommend the right level of structure for it.</p>
+      <p>You'll receive a separate email — <strong>Your CHEW Recommendation Is
+      Ready</strong> — as soon as that review is complete, with the specific
+      engagement we recommend and why.</p>
       <p>You'll also get a separate email inviting you to set up your CHEW Client Portal
       account, where your Blueprint and roadmap will appear as your strategist puts them together.</p>
     `,
@@ -224,12 +229,15 @@ const DECISION_CONTENT = {
   ACCEPT_WITH_CONDITIONS: {
     subject: 'Your CHEW application — accepted, with next steps',
     heading: (name) => `Good news, ${name || 'there'} — with a next step first.`,
-    body: (selectProgramUrl) => `
+    body: () => `
       <p>After reviewing your application, we'd like to move forward with you, with
       one or more conditions to put in place first. We'll lay those out directly in a
       follow-up so there's no ambiguity about what's needed.</p>
-      <p style="font-weight:bold;">Once that's settled, you're invited to continue with CHEW.</p>
-      <p><a href="${selectProgramUrl}" style="color: #8F7024; font-weight: bold;">Continue &rarr;</a></p>
+      <p>CHEW is also reviewing the Starting Position you submitted to determine the
+      appropriate engagement scope. You'll receive a separate email — <strong>Your
+      CHEW Recommendation Is Ready</strong> — with the specific engagement we
+      recommend, and it will show any conditions that need to be in place before
+      you can move into contracting.</p>
       <p>You'll also get a separate email inviting you to set up your CHEW Client Portal
       account, where your Blueprint and roadmap will appear as your strategist puts them together.</p>
     `,
@@ -269,7 +277,13 @@ const DECISION_CONTENT = {
 // applicantMessage is deliberately the ONLY free-text field this function
 // ever emails — the operator's internal-only note (applications.decision_note)
 // must never be passed in here. See api/send-decision.js.
-async function sendDecisionEmail({ to, name, decision, applicantMessage, selectProgramUrl }) {
+//
+// Deliberately does NOT link to any program-selection page — admissions
+// (this email) and scope/recommendation (sendRecommendationReadyEmail,
+// below) are different events sent at different times, per the CHEW
+// Recommendation Engine doctrine: an ACCEPT decision never implies a
+// specific engagement has been approved yet.
+async function sendDecisionEmail({ to, name, decision, applicantMessage }) {
   const resend = getClient();
   const content = DECISION_CONTENT[decision];
   if (!content) throw new Error(`Unknown decision type: ${decision}`);
@@ -281,8 +295,110 @@ async function sendDecisionEmail({ to, name, decision, applicantMessage, selectP
     html: `
       <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
         <h2 style="color: #8F7024;">${content.heading(name)}</h2>
-        ${content.body(selectProgramUrl)}
+        ${content.body()}
         ${applicantMessage ? `<p>${escapeHtml(applicantMessage)}</p>` : ''}
+        <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
+      </div>
+    `,
+  });
+}
+
+// Sent separately from sendDecisionEmail, once an admin clicks "Approve &
+// Send" in the Scope Builder (see api/save-recommendation.js) — the
+// second, distinct lifecycle moment the CHEW Recommendation Engine
+// doctrine requires: acceptance and scope approval are different facts,
+// and this email is the one that first tells a client which specific
+// engagement CHEW is recommending.
+async function sendRecommendationReadyEmail({ to, name, engagementLabel, clientFacingReason, recommendationUrl }) {
+  const resend = getClient();
+  return resend.emails.send({
+    from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
+    to,
+    subject: 'Your CHEW Recommendation Is Ready',
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
+        <h2 style="color: #8F7024;">Your CHEW Recommendation Is Ready, ${name || 'there'}.</h2>
+        <p>We reviewed the Starting Position you submitted. There's a clear place to begin.</p>
+        <p><strong>Recommended engagement:</strong> ${escapeHtml(engagementLabel)}</p>
+        <p><strong>Why this fits:</strong> ${escapeHtml(clientFacingReason)}</p>
+        <p><a href="${recommendationUrl}" style="color: #8F7024; font-weight: bold;">View My CHEW Recommendation &rarr;</a></p>
+        <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
+      </div>
+    `,
+  });
+}
+
+// Internal-only — notifies the configured admin address when a client
+// requests a scope review on their active recommendation (see
+// api/request-scope-review.js). Never sent to the applicant.
+async function sendScopeReviewRequestNotice({ applicantName, applicantEmail, engagementLabel, message, adminApplicationUrl }) {
+  const resend = getClient();
+  return resend.emails.send({
+    from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
+    to: getAdminEmail(),
+    subject: `Scope review requested — ${applicantName || applicantEmail}`,
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; color: #1B1815;">
+        <h2 style="color: #8F7024;">Scope Review Requested</h2>
+        <p><strong>${escapeHtml(applicantName || '')}</strong> (${escapeHtml(applicantEmail || '')})
+        requested a review of their recommended engagement (${escapeHtml(engagementLabel || '')}).</p>
+        ${message ? `<p><strong>Their message:</strong></p><p>${escapeHtml(message)}</p>` : '<p>No additional message was provided.</p>'}
+        ${adminApplicationUrl ? `<p><a href="${adminApplicationUrl}" style="color:#8F7024; font-weight:bold;">Open in Admissions Queue &rarr;</a></p>` : ''}
+      </div>
+    `,
+  });
+}
+
+// Three honest, single-shot follow-up nudges for the CHEW Recommendation
+// Engine (see api/send-recommendation-reminders.js for the cron job that
+// sends these and the claim-once columns that stop duplicates). No
+// countdown, no scarcity, no invented deadline — each just restates
+// where the applicant left off and links back to the same page.
+async function sendRecommendationNotViewedReminderEmail({ to, name, recommendationUrl }) {
+  const resend = getClient();
+  return resend.emails.send({
+    from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
+    to,
+    subject: 'Your CHEW Recommendation Is Ready',
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
+        <h2 style="color: #8F7024;">Still here whenever you're ready, ${name || 'there'}.</h2>
+        <p>CHEW put together a recommended engagement for you based on your Starting Position. It's still waiting whenever you have a few minutes to look it over.</p>
+        <p><a href="${recommendationUrl}" style="color: #8F7024; font-weight: bold;">View My CHEW Recommendation &rarr;</a></p>
+        <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
+      </div>
+    `,
+  });
+}
+
+async function sendChooseEngagementReminderEmail({ to, name, recommendationUrl }) {
+  const resend = getClient();
+  return resend.emails.send({
+    from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
+    to,
+    subject: 'Continuing Your CHEW Recommendation',
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
+        <h2 style="color: #8F7024;">Picking back up, ${name || 'there'}?</h2>
+        <p>You looked over your CHEW recommendation but haven't chosen an engagement yet. If you have a question about it, or want a different starting point, you can also request a scope review directly from that page.</p>
+        <p><a href="${recommendationUrl}" style="color: #8F7024; font-weight: bold;">Return to My CHEW Recommendation &rarr;</a></p>
+        <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
+      </div>
+    `,
+  });
+}
+
+async function sendSignAgreementReminderEmail({ to, name, signAgreementUrl }) {
+  const resend = getClient();
+  return resend.emails.send({
+    from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
+    to,
+    subject: 'Finishing Your CHEW Engagement Setup',
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
+        <h2 style="color: #8F7024;">One step left, ${name || 'there'}.</h2>
+        <p>You chose your CHEW engagement, but the Client Services Agreement hasn't been signed yet. Nothing is charged until you sign and confirm payment.</p>
+        <p><a href="${signAgreementUrl}" style="color: #8F7024; font-weight: bold;">Continue to the Agreement &rarr;</a></p>
         <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
       </div>
     `,
@@ -619,11 +735,17 @@ async function sendOwnerPlanPaymentFailedNotice({ purchaseId, fullName, email, t
 }
 
 module.exports = {
+  answerLabel,
   sendConfirmationEmail,
   sendReminderEmail,
   sendStartingPositionConfirmationEmail,
   sendOwnerNewApplicationNotice,
   sendDecisionEmail,
+  sendRecommendationReadyEmail,
+  sendScopeReviewRequestNotice,
+  sendRecommendationNotViewedReminderEmail,
+  sendChooseEngagementReminderEmail,
+  sendSignAgreementReminderEmail,
   sendProgramEntryConfirmationEmail,
   sendMembershipWelcomeEmail,
   sendRemainderConfirmationEmail,
