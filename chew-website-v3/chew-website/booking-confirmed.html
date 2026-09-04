@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enrollment Confirmed | CHEW</title>
+<meta name="description" content="Your CHEW enrollment, confirmed.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .bc-wrap { max-width: 640px; margin: 0 auto; }
+  .bc-state { display: none; }
+  .bc-state.is-active { display: block; }
+  .bc-eyebrow { color: var(--gold-light); font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; }
+  .bc-heading { font-size: 2rem; margin: 10px 0 4px; }
+  .bc-sub { font-size: 1.05rem; color: var(--text-muted); margin-bottom: 28px; }
+  .bc-facts { display: grid; gap: 0; margin: 24px 0; padding: 4px 0; border-top: 1px solid rgba(255,255,255,0.1); }
+  .bc-fact { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .bc-fact-label { color: var(--text-faint); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .bc-fact-value { font-weight: 600; text-align: right; }
+  .bc-next { margin-top: 24px; padding: 18px 20px; background: rgba(201,162,39,0.06); border: 1px solid rgba(201,162,39,0.18); border-radius: 8px; }
+  .bc-next-label { color: var(--gold-light); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; display: block; margin-bottom: 8px; }
+  .bc-spinner { display: inline-block; width: 22px; height: 22px; border: 2px solid rgba(232,206,122,0.25); border-top-color: var(--gold-light); border-radius: 50%; animation: bc-spin 0.9s linear infinite; margin-bottom: 18px; }
+  @keyframes bc-spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="brand">
+      <img src="assets/chew-logo-monument.png" alt="CHEW" width="40" height="40">
+    </a>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="container bc-wrap">
+
+      <!-- No session_id at all: never invent a success state from bare navigation -->
+      <div class="bc-state" id="bc-missing">
+        <span class="bc-eyebrow">CHEW</span>
+        <h1 class="bc-heading">We can't confirm a payment here.</h1>
+        <p class="bc-sub">This page only confirms a real CHEW checkout. If you just paid, check your email for
+        a confirmation, or use the payment link CHEW sent you.</p>
+      </div>
+
+      <!-- Stripe redirected the browser, but our webhook hasn't landed yet -->
+      <div class="bc-state" id="bc-processing">
+        <div class="bc-spinner" aria-hidden="true"></div>
+        <span class="bc-eyebrow">CHEW</span>
+        <h1 class="bc-heading">Payment received.</h1>
+        <p class="bc-sub">CHEW is confirming your enrollment. This is usually instant — this page will update
+        itself automatically. You don't need to do anything.</p>
+      </div>
+
+      <!-- Webhook confirmed but never actually found a purchase for this session -->
+      <div class="bc-state" id="bc-notfound">
+        <span class="bc-eyebrow">CHEW</span>
+        <h1 class="bc-heading">We couldn't find this checkout.</h1>
+        <p class="bc-sub">If you just completed a payment, please check your email for confirmation. If this
+        persists, contact CHEW directly — don't pay again from this page.</p>
+      </div>
+
+      <!-- Confirmed still processing after the poll window closes -->
+      <div class="bc-state" id="bc-timeout">
+        <span class="bc-eyebrow">CHEW</span>
+        <h1 class="bc-heading">Still confirming.</h1>
+        <p class="bc-sub">Your payment went through on Stripe's side, but CHEW's system hasn't finished
+        recording it yet. This is rare and usually resolves within a few minutes.</p>
+        <button type="button" class="btn btn-outline" id="bc-refresh">Check again</button>
+      </div>
+
+      <!-- Authoritative success -->
+      <div class="bc-state" id="bc-confirmed">
+        <span class="bc-eyebrow">Welcome to CHEW</span>
+        <h1 class="bc-heading">Payment confirmed.</h1>
+        <p class="bc-sub">Your move is officially in motion.</p>
+
+        <div class="bc-facts">
+          <div class="bc-fact"><span class="bc-fact-label">Program</span><span class="bc-fact-value" id="bc-program"></span></div>
+          <div class="bc-fact"><span class="bc-fact-label">Payment Received</span><span class="bc-fact-value" id="bc-amount"></span></div>
+          <div class="bc-fact"><span class="bc-fact-label">Agreement</span><span class="bc-fact-value" id="bc-agreement"></span></div>
+          <div class="bc-fact"><span class="bc-fact-label">Enrollment Status</span><span class="bc-fact-value" id="bc-status"></span></div>
+        </div>
+
+        <div class="bc-next">
+          <span class="bc-next-label">What happens next</span>
+          <p id="bc-next-action" style="margin:0;"></p>
+        </div>
+
+        <p style="margin-top:24px; font-size:0.85rem; color:var(--text-faint);">A confirmation email is on its way to you. Questions? Just reply to it.</p>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var sessionId = params.get('session_id') || '';
+
+  var states = ['missing', 'processing', 'notfound', 'timeout', 'confirmed'];
+  function show(name) {
+    states.forEach(function (s) {
+      document.getElementById('bc-' + s).classList.toggle('is-active', s === name);
+    });
+  }
+
+  if (!sessionId) {
+    show('missing');
+    return;
+  }
+
+  var POLL_INTERVAL_MS = 2500;
+  var MAX_POLLS = 12; // ~30 seconds of bounded re-checking
+  var pollCount = 0;
+
+  function renderConfirmed(data) {
+    document.getElementById('bc-program').textContent = data.program;
+    document.getElementById('bc-amount').textContent = chewFormatCents(data.amountPaidCents);
+    document.getElementById('bc-agreement').textContent = data.agreementSigned ? 'Signed' : 'Not on file';
+    document.getElementById('bc-status').textContent = data.enrollmentStatusLabel;
+    document.getElementById('bc-next-action').textContent = data.nextAction;
+    show('confirmed');
+  }
+
+  function check() {
+    fetch('/api/booking-confirmation?session_id=' + encodeURIComponent(sessionId))
+      .then(function (res) {
+        if (res.status === 404) { show('notfound'); return null; }
+        if (!res.ok) throw new Error('lookup failed');
+        return res.json();
+      })
+      .then(function (data) {
+        if (!data) return;
+        if (data.processing) {
+          pollCount += 1;
+          show('processing');
+          if (pollCount >= MAX_POLLS) {
+            show('timeout');
+            return;
+          }
+          window.setTimeout(check, POLL_INTERVAL_MS);
+          return;
+        }
+        renderConfirmed(data);
+      })
+      .catch(function () {
+        show('timeout');
+      });
+  }
+
+  document.getElementById('bc-refresh').addEventListener('click', function () {
+    pollCount = 0;
+    check();
+  });
+
+  show('processing');
+  check();
+})();
+</script>
+
+<footer class="site-footer">
+  <div class="container">
+    <a href="index.html" class="footer-mini-brand">
+      <img src="assets/chew-logo-monument.png" alt="CHEW" width="48" height="48">
+    </a>
+    <div class="footer-legal">
+      <span>&copy; 2026 CHEW LLC. All rights reserved.</span>
+      <span>CHEW LLC is a financial education and business-infrastructure company. CHEW does not provide credit repair services, does not promise or guarantee funding, approvals, score changes, or removal of information, and does not provide legal, tax, or investment advice. Results depend on individual circumstances, participation, and third-party decisions. See our <a href="disclaimer.html" style="color:inherit;">disclaimer</a>.</span>
+    </div>
+  </div>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>

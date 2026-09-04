@@ -75,69 +75,110 @@ module.exports = async (req, res) => {
         const phase = session.metadata?.phase;
         const purchaseResult = await query(
           `SELECT id, access_token, tier, client_name, client_email, remainder_amount_cents,
-                  application_id, agreement_signature_id
+                  application_id, agreement_signature_id, entry_paid_at, remainder_paid_at
            FROM program_purchases WHERE id = $1`,
           [purchaseId]
         );
         const purchase = purchaseResult.rows[0];
 
+        // Stripe retries checkout.session.completed on anything but a fast
+        // 2xx, and can occasionally redeliver an already-acknowledged event
+        // regardless. entry_paid_at / remainder_paid_at are the existing
+        // durable markers that a given phase has already been processed for
+        // this purchase — no new column needed. The UPDATE below claims the
+        // event atomically (WHERE ...IS NULL): two near-simultaneous
+        // deliveries can both reach this code with entry_paid_at still
+        // null, but only one UPDATE will actually match a row, so only the
+        // winner sends the customer confirmation and owner notification.
+        // The loser's rowCount is 0 and it skips silently — no double email.
         if (!purchase) {
           console.error('Webhook: program_purchases row not found for id', purchaseId);
         } else if (phase === 'entry') {
-          if (purchase.tier === 'membership') {
+          if (purchase.entry_paid_at) {
+            console.log(`Webhook: duplicate delivery for purchase ${purchase.id} phase=entry, already processed at ${purchase.entry_paid_at} — skipping.`);
+          } else if (purchase.tier === 'membership') {
             const subscription = await stripe.subscriptions.retrieve(session.subscription);
             const firstChargeAt = new Date(subscription.trial_end * 1000);
 
-            await query(
+            const claim = await query(
               `UPDATE program_purchases
                SET entry_paid_at = now(), status = 'complete',
                    stripe_customer_id = $1, stripe_subscription_id = $2,
                    membership_first_charge_at = $3, membership_status = 'trialing'
-               WHERE id = $4`,
+               WHERE id = $4 AND entry_paid_at IS NULL`,
               [session.customer, session.subscription, firstChargeAt.toISOString(), purchase.id]
             );
 
-            await sendMembershipWelcomeEmail({
-              to: purchase.client_email,
-              name: purchase.client_name,
-              firstChargeDate: firstChargeAt,
-            });
-
-            await sendOwnerEnrollmentNotice({
-              applicationId: purchase.application_id,
-              purchaseId: purchase.id,
-              fullName: purchase.client_name,
-              tier: purchase.tier,
-              amountPaidCents: session.amount_total,
-              paymentStatus: 'Entry fee paid — membership trialing',
-              signatureId: purchase.agreement_signature_id,
-              nextAction: 'Membership is active (trialing). No further payment action needed until the first monthly charge.',
-            });
+            if (claim.rowCount === 0) {
+              console.log(`Webhook: lost the claim race for purchase ${purchase.id} phase=entry — skipping duplicate emails.`);
+            } else {
+              try {
+                await sendMembershipWelcomeEmail({
+                  to: purchase.client_email,
+                  name: purchase.client_name,
+                  amountPaidCents: session.amount_total,
+                  agreementSigned: Boolean(purchase.agreement_signature_id),
+                  firstChargeDate: firstChargeAt,
+                });
+              } catch (emailErr) {
+                console.error(`CUSTOMER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
+              }
+              try {
+                await sendOwnerEnrollmentNotice({
+                  applicationId: purchase.application_id,
+                  purchaseId: purchase.id,
+                  fullName: purchase.client_name,
+                  tier: purchase.tier,
+                  amountPaidCents: session.amount_total,
+                  paymentStatus: 'Entry fee paid — membership trialing',
+                  signatureId: purchase.agreement_signature_id,
+                  nextAction: 'Membership is active (trialing). No further payment action needed until the first monthly charge.',
+                });
+              } catch (emailErr) {
+                console.error(`OWNER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
+              }
+            }
           } else {
-            await query(
-              `UPDATE program_purchases SET entry_paid_at = now(), status = 'pending_remainder' WHERE id = $1`,
+            const claim = await query(
+              `UPDATE program_purchases SET entry_paid_at = now(), status = 'pending_remainder'
+               WHERE id = $1 AND entry_paid_at IS NULL`,
               [purchase.id]
             );
 
-            await sendProgramEntryConfirmationEmail({
-              to: purchase.client_email,
-              name: purchase.client_name,
-              tier: purchase.tier,
-              remainderAmountCents: purchase.remainder_amount_cents,
-              payRemainderUrl: `${process.env.SITE_URL}/pay-remainder.html?token=${encodeURIComponent(purchase.access_token)}`,
-            });
-
-            await sendOwnerEnrollmentNotice({
-              applicationId: purchase.application_id,
-              purchaseId: purchase.id,
-              fullName: purchase.client_name,
-              tier: purchase.tier,
-              amountPaidCents: session.amount_total,
-              paymentStatus: 'Entry fee paid — remainder pending',
-              signatureId: purchase.agreement_signature_id,
-              nextAction: `Remainder balance still owed. Client has a pay-remainder link for the rest.`,
-            });
+            if (claim.rowCount === 0) {
+              console.log(`Webhook: lost the claim race for purchase ${purchase.id} phase=entry — skipping duplicate emails.`);
+            } else {
+              try {
+                await sendProgramEntryConfirmationEmail({
+                  to: purchase.client_email,
+                  name: purchase.client_name,
+                  tier: purchase.tier,
+                  amountPaidCents: session.amount_total,
+                  remainderAmountCents: purchase.remainder_amount_cents,
+                  agreementSigned: Boolean(purchase.agreement_signature_id),
+                  payRemainderUrl: `${process.env.SITE_URL}/pay-remainder.html?token=${encodeURIComponent(purchase.access_token)}`,
+                });
+              } catch (emailErr) {
+                console.error(`CUSTOMER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
+              }
+              try {
+                await sendOwnerEnrollmentNotice({
+                  applicationId: purchase.application_id,
+                  purchaseId: purchase.id,
+                  fullName: purchase.client_name,
+                  tier: purchase.tier,
+                  amountPaidCents: session.amount_total,
+                  paymentStatus: 'Entry fee paid — remainder pending',
+                  signatureId: purchase.agreement_signature_id,
+                  nextAction: `Remainder balance still owed. Client has a pay-remainder link for the rest.`,
+                });
+              } catch (emailErr) {
+                console.error(`OWNER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
+              }
+            }
           }
+        } else if (phase === 'remainder' && purchase.remainder_paid_at) {
+          console.log(`Webhook: duplicate delivery for purchase ${purchase.id} phase=remainder, already processed at ${purchase.remainder_paid_at} — skipping.`);
         } else if (phase === 'remainder') {
           let methodType = 'card';
           try {
@@ -151,28 +192,40 @@ module.exports = async (req, res) => {
           }
 
           const bonusEarned = methodType === 'card';
-          await query(
+          const claim = await query(
             `UPDATE program_purchases
              SET remainder_paid_at = now(), remainder_payment_method = $1,
                  bonus_session_earned = $2, status = 'complete'
-             WHERE id = $3`,
+             WHERE id = $3 AND remainder_paid_at IS NULL`,
             [methodType, bonusEarned, purchase.id]
           );
 
-          await sendRemainderConfirmationEmail({
-            to: purchase.client_email,
-            name: purchase.client_name,
-            tier: purchase.tier,
-            bonusEarned,
-          });
+          if (claim.rowCount === 0) {
+            console.log(`Webhook: lost the claim race for purchase ${purchase.id} phase=remainder — skipping duplicate emails.`);
+          } else {
+            try {
+              await sendRemainderConfirmationEmail({
+                to: purchase.client_email,
+                name: purchase.client_name,
+                tier: purchase.tier,
+                bonusEarned,
+              });
+            } catch (emailErr) {
+              console.error(`CUSTOMER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
+            }
 
-          if (bonusEarned) {
-            await sendAdminBonusSessionNotice({
-              purchaseId: purchase.id,
-              name: purchase.client_name,
-              email: purchase.client_email,
-              tier: purchase.tier,
-            });
+            if (bonusEarned) {
+              try {
+                await sendAdminBonusSessionNotice({
+                  purchaseId: purchase.id,
+                  name: purchase.client_name,
+                  email: purchase.client_email,
+                  tier: purchase.tier,
+                });
+              } catch (emailErr) {
+                console.error(`OWNER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
+              }
+            }
           }
         }
       } else if (bookingId) {

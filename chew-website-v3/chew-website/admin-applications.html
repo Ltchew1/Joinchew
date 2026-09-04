@@ -21,6 +21,15 @@
   <section class="section" style="padding-top:48px;">
     <div class="container">
       <h1 style="font-size:1.6rem;">Admissions Queue</h1>
+
+      <div id="access-form" style="display:none; max-width:380px; margin-top:24px;">
+        <p style="font-size:0.9rem; color:var(--text-muted);">Enter the CHEW admin access key to open the queue.</p>
+        <div id="access-error" class="status-note" style="display:none; margin-bottom:12px;"></div>
+        <input type="password" id="access-key-input" placeholder="Access key" autocomplete="off"
+          style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.03); color:var(--text); font-size:0.9rem; font-family:inherit; margin-bottom:12px;">
+        <button type="button" class="btn btn-gold" id="access-key-submit">Open Queue</button>
+      </div>
+
       <div id="queue-status" class="status-note" style="margin-top:16px;"></div>
       <div id="queue-list" style="margin-top:24px; display:flex; flex-direction:column; gap:20px;"></div>
     </div>
@@ -71,10 +80,62 @@
 
 <script>
 (function () {
+  // ADMIN AUTH HARDENING REQUIRED — this is still a shared-secret bridge,
+  // not a real authenticated admin session (that's a later phase). This
+  // pass only fixes the specific usability/exposure problem: a link
+  // clicked from an email opens a fresh browser context with no saved
+  // ?secret=, and putting ADMIN_SECRET directly in that email is a
+  // non-starter. So: a secret arriving via ?secret= (still accepted for
+  // backward compatibility) is read exactly once, held in sessionStorage
+  // (not localStorage — cleared when the tab closes, never synced/
+  // persisted beyond this browser session), and stripped from the visible
+  // URL immediately via history.replaceState so it never sits in browser
+  // history, and is never written into the page's own HTML source, logs,
+  // or the #app-N hash fragment used for deep-linking.
+  var ACCESS_KEY_STORAGE = 'chewAdminAccessKey';
   var params = new URLSearchParams(window.location.search);
   var secret = params.get('secret') || '';
   var statusEl = document.getElementById('queue-status');
   var listEl = document.getElementById('queue-list');
+  var accessForm = document.getElementById('access-form');
+  var accessError = document.getElementById('access-error');
+  var accessInput = document.getElementById('access-key-input');
+  var accessSubmit = document.getElementById('access-key-submit');
+
+  if (secret) {
+    try { sessionStorage.setItem(ACCESS_KEY_STORAGE, secret); } catch (e) { /* private-mode storage block — key still works for this page load */ }
+    history.replaceState(null, '', window.location.pathname + window.location.hash);
+  } else {
+    try { secret = sessionStorage.getItem(ACCESS_KEY_STORAGE) || ''; } catch (e) { secret = ''; }
+  }
+
+  function showAccessForm(message) {
+    accessForm.style.display = 'block';
+    listEl.innerHTML = '';
+    statusEl.style.display = 'none';
+    if (message) {
+      accessError.textContent = message;
+      accessError.classList.add('visible');
+      accessError.style.display = 'block';
+    } else {
+      accessError.style.display = 'none';
+    }
+  }
+
+  accessSubmit.addEventListener('click', function () {
+    var typed = accessInput.value.trim();
+    if (!typed) return;
+    secret = typed;
+    accessSubmit.disabled = true;
+    accessSubmit.textContent = 'Opening...';
+    loadQueue().then(function () {
+      accessSubmit.disabled = false;
+      accessSubmit.textContent = 'Open Queue';
+    });
+  });
+  accessInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') accessSubmit.click();
+  });
 
   var DECISIONS = [
     { value: 'ACCEPT', label: 'Accept' },
@@ -292,23 +353,52 @@
       });
   }
 
+  function highlightFromHash() {
+    if (!(window.location.hash && window.location.hash.indexOf('#app-') === 0)) return;
+    document.querySelectorAll('.app-card.is-highlighted').forEach(function (el) { el.classList.remove('is-highlighted'); });
+    var target = document.querySelector(window.location.hash);
+    if (target) {
+      target.classList.add('is-highlighted');
+      window.setTimeout(function () { target.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 80);
+    }
+  }
+
+  // Covers the same-tab case: the operator already has this page open
+  // (queue already loaded, key already in sessionStorage) and a link
+  // change only updates the #app-N fragment without a full navigation —
+  // browsers don't re-run page-load script for a same-document hash
+  // change, so this listens for it explicitly rather than requiring a
+  // full reload to see the right application highlighted.
+  window.addEventListener('hashchange', function () {
+    if (listEl.children.length > 0) highlightFromHash();
+  });
+
   function loadQueue() {
     if (!secret) {
-      statusEl.textContent = 'Missing ?secret= in the URL.';
-      statusEl.classList.add('visible');
-      return;
+      showAccessForm();
+      return Promise.resolve();
     }
+    accessForm.style.display = 'none';
     statusEl.textContent = 'Loading...';
     statusEl.classList.add('visible');
+    statusEl.style.display = 'block';
     listEl.innerHTML = '';
 
-    fetch('/api/admin-applications?secret=' + encodeURIComponent(secret))
+    return fetch('/api/admin-applications?secret=' + encodeURIComponent(secret))
       .then(function (res) {
-        if (res.status === 401) throw new Error('Invalid secret.');
+        if (res.status === 401) {
+          var err = new Error('That access key isn’t valid.');
+          err.isAuthFailure = true;
+          throw err;
+        }
         if (!res.ok) throw new Error('Failed to load applications.');
         return res.json();
       })
       .then(function (data) {
+        // Confirmed valid by the API responding 200 — persist now
+        // regardless of whether this secret arrived via ?secret=, an
+        // existing sessionStorage entry, or a freshly typed access key.
+        try { sessionStorage.setItem(ACCESS_KEY_STORAGE, secret); } catch (e) { /* ignore */ }
         statusEl.style.display = 'none';
         if (!data.applications || data.applications.length === 0) {
           listEl.innerHTML = '<p style="color:var(--text-faint);">No applications yet.</p>';
@@ -318,15 +408,15 @@
           listEl.appendChild(renderApplication(app));
         });
 
-        if (window.location.hash && window.location.hash.indexOf('#app-') === 0) {
-          var target = document.querySelector(window.location.hash);
-          if (target) {
-            target.classList.add('is-highlighted');
-            window.setTimeout(function () { target.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 80);
-          }
-        }
+        highlightFromHash();
       })
       .catch(function (err) {
+        if (err.isAuthFailure) {
+          try { sessionStorage.removeItem(ACCESS_KEY_STORAGE); } catch (e) { /* ignore */ }
+          secret = '';
+          showAccessForm(err.message);
+          return;
+        }
         statusEl.textContent = err.message;
         statusEl.classList.add('visible');
       });

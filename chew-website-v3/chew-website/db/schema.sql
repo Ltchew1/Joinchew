@@ -1041,3 +1041,9 @@ UPDATE applications
 SET applicant_message = decision_note
 WHERE decision_note IS NOT NULL
   AND applicant_message IS NULL;
+
+-- booking-confirmed.html (api/booking-confirmation.js) looks up a purchase
+-- by Stripe Checkout Session id on every payment redirect, and re-checks
+-- it repeatedly while polling for the webhook to land -- a new, frequent
+-- read pattern on a column that had no index before.
+CREATE INDEX IF NOT EXISTS idx_program_purchases_entry_session ON program_purchases (entry_stripe_session_id);

@@ -303,43 +303,62 @@ function formatDate(date) {
   return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
-async function sendProgramEntryConfirmationEmail({ to, name, tier, remainderAmountCents, payRemainderUrl }) {
+// The one transactional "you paid, here's where things stand" email for the
+// entry-fee/remainder-pending path (Infrastructure/Executive). agreementSigned
+// is passed in by the caller (api/stripe-webhook.js), which already knows it
+// from the same program_purchases row this send is gated on — a checkout
+// session can't exist without a valid signature, so this is real state, not
+// an assumption made in this file.
+async function sendProgramEntryConfirmationEmail({ to, name, tier, amountPaidCents, remainderAmountCents, agreementSigned, payRemainderUrl }) {
   const resend = getClient();
   const programLabel = PROGRAM_LABELS[tier] || tier;
 
   return resend.emails.send({
     from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
     to,
-    subject: `You're in — ${programLabel} entry fee received`,
+    subject: 'Welcome to CHEW — Enrollment Confirmed',
     html: `
       <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
-        <h2 style="color: #8F7024;">Welcome to the ${programLabel}, ${name || 'there'}.</h2>
-        <p>Your entry fee has been received. The remaining balance of
-        <strong>${formatCents(remainderAmountCents)}</strong> is credited from your entry fee against
-        the program's full cost.</p>
-        <p>When you're ready, you can pay the remainder in full by card (and receive a complimentary
-        1:1 strategy session as our thank-you — not a discount), or split it via Klarna or Afterpay:</p>
+        <h2 style="color: #8F7024;">Welcome to CHEW, ${name || 'there'}.</h2>
+        <p>Payment confirmed. Your move is officially in motion.</p>
+        <table style="width:100%; border-collapse:collapse; margin:20px 0; font-size:14px;">
+          <tr><td style="padding:6px 0; color:#8F7024; font-weight:bold; width:150px;">Program</td><td style="padding:6px 0;">${programLabel}</td></tr>
+          <tr><td style="padding:6px 0; color:#8F7024; font-weight:bold;">Payment Received</td><td style="padding:6px 0;">${formatCents(amountPaidCents)} (entry fee)</td></tr>
+          <tr><td style="padding:6px 0; color:#8F7024; font-weight:bold;">Agreement</td><td style="padding:6px 0;">${agreementSigned ? 'Signed' : 'Not on file'}</td></tr>
+        </table>
+        <p>The remaining balance of <strong>${formatCents(remainderAmountCents)}</strong> is credited from
+        your entry fee against the program's full cost.</p>
+        <p><strong>What happens next:</strong> when you're ready, you can pay the remainder in full by card
+        (and receive a complimentary 1:1 strategy session as our thank-you — not a discount), or split it via
+        Klarna or Afterpay:</p>
         <p><a href="${payRemainderUrl}" style="color: #8F7024; font-weight: bold;">Pay your remaining balance</a></p>
+        <p>Questions? Just reply to this email.</p>
         <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
       </div>
     `,
   });
 }
 
-async function sendMembershipWelcomeEmail({ to, name, firstChargeDate }) {
+async function sendMembershipWelcomeEmail({ to, name, amountPaidCents, agreementSigned, firstChargeDate }) {
   const resend = getClient();
 
   return resend.emails.send({
     from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
     to,
-    subject: 'Welcome to CHEW Membership',
+    subject: 'Welcome to CHEW — Enrollment Confirmed',
     html: `
       <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
-        <h2 style="color: #8F7024;">Welcome, ${name || 'there'}.</h2>
-        <p>Your Membership entry fee has been received. Your $97/month membership begins on
-        <strong>${formatDate(firstChargeDate)}</strong> — nothing further is due before then.</p>
-        <p>We'll send a reminder a week before your first charge, with an easy way to cancel
-        any time.</p>
+        <h2 style="color: #8F7024;">Welcome to CHEW, ${name || 'there'}.</h2>
+        <p>Payment confirmed. Your move is officially in motion.</p>
+        <table style="width:100%; border-collapse:collapse; margin:20px 0; font-size:14px;">
+          <tr><td style="padding:6px 0; color:#8F7024; font-weight:bold; width:150px;">Program</td><td style="padding:6px 0;">Membership</td></tr>
+          <tr><td style="padding:6px 0; color:#8F7024; font-weight:bold;">Payment Received</td><td style="padding:6px 0;">${formatCents(amountPaidCents)} (entry fee)</td></tr>
+          <tr><td style="padding:6px 0; color:#8F7024; font-weight:bold;">Agreement</td><td style="padding:6px 0;">${agreementSigned ? 'Signed' : 'Not on file'}</td></tr>
+        </table>
+        <p><strong>What happens next:</strong> your $97/month membership begins on
+        <strong>${formatDate(firstChargeDate)}</strong> — nothing further is due before then. We'll send a
+        reminder a week before your first charge, with an easy way to cancel any time.</p>
+        <p>Questions? Just reply to this email.</p>
         <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
       </div>
     `,
