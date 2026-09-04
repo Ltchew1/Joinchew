@@ -42,22 +42,6 @@
 </header>
 
 <main>
-<div class="wp-drawer" id="wp-drawer" hidden>
-  <div class="wp-drawer-scrim" data-drawer-close></div>
-  <div class="wp-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="wp-drawer-title">
-    <button type="button" class="wp-drawer-close" data-drawer-close aria-label="Close">&times;</button>
-    <span class="wp-drawer-index" id="wp-drawer-index"></span>
-    <h3 id="wp-drawer-title"></h3>
-    <div class="wp-drawer-section"><span class="wp-drawer-label">What It Is</span><p id="wp-drawer-what"></p></div>
-    <div class="wp-drawer-section"><span class="wp-drawer-label">Why It Matters</span><p id="wp-drawer-why"></p></div>
-    <div class="wp-drawer-section"><span class="wp-drawer-label">What To Look At</span><p id="wp-drawer-look"></p></div>
-    <div class="wp-drawer-section"><span class="wp-drawer-label">How It Connects</span><p id="wp-drawer-connects"></p></div>
-    <div class="wp-drawer-play" id="wp-drawer-play" hidden>
-      <a id="wp-drawer-play-link" href="playbook.html">Related Play: <span id="wp-drawer-play-name"></span> &rarr;</a>
-    </div>
-    <p class="wp-drawer-explore" id="wp-drawer-explore" hidden><a id="wp-drawer-explore-link" href="apply.html"></a></p>
-  </div>
-</div>
   <section class="wp-hero">
     <div class="wp-hero-bg"></div>
     <div class="wp-hero-scrim"></div>
@@ -153,6 +137,31 @@
     </div>
   </section>
 </main>
+
+<!-- A direct <body> child, not nested in <main> — <main> carries the
+     sitewide `position:relative; z-index:1` base rule (styles.css),
+     which traps any z-index inside it below the fixed header's
+     z-index:50 no matter how high the drawer's own z-index is set.
+     Living outside <main> lets the drawer's z-index compete directly
+     against the header at the body level, so it (and its close
+     button, which sits in the same screen region as the header) is
+     actually clickable above it. -->
+<div class="wp-drawer" id="wp-drawer" hidden>
+  <div class="wp-drawer-scrim" data-drawer-close></div>
+  <div class="wp-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="wp-drawer-title">
+    <button type="button" class="wp-drawer-close" data-drawer-close aria-label="Close">&times;</button>
+    <span class="wp-drawer-index" id="wp-drawer-index"></span>
+    <h3 id="wp-drawer-title"></h3>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">What It Is</span><p id="wp-drawer-what"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">Why It Matters</span><p id="wp-drawer-why"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">What To Look At</span><p id="wp-drawer-look"></p></div>
+    <div class="wp-drawer-section"><span class="wp-drawer-label">How It Connects</span><p id="wp-drawer-connects"></p></div>
+    <div class="wp-drawer-play" id="wp-drawer-play" hidden>
+      <a id="wp-drawer-play-link" href="playbook.html">Related Play: <span id="wp-drawer-play-name"></span> &rarr;</a>
+    </div>
+    <p class="wp-drawer-explore" id="wp-drawer-explore" hidden><a id="wp-drawer-explore-link" href="apply.html"></a></p>
+  </div>
+</div>
 
 <nav class="wp-switcher" aria-label="Other Worlds">
   <a href="world-level-up.html" class="wp-switcher-link wp-switcher--prev" style="background-image:url(assets/worlds/levelup.jpg);">
