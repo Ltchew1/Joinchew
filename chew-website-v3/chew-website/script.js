@@ -1766,6 +1766,114 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
   }
+
+  // My Position — the Position Board: real (DOM-measured) connecting
+  // routes from the canonical locator to each of the six stations,
+  // redrawn on resize. Selecting a station illuminates its route, gives
+  // the environment a brief subtle reaction, and opens the shared
+  // Intelligence Drawer — no accordion, no page jump. Same mechanics as
+  // the Worlds World Map/Intelligence Drawer, kept as a separate
+  // mp-* system so the two can coexist without id collisions.
+  (function () {
+    var board = document.getElementById('mp-board');
+    if (!board) return;
+    var locator = document.getElementById('mp-locator');
+    var nodes = Array.prototype.slice.call(board.querySelectorAll('.mp-node'));
+    var routesSvg = document.getElementById('mp-routes');
+    var env = document.querySelector('.mp-env');
+
+    function drawRoutes() {
+      if (!routesSvg || !locator || window.innerWidth <= 640) { if (routesSvg) routesSvg.innerHTML = ''; return; }
+      var boardRect = board.getBoundingClientRect();
+      var locRect = locator.getBoundingClientRect();
+      var cx = locRect.left + locRect.width / 2 - boardRect.left;
+      var cy = locRect.top + locRect.height / 2 - boardRect.top;
+      routesSvg.innerHTML = '';
+      nodes.forEach(function (node, i) {
+        var r = node.getBoundingClientRect();
+        var nx = r.left + r.width / 2 - boardRect.left;
+        var ny = r.top + r.height / 2 - boardRect.top;
+        var mx = (cx + nx) / 2, my = (cy + ny) / 2;
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M ' + cx + ' ' + cy + ' Q ' + mx + ' ' + my + ' ' + nx + ' ' + ny);
+        path.dataset.index = String(i);
+        routesSvg.appendChild(path);
+      });
+    }
+    drawRoutes();
+    window.addEventListener('resize', drawRoutes);
+    window.addEventListener('load', drawRoutes);
+
+    var drawer = document.getElementById('mp-drawer');
+    if (!drawer) return;
+    var els = {
+      chip: document.getElementById('mp-drawer-chip'),
+      title: document.getElementById('mp-drawer-title'),
+      what: document.getElementById('mp-drawer-what'),
+      why: document.getElementById('mp-drawer-why'),
+      need: document.getElementById('mp-drawer-need'),
+      connects: document.getElementById('mp-drawer-connects')
+    };
+    var closeTimer = null;
+    var envReactTimer = null;
+
+    function openDrawer(node, i) {
+      nodes.forEach(function (n) { n.classList.remove('is-active'); n.setAttribute('aria-expanded', 'false'); });
+      node.classList.add('is-active');
+      node.setAttribute('aria-expanded', 'true');
+      if (routesSvg) {
+        routesSvg.querySelectorAll('path').forEach(function (p) {
+          p.classList.toggle('is-lit', Number(p.dataset.index) === i);
+        });
+      }
+      if (env) {
+        env.classList.add('is-active');
+        if (envReactTimer) window.clearTimeout(envReactTimer);
+        envReactTimer = window.setTimeout(function () { env.classList.remove('is-active'); }, 700);
+      }
+      if (els.chip) els.chip.textContent = node.dataset.chip || '';
+      if (els.title) els.title.textContent = node.dataset.title || '';
+      if (els.what) els.what.textContent = node.dataset.what || '';
+      if (els.why) els.why.textContent = node.dataset.why || '';
+      if (els.need) els.need.textContent = node.dataset.need || '';
+      if (els.connects) els.connects.textContent = node.dataset.connects || '';
+      if (closeTimer) { window.clearTimeout(closeTimer); closeTimer = null; }
+      drawer.hidden = false;
+      void drawer.offsetWidth;
+      drawer.classList.add('is-open');
+      document.body.classList.add('mp-drawer-locked');
+    }
+    function closeDrawer() {
+      drawer.classList.remove('is-open');
+      nodes.forEach(function (n) { n.classList.remove('is-active'); n.setAttribute('aria-expanded', 'false'); });
+      if (routesSvg) routesSvg.querySelectorAll('path').forEach(function (p) { p.classList.remove('is-lit'); });
+      document.body.classList.remove('mp-drawer-locked');
+      closeTimer = window.setTimeout(function () { drawer.hidden = true; }, 420);
+    }
+    nodes.forEach(function (node, i) {
+      node.setAttribute('aria-expanded', 'false');
+      node.addEventListener('click', function () { openDrawer(node, i); });
+    });
+    drawer.querySelectorAll('[data-drawer-close]').forEach(function (el) {
+      el.addEventListener('click', closeDrawer);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && drawer.classList.contains('is-open')) closeDrawer();
+    });
+  })();
+
+  // My Position — Path Reconstruction: computes each route segment's
+  // real drawn length so the CSS stroke-dashoffset "draw on reveal"
+  // transition (shared [data-reveal] -> .is-visible flow) animates the
+  // exact path instead of a guessed constant.
+  (function () {
+    var lines = document.querySelectorAll('.mp-path-line[data-draw]');
+    lines.forEach(function (line, i) {
+      var len = line.getTotalLength ? line.getTotalLength() : 300;
+      line.style.setProperty('--len', String(Math.ceil(len)));
+      line.style.setProperty('--draw-delay', (i * 0.35) + 's');
+    });
+  })();
 });
 
 // ---------- CHEW Deal Sheet — shared render helper ----------
