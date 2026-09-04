@@ -1,13 +1,18 @@
 // /api/admin-applications.js
 //
-// Lightweight admissions review queue — no real auth system exists yet
-// (the built-out Admin Dashboard is a later phase), so this follows the
-// same shared-secret convention already used by api/send-reminders.js.
-// Requires ADMIN_SECRET and DATABASE_URL set in Vercel environment variables.
+// Admissions review queue. Authenticated via a real Clerk admin session
+// (see lib/admin-auth.js) — the query-string shared-secret bridge this
+// endpoint used before is gone from the primary path; a disabled-in-
+// production legacy fallback remains only for local dev, see
+// lib/admin-auth.js's legacySecretAuthorized().
+// Requires CLERK_SECRET_KEY, ADMIN_CLERK_USER_ID, and DATABASE_URL set in
+// Vercel environment variables.
 //
-// GET /api/admin-applications?secret=<ADMIN_SECRET>
+// GET /api/admin-applications
+//   Authorization: Bearer <Clerk session token>
 
 const { query } = require('../lib/db');
+const { requireAdmin, legacySecretAuthorized } = require('../lib/admin-auth');
 
 module.exports = async (req, res) => {
   if (req.method !== 'GET') {
@@ -15,11 +20,9 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (!process.env.ADMIN_SECRET) {
-    return res.status(503).json({ error: 'Admin access is not configured yet.' });
-  }
-  if (req.query.secret !== process.env.ADMIN_SECRET) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  if (!legacySecretAuthorized(req.query.secret)) {
+    const adminId = await requireAdmin(req, res);
+    if (!adminId) return; // requireAdmin already wrote the 401/403/503 response
   }
 
   try {

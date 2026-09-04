@@ -221,6 +221,93 @@ function addOneCalendarMonthUnix(fromUnixSeconds) {
   return Math.floor(next.getTime() / 1000);
 }
 
+// Thrown by findOrCreateInstallmentSchedule when Stripe itself already has
+// more than one schedule for this purchase -- a state this code must never
+// try to resolve by guessing. The purchaseId/scheduleIds are attached so
+// the caller's log line names exactly what a human needs to go look at.
+class DuplicateInstallmentScheduleError extends Error {
+  constructor(purchaseId, scheduleIds) {
+    super(`DUPLICATE_INSTALLMENT_SCHEDULE_REQUIRES_REVIEW purchase=${purchaseId} schedules=${scheduleIds.join(',')}`);
+    this.name = 'DuplicateInstallmentScheduleError';
+    this.purchaseId = purchaseId;
+    this.scheduleIds = scheduleIds;
+  }
+}
+
+// Reconciles the ONE Subscription Schedule a Monthly Plan purchase should
+// ever have against what Stripe itself actually has -- never trusting
+// local DB state or Stripe's idempotency-key retention alone. The
+// idempotency key passed to create() below is still real defense-in-depth
+// (it's what stops two concurrent callers who both reach this function at
+// the same instant, both find zero matches, and both attempt to create),
+// but its retention window is finite (Stripe documents roughly 24 hours)
+// and is not a substitute for checking what actually exists, which is why
+// this function exists at all:
+//   1. Local schedule id already known -> retrieve and use it, create
+//      nothing. This is the fast, common path on every delivery after the
+//      first.
+//   2. Local id unknown -> list this Customer's schedules and filter to
+//      ones carrying CHEW's own metadata for this exact purchase (never a
+//      bare customer-id guess, which could match an unrelated schedule).
+//      Exactly one match -> that's the real schedule, a prior delivery
+//      must have created it and failed to persist the id locally -> recover
+//      it, create nothing.
+//   3. Zero matches -> genuinely nothing exists yet -> create one, with
+//      the idempotency key as the race-safety net described above.
+//   4. More than one match -> STOP. Never create a third, never guess
+//      which of the two is authoritative for billing -- that decision
+//      requires a human looking at both objects in the Stripe Dashboard.
+async function findOrCreateInstallmentSchedule({ purchase, customerId, defaultPaymentMethod, startDate, remainingCount }) {
+  if (purchase.stripe_subscription_schedule_id) {
+    const schedule = await stripe.subscriptionSchedules.retrieve(purchase.stripe_subscription_schedule_id);
+    return { schedule, recovered: true };
+  }
+
+  const existing = await stripe.subscriptionSchedules.list({ customer: customerId, limit: 100 });
+  const matches = existing.data.filter((s) =>
+    s.metadata && s.metadata.chew_purchase_id === String(purchase.id) && s.metadata.kind === 'chew_program_installment_plan'
+  );
+
+  if (matches.length > 1) {
+    throw new DuplicateInstallmentScheduleError(purchase.id, matches.map((s) => s.id));
+  }
+  if (matches.length === 1) {
+    return { schedule: matches[0], recovered: true };
+  }
+
+  const scheduleMetadata = { chew_purchase_id: String(purchase.id), kind: 'chew_program_installment_plan' };
+  const schedule = await stripe.subscriptionSchedules.create({
+    customer: customerId,
+    start_date: startDate,
+    end_behavior: 'cancel',
+    // Set at BOTH levels deliberately: top-level metadata is what this
+    // function's own reconciliation lookup (list + filter, above) reads
+    // back directly off the schedule object; phase-level metadata is what
+    // Stripe copies onto the underlying Subscription once the phase
+    // begins, and from there onto every invoice at finalization -- which
+    // is what the invoice.payment_succeeded/failed handlers below use to
+    // identify which purchase an installment belongs to. Two different
+    // consumers, two different times they need to read it.
+    metadata: scheduleMetadata,
+    default_settings: defaultPaymentMethod ? { default_payment_method: defaultPaymentMethod } : undefined,
+    phases: [{
+      metadata: scheduleMetadata,
+      items: [{
+        price_data: {
+          currency: 'usd',
+          unit_amount: purchase.installment_amount_cents,
+          recurring: { interval: 'month' },
+          product_data: { name: `${PROGRAMS[purchase.tier].label} — Monthly Plan Installment` },
+        },
+        quantity: 1,
+      }],
+      iterations: remainingCount,
+    }],
+  }, { idempotencyKey: `plan-schedule:${purchase.id}` });
+
+  return { schedule, recovered: false };
+}
+
 // Vercel needs the raw request body (unparsed) to verify the Stripe signature.
 module.exports.config = {
   api: { bodyParser: false },
@@ -289,7 +376,7 @@ module.exports = async (req, res) => {
                   membership_first_charge_at, remainder_payment_method, bonus_session_earned,
                   payment_plan_type, installment_amount_cents,
                   installment_count, installments_paid, total_contract_amount_cents,
-                  initial_payment_paid_at
+                  initial_payment_paid_at, stripe_subscription_schedule_id, stripe_subscription_id
            FROM program_purchases WHERE id = $1`,
           [purchaseId]
         );
@@ -458,81 +545,78 @@ module.exports = async (req, res) => {
           // Step 2: mark it confirmed idempotently, same WHERE ...IS NULL
           // pattern as entry/remainder above, decoupled from notification
           // sends below.
-          if (!purchase.initial_payment_paid_at) {
-            if (purchase.payment_plan_type === 'monthly') {
-              // The Checkout Session (mode: 'payment', setup_future_usage:
-              // 'off_session') just saved a reusable payment method on a
-              // real Stripe Customer. Bill the REMAINING installments only
-              // via a Subscription Schedule — never the initial payment
-              // again — starting ~1 month out, ending itself automatically
-              // after installment_count charges. No interest/financing
-              // charge is ever added (see lib/programs.js / locked doctrine).
-              const remainingCount = purchase.installment_count;
-              let scheduleId = null;
-              let subscriptionId = null;
-              let nextPaymentDueAt = null;
+          if (purchase.payment_plan_type === 'monthly') {
+            // The Checkout Session (mode: 'payment', setup_future_usage:
+            // 'off_session') just saved a reusable payment method on a
+            // real Stripe Customer. Bill the REMAINING installments only
+            // via a Subscription Schedule — never the initial payment
+            // again — starting ~1 month out, ending itself automatically
+            // after installment_count charges. No interest/financing
+            // charge is ever added (see lib/programs.js / locked doctrine).
+            //
+            // Schedule reconciliation and payment confirmation are
+            // deliberately DECOUPLED below (two separate guards, two
+            // separate UPDATEs) rather than one combined
+            // `if (!initial_payment_paid_at)` block. If payment confirms
+            // on delivery #1 but schedule reconciliation fails or finds a
+            // DUPLICATE_INSTALLMENT_SCHEDULE_REQUIRES_REVIEW condition,
+            // the client genuinely paid and must be recorded/notified as
+            // such regardless — and a later delivery must still be able to
+            // retry JUST the schedule reconciliation (once a human resolves
+            // the duplicate in Stripe, say) without that retry being
+            // skipped because initial_payment_paid_at already looks "done."
+            const remainingCount = purchase.installment_count;
+            let scheduleId = purchase.stripe_subscription_schedule_id || null;
+            let subscriptionId = purchase.stripe_subscription_id || null;
+            let nextPaymentDueAt = null;
+            let duplicateScheduleDetected = false;
 
-              if (remainingCount > 0) {
-                const startDate = addOneCalendarMonthUnix(Math.floor(Date.now() / 1000));
+            if (!scheduleId && remainingCount > 0) {
+              const startDate = addOneCalendarMonthUnix(Math.floor(Date.now() / 1000));
 
-                // Bind the SAME payment method the client just used for the
-                // initial payment, rather than leaving it to an ambiguous
-                // Stripe Customer default — the Checkout Session saved it
-                // (setup_future_usage: 'off_session') but did not otherwise
-                // designate it as the customer's default anywhere.
-                let defaultPaymentMethod;
-                try {
-                  const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent);
-                  defaultPaymentMethod = paymentIntent.payment_method || undefined;
-                } catch (pmErr) {
-                  console.error(`Could not resolve initial payment method for purchase ${purchase.id}, schedule will fall back to the Customer default:`, pmErr.message);
-                }
-
-                // Idempotency key deterministic per purchase: if Stripe
-                // successfully creates the schedule but the subsequent DB
-                // UPDATE below fails (connection drop, etc.), the row-level
-                // WHERE ...IS NULL guard alone cannot prevent a webhook
-                // retry from calling create() a second time — that would be
-                // a genuine duplicate external Stripe object, not just a
-                // duplicate DB write. Passing the same key on every attempt
-                // makes Stripe return the ORIGINAL schedule instead of
-                // creating a second one.
-                const schedule = await stripe.subscriptionSchedules.create({
-                  customer: session.customer,
-                  start_date: startDate,
-                  end_behavior: 'cancel',
-                  default_settings: defaultPaymentMethod ? { default_payment_method: defaultPaymentMethod } : undefined,
-                  phases: [{
-                    // Stripe copies phase metadata onto the underlying
-                    // Subscription when this phase begins, and every invoice
-                    // snapshots it at finalization (invoice.subscription_details.metadata)
-                    // — this is what api/stripe-webhook.js's invoice.payment_*
-                    // handlers use as the primary, spoof-resistant way to
-                    // identify which CHEW purchase an installment belongs to,
-                    // instead of guessing from a bare customer id.
-                    metadata: { purchase_id: String(purchase.id), kind: 'chew_program_installment_plan' },
-                    items: [{
-                      price_data: {
-                        currency: 'usd',
-                        unit_amount: purchase.installment_amount_cents,
-                        recurring: { interval: 'month' },
-                        product_data: { name: `${PROGRAMS[purchase.tier].label} — Monthly Plan Installment` },
-                      },
-                      quantity: 1,
-                    }],
-                    iterations: remainingCount,
-                  }],
-                }, { idempotencyKey: `plan-schedule:${purchase.id}` });
-                scheduleId = schedule.id;
-                // The schedule's underlying Subscription doesn't exist
-                // until its first phase actually starts (start_date is in
-                // the future), so schedule.subscription is null here. The
-                // invoice.payment_succeeded/failed handlers below backfill
-                // stripe_subscription_id the first time they see it.
-                subscriptionId = schedule.subscription || null;
-                nextPaymentDueAt = new Date(startDate * 1000).toISOString();
+              // Bind the SAME payment method the client just used for the
+              // initial payment, rather than leaving it to an ambiguous
+              // Stripe Customer default — the Checkout Session saved it
+              // (setup_future_usage: 'off_session') but did not otherwise
+              // designate it as the customer's default anywhere.
+              let defaultPaymentMethod;
+              try {
+                const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent);
+                defaultPaymentMethod = paymentIntent.payment_method || undefined;
+              } catch (pmErr) {
+                console.error(`Could not resolve initial payment method for purchase ${purchase.id}, schedule will fall back to the Customer default:`, pmErr.message);
               }
 
+              try {
+                const result = await findOrCreateInstallmentSchedule({
+                  purchase, customerId: session.customer, defaultPaymentMethod, startDate, remainingCount,
+                });
+                scheduleId = result.schedule.id;
+                // The schedule's underlying Subscription doesn't exist
+                // until its first phase actually starts (start_date is in
+                // the future) unless this was a RECOVERED already-active
+                // schedule, so schedule.subscription may be null here. The
+                // invoice.payment_succeeded/failed handlers below backfill
+                // stripe_subscription_id the first time they see it either way.
+                subscriptionId = result.schedule.subscription || null;
+                nextPaymentDueAt = new Date(startDate * 1000).toISOString();
+              } catch (scheduleErr) {
+                if (scheduleErr instanceof DuplicateInstallmentScheduleError) {
+                  // Never create a third schedule, never guess which of the
+                  // existing two is authoritative. Retryable so this keeps
+                  // getting flagged (and self-heals via the SAME retry
+                  // mechanism) once a human resolves the duplicate directly
+                  // in the Stripe Dashboard -- see LAUNCH_BLOCKERS notes.
+                  console.error(scheduleErr.message);
+                  duplicateScheduleDetected = true;
+                  hasRetryableFailure = true;
+                } else {
+                  throw scheduleErr;
+                }
+              }
+            }
+
+            if (!purchase.initial_payment_paid_at) {
               await query(
                 `UPDATE program_purchases
                  SET initial_payment_paid_at = now(), status = 'active',
@@ -542,28 +626,40 @@ module.exports = async (req, res) => {
                  WHERE id = $6 AND initial_payment_paid_at IS NULL`,
                 [
                   session.customer, scheduleId, subscriptionId,
-                  remainingCount > 0 ? 'current' : 'paid_in_full',
+                  duplicateScheduleDetected ? null : (remainingCount > 0 ? 'current' : 'paid_in_full'),
                   nextPaymentDueAt, purchase.id,
                 ]
               );
-              if (remainingCount <= 0) {
+              if (remainingCount <= 0 && !duplicateScheduleDetected) {
                 await query(
                   `UPDATE program_purchases SET paid_in_full_at = now() WHERE id = $1 AND paid_in_full_at IS NULL`,
                   [purchase.id]
                 );
               }
-            } else {
-              // pay_in_full: nothing further is ever billed. Both facts —
-              // initial payment confirmed and paid-in-full — are true the
-              // same moment.
+            } else if (scheduleId && !purchase.stripe_subscription_schedule_id) {
+              // Payment was already confirmed on an earlier delivery, and
+              // schedule reconciliation just now succeeded (recovering
+              // from an earlier failure/duplicate) -- persist the
+              // recovered schedule id now, independently of payment state.
               await query(
                 `UPDATE program_purchases
-                 SET initial_payment_paid_at = now(), paid_in_full_at = now(),
-                     status = 'active', stripe_customer_id = $1, payment_plan_status = 'paid_in_full'
-                 WHERE id = $2 AND initial_payment_paid_at IS NULL`,
-                [session.customer, purchase.id]
+                 SET stripe_subscription_schedule_id = $1, stripe_subscription_id = $2,
+                     payment_plan_status = 'current', next_payment_due_at = $3
+                 WHERE id = $4 AND stripe_subscription_schedule_id IS NULL`,
+                [scheduleId, subscriptionId, nextPaymentDueAt, purchase.id]
               );
             }
+          } else if (!purchase.initial_payment_paid_at) {
+            // pay_in_full: nothing further is ever billed. Both facts —
+            // initial payment confirmed and paid-in-full — are true the
+            // same moment.
+            await query(
+              `UPDATE program_purchases
+               SET initial_payment_paid_at = now(), paid_in_full_at = now(),
+                   status = 'active', stripe_customer_id = $1, payment_plan_status = 'paid_in_full'
+               WHERE id = $2 AND initial_payment_paid_at IS NULL`,
+              [session.customer, purchase.id]
+            );
           }
 
           // Steps 3+: attempt only whichever notification is still
@@ -748,17 +844,17 @@ module.exports = async (req, res) => {
     const subscriptionId = invoice.subscription;
     const customerId = invoice.customer;
     const amountCents = event.type === 'invoice.payment_succeeded' ? invoice.amount_paid : invoice.amount_due;
-    // The most trustworthy signal available: the purchase_id CHEW stamps
-    // onto the Subscription Schedule's phase metadata at creation time
-    // (see the phase === 'plan_payment' branch above), which Stripe copies
+    // The most trustworthy signal available: the chew_purchase_id CHEW
+    // stamps onto the Subscription Schedule's phase metadata at creation
+    // time (see findOrCreateInstallmentSchedule above), which Stripe copies
     // onto the underlying Subscription when that phase begins and snapshots
     // onto every invoice at finalization. An invoice can only carry this key
     // if it genuinely came from a schedule CHEW created for THIS program
     // installment plan — Membership's plain Subscription, an unrelated
     // future Stripe product, or a test invoice never has it, so this can't
     // be spoofed by coincidence the way a bare customer-id match could be.
-    const metadataPurchaseId = invoice.subscription_details?.metadata?.purchase_id
-      ? Number(invoice.subscription_details.metadata.purchase_id)
+    const metadataPurchaseId = invoice.subscription_details?.metadata?.chew_purchase_id
+      ? Number(invoice.subscription_details.metadata.chew_purchase_id)
       : null;
 
     try {

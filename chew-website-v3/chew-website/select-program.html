@@ -106,9 +106,11 @@
     var html = '';
     html += '<h3>' + deal.label + '</h3>';
     html += '<p style="font-size:0.92rem;">' + TIER_COPY[tier] + '</p>';
+    html += '<p style="font-size:0.88rem; font-weight:600; margin:10px 0 2px; color:var(--gold-light, #e8ce7a);">You receive: ' + deal.deliverable + '</p>';
     html += '<ul class="program-meta">';
-    html += '<li><strong>' + deal.sessionCount + '</strong> 1:1 sessions &middot; up to <strong>' + deal.durationDays + '</strong> days</li>';
+    html += '<li><strong>' + deal.sessionCount + '</strong> 1:1 sessions (' + deal.sessionMinutes + ' min each) &middot; up to <strong>' + deal.durationDays + '</strong> days</li>';
     html += '<li><strong>' + deal.documentReviewEvents + '</strong> document review event' + (deal.documentReviewEvents === 1 ? '' : 's') + '</li>';
+    html += '<li>' + deal.advisoryAccess + '</li>';
     html += '</ul>';
     html += '<p class="ds-value ds-value--price" style="margin:14px 0 2px;">' + fmt(deal.totalCents) + ' total investment</p>';
 

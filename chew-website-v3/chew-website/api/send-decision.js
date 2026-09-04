@@ -3,10 +3,15 @@
 // Sends the human-reviewed admissions decision to an applicant and marks
 // the application decided. A human must choose the decision explicitly —
 // this endpoint never sends the AI's raw recommendation automatically.
-// Requires ADMIN_SECRET, DATABASE_URL, RESEND_API_KEY, FROM_EMAIL.
+// Authenticated via a real Clerk admin session (see lib/admin-auth.js) —
+// this write endpoint authorizes independently of the read endpoint, on
+// every request.
+// Requires CLERK_SECRET_KEY, ADMIN_CLERK_USER_ID, DATABASE_URL,
+// RESEND_API_KEY, FROM_EMAIL.
 //
 // POST /api/send-decision.js
-//   { secret, id, decision, internalNote, applicantMessage }
+//   Authorization: Bearer <Clerk session token>
+//   { id, decision, internalNote, applicantMessage }
 //
 // internalNote     -> database (applications.internal_note) / admin only,
 //                      NEVER inserted into the outgoing applicant email.
@@ -26,6 +31,7 @@ const { getPool } = require('../lib/db');
 const { sendDecisionEmail } = require('../lib/email');
 const { createPortalInvitation } = require('../lib/clerk');
 const { VALID_RECOMMENDATIONS } = require('../lib/scoring');
+const { requireAdmin, legacySecretAuthorized } = require('../lib/admin-auth');
 
 const PORTAL_DECISIONS = ['ACCEPT', 'ACCEPT_WITH_CONDITIONS'];
 
@@ -35,15 +41,13 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (!process.env.ADMIN_SECRET) {
-    return res.status(503).json({ error: 'Admin access is not configured yet.' });
-  }
-
   const { secret, id, decision, internalNote, applicantMessage } = req.body || {};
 
-  if (secret !== process.env.ADMIN_SECRET) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  if (!legacySecretAuthorized(secret)) {
+    const adminId = await requireAdmin(req, res);
+    if (!adminId) return; // requireAdmin already wrote the 401/403/503 response
   }
+
   if (!id || !VALID_RECOMMENDATIONS.includes(decision)) {
     return res.status(400).json({ error: 'A valid application id and decision are required.' });
   }

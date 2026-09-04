@@ -188,6 +188,17 @@ see the gap flagged in §2 above. Counsel should confirm whether Florida law
 or card-network rules require a distinct recurring-payment authorization
 clause beyond what's in 3.2, and if so, what language satisfies it.
 
+**Engineering note on what is actually retained (not a legal conclusion):**
+the paragraph above describes what the agreement text *asserts* CHEW
+retains. What the system actually persists, per client signature, is: an
+immutable snapshot of the exact agreement HTML shown at signing, the
+agreement version identifier, a content hash of that snapshot, the signed
+timestamp, and a durable copy delivered to both the client and CHEW at
+signing time. CHEW retains a durable, reproducible evidence record of the
+signed agreement. This is a description of the technical record, not a
+claim about its legal weight or sufficiency in any dispute — that
+determination is for counsel, not engineering, to make.
+
 ---
 
 ## Summary of items flagged for counsel

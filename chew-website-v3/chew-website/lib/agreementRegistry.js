@@ -61,7 +61,15 @@ function getDealSheetData(tier) {
     monthly: oneTime ? program.monthly : null,
     durationDays: oneTime ? program.durationDays : null,
     sessionCount: oneTime ? program.sessionCount : null,
+    sessionMinutes: oneTime ? program.sessionMinutes : null,
     documentReviewEvents: oneTime ? program.documentReviewEvents : null,
+    // The concrete, named work product for this tier (e.g. "Full Financial
+    // Blueprint + Position Map + Sequenced Action Plan") — already the
+    // source `scope` below is built from, broken out here as its own field
+    // so a card UI (select-program.html) can show it as a scannable line
+    // rather than only inside the long legal-style `scope` sentence.
+    deliverable: oneTime ? program.deliverable : null,
+    advisoryAccess: oneTime ? program.advisoryAccess : null,
     // Membership fields (unchanged shape)
     entryAmountCents: !oneTime ? program.entryAmountCents : null,
     recurringAmountCents: !oneTime ? program.recurringAmountCents : null,

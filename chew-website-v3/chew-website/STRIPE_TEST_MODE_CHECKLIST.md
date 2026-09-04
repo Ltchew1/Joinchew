@@ -60,8 +60,13 @@ remaining, separate gate.
    `start_date` approximately one calendar month out (verify it lands on
    the correct clamped date if the enrollment date is near month-end —
    see the exact rule in `api/stripe-webhook.js`'s `addOneCalendarMonthUnix`).
-4. Confirm the schedule's phase metadata contains `purchase_id` and
-   `kind: 'chew_program_installment_plan'`.
+4. Confirm the schedule's own top-level metadata AND its phase metadata
+   both contain `chew_purchase_id` and `kind: 'chew_program_installment_plan'`
+   (the reconciliation layer in `findOrCreateInstallmentSchedule` reads the
+   top-level field; Stripe copies the phase-level field onto the
+   Subscription and then onto every invoice, which is what the separate
+   `invoice.payment_succeeded`/`invoice.payment_failed` handler's lookup
+   depends on).
 5. Confirm in the database: `initial_payment_paid_at` set,
    `stripe_subscription_schedule_id` populated, `payment_plan_status =
    'current'`, `next_payment_due_at` matches the schedule's `start_date`.
