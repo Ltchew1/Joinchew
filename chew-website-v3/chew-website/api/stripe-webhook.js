@@ -30,25 +30,45 @@ const {
   sendOwnerEnrollmentNotice,
 } = require('../lib/email');
 
-// Payment state (program_purchases.entry_paid_at) and notification state
-// (customer_enrollment_notified_at / owner_enrollment_notified_at) are
-// separate facts, claimed separately -- see db/schema.sql for why. This
-// claims ONE notification "kind" for one purchase: locks the row, checks
-// the specific notified_at column under that lock, sends only if still
-// null, and only marks it sent after the send actually succeeds. Two
-// concurrent webhook deliveries for the same purchase serialize on the
-// row lock -- the loser blocks until the winner's transaction commits (or
-// rolls back, if the send threw), then re-checks the now-current column
-// itself rather than trusting a value read before the lock. A send
-// failure rolls back and leaves the column null, so it's always safe to
-// retry -- never a permanently stuck "claimed but never sent" state.
+// Payment state (entry_paid_at / remainder_paid_at) and notification state
+// are separate facts, claimed separately -- see db/schema.sql for why.
+// Four independent notification "kinds" share this one claim function,
+// each backed by its own purchase-level timestamp column: entry-phase
+// (customer_enrollment_notified_at / owner_enrollment_notified_at) and
+// remainder-phase (remainder_customer_notified_at / remainder_owner_notified_at).
+// Purchase-level (not per-payment-event) is deliberate: audited first --
+// api/create-remainder-checkout-session.js refuses to open a second
+// session once a purchase's remainder is paid or has left
+// 'pending_remainder', so remainder is architecturally a single final
+// balance payment per purchase, never an installment series. A
+// per-payment-event ledger would be unmatched complexity for a data model
+// that only ever has one remainder event to notify about.
+//
+// This claims ONE kind for one purchase: locks the row, checks the
+// specific notified_at column under that lock, sends only if still null,
+// and only marks it sent after the send actually succeeds. Two concurrent
+// webhook deliveries for the same purchase serialize on the row lock --
+// the loser blocks until the winner's transaction commits (or rolls back,
+// if the send threw), then re-checks the now-current column itself rather
+// than trusting a value read before the lock. A send failure rolls back
+// and leaves the column null, so it's always safe to retry -- never a
+// permanently stuck "claimed but never sent" state.
+const NOTIFICATION_COLUMNS = {
+  entryCustomer: 'customer_enrollment_notified_at',
+  entryOwner: 'owner_enrollment_notified_at',
+  remainderCustomer: 'remainder_customer_notified_at',
+  remainderOwner: 'remainder_owner_notified_at',
+};
+
 async function claimAndSendNotification(purchaseId, kind, sendFn) {
-  const column = kind === 'customer' ? 'customer_enrollment_notified_at' : 'owner_enrollment_notified_at';
+  const column = NOTIFICATION_COLUMNS[kind];
+  if (!column) throw new Error(`Unknown notification kind: ${kind}`);
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
     const result = await client.query(
-      `SELECT customer_enrollment_notified_at, owner_enrollment_notified_at
+      `SELECT customer_enrollment_notified_at, owner_enrollment_notified_at,
+              remainder_customer_notified_at, remainder_owner_notified_at
        FROM program_purchases WHERE id = $1 FOR UPDATE`,
       [purchaseId]
     );
@@ -60,12 +80,7 @@ async function claimAndSendNotification(purchaseId, kind, sendFn) {
 
     await sendFn();
 
-    await client.query(
-      kind === 'customer'
-        ? `UPDATE program_purchases SET customer_enrollment_notified_at = now() WHERE id = $1`
-        : `UPDATE program_purchases SET owner_enrollment_notified_at = now() WHERE id = $1`,
-      [purchaseId]
-    );
+    await client.query(`UPDATE program_purchases SET ${column} = now() WHERE id = $1`, [purchaseId]);
     await client.query('COMMIT');
     return true;
   } catch (err) {
@@ -122,7 +137,7 @@ module.exports = async (req, res) => {
         const purchaseResult = await query(
           `SELECT id, access_token, tier, client_name, client_email, remainder_amount_cents,
                   application_id, agreement_signature_id, entry_paid_at, remainder_paid_at,
-                  membership_first_charge_at
+                  membership_first_charge_at, remainder_payment_method, bonus_session_earned
            FROM program_purchases WHERE id = $1`,
           [purchaseId]
         );
@@ -191,7 +206,7 @@ module.exports = async (req, res) => {
               });
 
           try {
-            const sent = await claimAndSendNotification(purchase.id, 'customer', sendCustomerNotice);
+            const sent = await claimAndSendNotification(purchase.id, 'entryCustomer', sendCustomerNotice);
             if (!sent) console.log(`Webhook: customer notification for purchase ${purchase.id} already sent — skipping.`);
           } catch (emailErr) {
             console.error(`CUSTOMER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
@@ -203,7 +218,7 @@ module.exports = async (req, res) => {
             : 'Remainder balance still owed. Client has a pay-remainder link for the rest.';
 
           try {
-            const sent = await claimAndSendNotification(purchase.id, 'owner', () => sendOwnerEnrollmentNotice({
+            const sent = await claimAndSendNotification(purchase.id, 'entryOwner', () => sendOwnerEnrollmentNotice({
               applicationId: purchase.application_id,
               purchaseId: purchase.id,
               fullName: purchase.client_name,
@@ -217,64 +232,66 @@ module.exports = async (req, res) => {
           } catch (emailErr) {
             console.error(`OWNER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
           }
-        } else if (phase === 'remainder' && purchase.remainder_paid_at) {
-          console.log(`Webhook: duplicate delivery for purchase ${purchase.id} phase=remainder, already processed at ${purchase.remainder_paid_at} — skipping.`);
         } else if (phase === 'remainder') {
-          // NOTE: this branch still gates its two emails on the same claim
-          // as the payment-confirm UPDATE below, same as entry-phase used
-          // to. It has the identical exposure entry-phase just had: a
-          // payment that confirms but hits an email failure right after
-          // won't get that email retried, because remainder_paid_at is
-          // already set on redelivery. Left as-is deliberately — this
-          // hotfix's scope was entry-phase enrollment notifications
-          // specifically (customer_enrollment_notified_at /
-          // owner_enrollment_notified_at). Flagged in the report as a
-          // known follow-up, not silently fixed here.
-          let methodType = 'card';
-          try {
-            const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent);
-            if (paymentIntent.payment_method) {
-              const paymentMethod = await stripe.paymentMethods.retrieve(paymentIntent.payment_method);
-              methodType = paymentMethod.type;
+          // Step 2: mark payment confirmed idempotently, decoupled from
+          // notification sends below — same doctrine as entry-phase.
+          // methodType/bonusEarned only need deriving via Stripe API calls
+          // the FIRST time this purchase confirms; on a retry (payment
+          // already confirmed by a prior delivery) that outcome is already
+          // persisted, so re-read it from the row instead of re-calling
+          // Stripe and risking an inconsistent bonusEarned across deliveries.
+          let bonusEarned = Boolean(purchase.bonus_session_earned);
+
+          if (!purchase.remainder_paid_at) {
+            let methodType = 'card';
+            try {
+              const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent);
+              if (paymentIntent.payment_method) {
+                const paymentMethod = await stripe.paymentMethods.retrieve(paymentIntent.payment_method);
+                methodType = paymentMethod.type;
+              }
+            } catch (pmErr) {
+              console.error('Could not determine remainder payment method:', pmErr.message);
             }
-          } catch (pmErr) {
-            console.error('Could not determine remainder payment method:', pmErr.message);
+            bonusEarned = methodType === 'card';
+
+            await query(
+              `UPDATE program_purchases
+               SET remainder_paid_at = now(), remainder_payment_method = $1,
+                   bonus_session_earned = $2, status = 'complete'
+               WHERE id = $3 AND remainder_paid_at IS NULL`,
+              [methodType, bonusEarned, purchase.id]
+            );
           }
 
-          const bonusEarned = methodType === 'card';
-          const claim = await query(
-            `UPDATE program_purchases
-             SET remainder_paid_at = now(), remainder_payment_method = $1,
-                 bonus_session_earned = $2, status = 'complete'
-             WHERE id = $3 AND remainder_paid_at IS NULL`,
-            [methodType, bonusEarned, purchase.id]
-          );
+          // Steps 3-8: attempt only whichever notification is still
+          // missing. Customer confirmation always applies; the owner
+          // bonus-session notice only applies when bonusEarned is true —
+          // if it's false, that claim is simply never attempted (there
+          // will never be anything to notify), not a "failure."
+          try {
+            const sent = await claimAndSendNotification(purchase.id, 'remainderCustomer', () => sendRemainderConfirmationEmail({
+              to: purchase.client_email,
+              name: purchase.client_name,
+              tier: purchase.tier,
+              bonusEarned,
+            }));
+            if (!sent) console.log(`Webhook: remainder customer notification for purchase ${purchase.id} already sent — skipping.`);
+          } catch (emailErr) {
+            console.error(`CUSTOMER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
+          }
 
-          if (claim.rowCount === 0) {
-            console.log(`Webhook: lost the claim race for purchase ${purchase.id} phase=remainder — skipping duplicate emails.`);
-          } else {
+          if (bonusEarned) {
             try {
-              await sendRemainderConfirmationEmail({
-                to: purchase.client_email,
+              const sent = await claimAndSendNotification(purchase.id, 'remainderOwner', () => sendAdminBonusSessionNotice({
+                purchaseId: purchase.id,
                 name: purchase.client_name,
+                email: purchase.client_email,
                 tier: purchase.tier,
-                bonusEarned,
-              });
+              }));
+              if (!sent) console.log(`Webhook: remainder owner notification for purchase ${purchase.id} already sent — skipping.`);
             } catch (emailErr) {
-              console.error(`CUSTOMER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
-            }
-
-            if (bonusEarned) {
-              try {
-                await sendAdminBonusSessionNotice({
-                  purchaseId: purchase.id,
-                  name: purchase.client_name,
-                  email: purchase.client_email,
-                  tier: purchase.tier,
-                });
-              } catch (emailErr) {
-                console.error(`OWNER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
-              }
+              console.error(`OWNER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
             }
           }
         }

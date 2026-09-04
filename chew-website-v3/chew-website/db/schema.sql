@@ -1059,3 +1059,15 @@ CREATE INDEX IF NOT EXISTS idx_program_purchases_entry_session ON program_purcha
 -- every other existing column are untouched.
 ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS customer_enrollment_notified_at TIMESTAMPTZ;
 ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS owner_enrollment_notified_at TIMESTAMPTZ;
+
+-- Same doctrine, applied to the remainder-balance payment. Audited first:
+-- create-remainder-checkout-session.js refuses to create a second Stripe
+-- session once remainder_paid_at is set OR once status has left
+-- 'pending_remainder' -- there is no installment/multi-payment concept
+-- anywhere in this schema, remainder is architecturally a single final
+-- balance payment per purchase. That makes a purchase-level timestamp
+-- (not a per-payment-event key) the correct, smallest-fit design here --
+-- the same shape as the entry-phase columns above, not a heavier
+-- per-event ledger this data model doesn't need.
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS remainder_customer_notified_at TIMESTAMPTZ;
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS remainder_owner_notified_at TIMESTAMPTZ;
