@@ -1047,3 +1047,15 @@ WHERE decision_note IS NOT NULL
 -- it repeatedly while polling for the webhook to land -- a new, frequent
 -- read pattern on a column that had no index before.
 CREATE INDEX IF NOT EXISTS idx_program_purchases_entry_session ON program_purchases (entry_stripe_session_id);
+
+-- Webhook notification durability: entry_paid_at is authoritative PAYMENT
+-- state. It is NOT a safe proxy for whether the enrollment emails actually
+-- sent -- a prior version gated both on the same claim, so a payment that
+-- confirmed successfully but hit an email-provider failure right after
+-- would never get its notification retried (entry_paid_at was already
+-- set, so the retry skipped the whole branch, emails included). These two
+-- columns are separate, independently-tracked facts: payment confirmed,
+-- and each notification actually sent. Additive only -- entry_paid_at and
+-- every other existing column are untouched.
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS customer_enrollment_notified_at TIMESTAMPTZ;
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS owner_enrollment_notified_at TIMESTAMPTZ;

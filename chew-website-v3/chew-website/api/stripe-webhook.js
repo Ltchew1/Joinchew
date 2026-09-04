@@ -20,7 +20,7 @@
 
 const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-const { query } = require('../lib/db');
+const { query, getPool } = require('../lib/db');
 const {
   sendConfirmationEmail,
   sendProgramEntryConfirmationEmail,
@@ -29,6 +29,52 @@ const {
   sendAdminBonusSessionNotice,
   sendOwnerEnrollmentNotice,
 } = require('../lib/email');
+
+// Payment state (program_purchases.entry_paid_at) and notification state
+// (customer_enrollment_notified_at / owner_enrollment_notified_at) are
+// separate facts, claimed separately -- see db/schema.sql for why. This
+// claims ONE notification "kind" for one purchase: locks the row, checks
+// the specific notified_at column under that lock, sends only if still
+// null, and only marks it sent after the send actually succeeds. Two
+// concurrent webhook deliveries for the same purchase serialize on the
+// row lock -- the loser blocks until the winner's transaction commits (or
+// rolls back, if the send threw), then re-checks the now-current column
+// itself rather than trusting a value read before the lock. A send
+// failure rolls back and leaves the column null, so it's always safe to
+// retry -- never a permanently stuck "claimed but never sent" state.
+async function claimAndSendNotification(purchaseId, kind, sendFn) {
+  const column = kind === 'customer' ? 'customer_enrollment_notified_at' : 'owner_enrollment_notified_at';
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    const result = await client.query(
+      `SELECT customer_enrollment_notified_at, owner_enrollment_notified_at
+       FROM program_purchases WHERE id = $1 FOR UPDATE`,
+      [purchaseId]
+    );
+    const row = result.rows[0];
+    if (!row || row[column]) {
+      await client.query('ROLLBACK');
+      return false;
+    }
+
+    await sendFn();
+
+    await client.query(
+      kind === 'customer'
+        ? `UPDATE program_purchases SET customer_enrollment_notified_at = now() WHERE id = $1`
+        : `UPDATE program_purchases SET owner_enrollment_notified_at = now() WHERE id = $1`,
+      [purchaseId]
+    );
+    await client.query('COMMIT');
+    return true;
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
 
 // Vercel needs the raw request body (unparsed) to verify the Stripe signature.
 module.exports.config = {
@@ -75,7 +121,8 @@ module.exports = async (req, res) => {
         const phase = session.metadata?.phase;
         const purchaseResult = await query(
           `SELECT id, access_token, tier, client_name, client_email, remainder_amount_cents,
-                  application_id, agreement_signature_id, entry_paid_at, remainder_paid_at
+                  application_id, agreement_signature_id, entry_paid_at, remainder_paid_at,
+                  membership_first_charge_at
            FROM program_purchases WHERE id = $1`,
           [purchaseId]
         );
@@ -84,102 +131,105 @@ module.exports = async (req, res) => {
         // Stripe retries checkout.session.completed on anything but a fast
         // 2xx, and can occasionally redeliver an already-acknowledged event
         // regardless. entry_paid_at / remainder_paid_at are the existing
-        // durable markers that a given phase has already been processed for
-        // this purchase — no new column needed. The UPDATE below claims the
-        // event atomically (WHERE ...IS NULL): two near-simultaneous
-        // deliveries can both reach this code with entry_paid_at still
-        // null, but only one UPDATE will actually match a row, so only the
-        // winner sends the customer confirmation and owner notification.
-        // The loser's rowCount is 0 and it skips silently — no double email.
+        // durable markers for PAYMENT state; deliberately NOT used to gate
+        // notification sends any more (see claimAndSendNotification above)
+        // — a payment can confirm successfully on delivery #1 while an
+        // email provider call fails right after, and delivery #2 must
+        // still retry exactly that missing email, not skip the branch
+        // entirely because the payment was already marked paid.
         if (!purchase) {
           console.error('Webhook: program_purchases row not found for id', purchaseId);
         } else if (phase === 'entry') {
-          if (purchase.entry_paid_at) {
-            console.log(`Webhook: duplicate delivery for purchase ${purchase.id} phase=entry, already processed at ${purchase.entry_paid_at} — skipping.`);
-          } else if (purchase.tier === 'membership') {
-            const subscription = await stripe.subscriptions.retrieve(session.subscription);
-            const firstChargeAt = new Date(subscription.trial_end * 1000);
+          // Step 2: mark payment confirmed idempotently. WHERE ...IS NULL
+          // makes this atomic on its own — a lost race here just means a
+          // concurrent delivery already confirmed it (or is about to);
+          // either way this delivery still proceeds to check/attempt
+          // notifications below using current DB state.
+          let firstChargeAt = purchase.membership_first_charge_at ? new Date(purchase.membership_first_charge_at) : null;
 
-            const claim = await query(
-              `UPDATE program_purchases
-               SET entry_paid_at = now(), status = 'complete',
-                   stripe_customer_id = $1, stripe_subscription_id = $2,
-                   membership_first_charge_at = $3, membership_status = 'trialing'
-               WHERE id = $4 AND entry_paid_at IS NULL`,
-              [session.customer, session.subscription, firstChargeAt.toISOString(), purchase.id]
-            );
-
-            if (claim.rowCount === 0) {
-              console.log(`Webhook: lost the claim race for purchase ${purchase.id} phase=entry — skipping duplicate emails.`);
+          if (!purchase.entry_paid_at) {
+            if (purchase.tier === 'membership') {
+              const subscription = await stripe.subscriptions.retrieve(session.subscription);
+              firstChargeAt = new Date(subscription.trial_end * 1000);
+              await query(
+                `UPDATE program_purchases
+                 SET entry_paid_at = now(), status = 'complete',
+                     stripe_customer_id = $1, stripe_subscription_id = $2,
+                     membership_first_charge_at = $3, membership_status = 'trialing'
+                 WHERE id = $4 AND entry_paid_at IS NULL`,
+                [session.customer, session.subscription, firstChargeAt.toISOString(), purchase.id]
+              );
             } else {
-              try {
-                await sendMembershipWelcomeEmail({
-                  to: purchase.client_email,
-                  name: purchase.client_name,
-                  amountPaidCents: session.amount_total,
-                  agreementSigned: Boolean(purchase.agreement_signature_id),
-                  firstChargeDate: firstChargeAt,
-                });
-              } catch (emailErr) {
-                console.error(`CUSTOMER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
-              }
-              try {
-                await sendOwnerEnrollmentNotice({
-                  applicationId: purchase.application_id,
-                  purchaseId: purchase.id,
-                  fullName: purchase.client_name,
-                  tier: purchase.tier,
-                  amountPaidCents: session.amount_total,
-                  paymentStatus: 'Entry fee paid — membership trialing',
-                  signatureId: purchase.agreement_signature_id,
-                  nextAction: 'Membership is active (trialing). No further payment action needed until the first monthly charge.',
-                });
-              } catch (emailErr) {
-                console.error(`OWNER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
-              }
+              await query(
+                `UPDATE program_purchases SET entry_paid_at = now(), status = 'pending_remainder'
+                 WHERE id = $1 AND entry_paid_at IS NULL`,
+                [purchase.id]
+              );
             }
-          } else {
-            const claim = await query(
-              `UPDATE program_purchases SET entry_paid_at = now(), status = 'pending_remainder'
-               WHERE id = $1 AND entry_paid_at IS NULL`,
-              [purchase.id]
-            );
+          }
 
-            if (claim.rowCount === 0) {
-              console.log(`Webhook: lost the claim race for purchase ${purchase.id} phase=entry — skipping duplicate emails.`);
-            } else {
-              try {
-                await sendProgramEntryConfirmationEmail({
-                  to: purchase.client_email,
-                  name: purchase.client_name,
-                  tier: purchase.tier,
-                  amountPaidCents: session.amount_total,
-                  remainderAmountCents: purchase.remainder_amount_cents,
-                  agreementSigned: Boolean(purchase.agreement_signature_id),
-                  payRemainderUrl: `${process.env.SITE_URL}/pay-remainder.html?token=${encodeURIComponent(purchase.access_token)}`,
-                });
-              } catch (emailErr) {
-                console.error(`CUSTOMER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
-              }
-              try {
-                await sendOwnerEnrollmentNotice({
-                  applicationId: purchase.application_id,
-                  purchaseId: purchase.id,
-                  fullName: purchase.client_name,
-                  tier: purchase.tier,
-                  amountPaidCents: session.amount_total,
-                  paymentStatus: 'Entry fee paid — remainder pending',
-                  signatureId: purchase.agreement_signature_id,
-                  nextAction: `Remainder balance still owed. Client has a pay-remainder link for the rest.`,
-                });
-              } catch (emailErr) {
-                console.error(`OWNER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
-              }
-            }
+          // Steps 3-8: attempt only whichever notification is still
+          // missing, each independently claimed and persisted the moment
+          // it actually sends. One failing never blocks or un-sends the
+          // other, and never rolls back the payment confirmation above.
+          const sendCustomerNotice = purchase.tier === 'membership'
+            ? () => sendMembershipWelcomeEmail({
+                to: purchase.client_email,
+                name: purchase.client_name,
+                amountPaidCents: session.amount_total,
+                agreementSigned: Boolean(purchase.agreement_signature_id),
+                firstChargeDate: firstChargeAt,
+              })
+            : () => sendProgramEntryConfirmationEmail({
+                to: purchase.client_email,
+                name: purchase.client_name,
+                tier: purchase.tier,
+                amountPaidCents: session.amount_total,
+                remainderAmountCents: purchase.remainder_amount_cents,
+                agreementSigned: Boolean(purchase.agreement_signature_id),
+                payRemainderUrl: `${process.env.SITE_URL}/pay-remainder.html?token=${encodeURIComponent(purchase.access_token)}`,
+              });
+
+          try {
+            const sent = await claimAndSendNotification(purchase.id, 'customer', sendCustomerNotice);
+            if (!sent) console.log(`Webhook: customer notification for purchase ${purchase.id} already sent — skipping.`);
+          } catch (emailErr) {
+            console.error(`CUSTOMER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
+          }
+
+          const paymentStatus = purchase.tier === 'membership' ? 'Entry fee paid — membership trialing' : 'Entry fee paid — remainder pending';
+          const nextAction = purchase.tier === 'membership'
+            ? 'Membership is active (trialing). No further payment action needed until the first monthly charge.'
+            : 'Remainder balance still owed. Client has a pay-remainder link for the rest.';
+
+          try {
+            const sent = await claimAndSendNotification(purchase.id, 'owner', () => sendOwnerEnrollmentNotice({
+              applicationId: purchase.application_id,
+              purchaseId: purchase.id,
+              fullName: purchase.client_name,
+              tier: purchase.tier,
+              amountPaidCents: session.amount_total,
+              paymentStatus,
+              signatureId: purchase.agreement_signature_id,
+              nextAction,
+            }));
+            if (!sent) console.log(`Webhook: owner notification for purchase ${purchase.id} already sent — skipping.`);
+          } catch (emailErr) {
+            console.error(`OWNER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
           }
         } else if (phase === 'remainder' && purchase.remainder_paid_at) {
           console.log(`Webhook: duplicate delivery for purchase ${purchase.id} phase=remainder, already processed at ${purchase.remainder_paid_at} — skipping.`);
         } else if (phase === 'remainder') {
+          // NOTE: this branch still gates its two emails on the same claim
+          // as the payment-confirm UPDATE below, same as entry-phase used
+          // to. It has the identical exposure entry-phase just had: a
+          // payment that confirms but hits an email failure right after
+          // won't get that email retried, because remainder_paid_at is
+          // already set on redelivery. Left as-is deliberately — this
+          // hotfix's scope was entry-phase enrollment notifications
+          // specifically (customer_enrollment_notified_at /
+          // owner_enrollment_notified_at). Flagged in the report as a
+          // known follow-up, not silently fixed here.
           let methodType = 'card';
           try {
             const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent);
