@@ -206,8 +206,7 @@
     html += '<p style="font-size:0.92rem;">' + TIER_META[tier].who + '</p>';
     html += '<div class="prog-price">' + fmt(deal.recurringAmountCents) + '/mo</div>';
     html += '<div class="prog-plan">' + fmt(deal.entryAmountCents) + ' entry &middot; first charge ' + deal.trialPeriodDays + ' days after enrollment</div>';
-    html += '<p style="font-size:0.8rem; color:var(--text-dim, rgba(255,255,255,0.6)); margin-bottom:14px;">Available to CHEW graduates. Not a program payment plan &mdash; a separate, ongoing commitment.</p>';
-    html += '<a href="apply.html" class="btn btn-outline" style="width:100%; justify-content:center;">Make Your Move</a>';
+    html += '<p style="font-size:0.8rem; color:var(--text-dim, rgba(255,255,255,0.6)); margin-bottom:14px;">Available to CHEW graduates after their engagement completes &mdash; not a first-time option, and not a program payment plan.</p>';
     el.innerHTML = html;
     return el;
   }

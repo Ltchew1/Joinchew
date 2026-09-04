@@ -48,6 +48,15 @@ module.exports = async (req, res) => {
     } catch {
       return res.status(400).json({ error: 'Invalid program tier.' });
     }
+
+    // Defense in depth alongside api/sign-agreement.js's guard: Membership is
+    // not a first-time engagement, so no checkout session for it should ever
+    // be created through this applicant-token flow, even if a signature
+    // somehow already exists (e.g. one signed before this guard existed).
+    if (tier === 'membership') {
+      return res.status(403).json({ error: 'Membership is available to CHEW graduates after their engagement completes, not as a first-time engagement.' });
+    }
+
     const oneTime = isOneTimeTier(tier);
 
     const appResult = await query(
@@ -155,11 +164,23 @@ module.exports = async (req, res) => {
     } else {
       const chargeCents = signature.initial_payment_amount_at_signing;
       const planLabel = paymentPlanType === 'pay_in_full' ? 'Pay in Full' : 'Initial Payment';
+      const isMonthly = paymentPlanType === 'monthly';
+
+      // Monthly Plan requires a payment method Stripe can charge again
+      // automatically, off-session, months later (see api/stripe-webhook.js,
+      // which creates a Subscription Schedule off this saved method once the
+      // initial charge confirms) — restricted to card, the only method type
+      // here that reliably supports setup_future_usage: 'off_session'
+      // reuse. Klarna/Afterpay are approved CHEW payment methods generally
+      // (see api/create-remainder-checkout-session.js) but are BNPL
+      // products, not reusable off-session payment instruments, so they are
+      // never offered for a Monthly Plan. Pay in Full never charges again,
+      // so it keeps the full approved one-time method set.
       session = await stripe.checkout.sessions.create({
         ...sessionConfig,
         metadata: { purchase_id: String(purchaseId), tier, phase: 'plan_payment', payment_plan_type: paymentPlanType },
         mode: 'payment',
-        payment_method_types: ['card'],
+        payment_method_types: isMonthly ? ['card'] : ['card', 'klarna', 'afterpay_clearpay'],
         line_items: [{
           price_data: {
             currency: 'usd',
@@ -168,14 +189,10 @@ module.exports = async (req, res) => {
           },
           quantity: 1,
         }],
-        // Monthly Plan needs a reusable payment method on a real Customer
-        // object to bill the remaining installments automatically later
-        // (see api/stripe-webhook.js, which creates the Subscription
-        // Schedule once this initial charge is confirmed). Pay in Full
-        // never charges again, so it doesn't need this, but requesting it
-        // unconditionally is harmless and keeps this branch simple.
-        customer_creation: 'always',
-        payment_intent_data: { setup_future_usage: 'off_session' },
+        ...(isMonthly ? {
+          customer_creation: 'always',
+          payment_intent_data: { setup_future_usage: 'off_session' },
+        } : {}),
       });
     }
 

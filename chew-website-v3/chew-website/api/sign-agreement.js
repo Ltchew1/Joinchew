@@ -111,6 +111,18 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Invalid program tier.' });
     }
 
+    // Membership is not a first-time engagement choice (locked doctrine: CHEW
+    // Membership is graduates-only, reached after an engagement completes and
+    // its 30-day Continuity period, via a separate affirmative opt-in). This
+    // is the ONLY path that currently reaches signature creation for any
+    // tier, so blocking it here is what actually enforces the rule —
+    // select-program.html simply no longer offers the card. A future
+    // graduate-enrollment path would need its own route that bypasses this
+    // check with real graduate verification; nothing does today.
+    if (tier === 'membership') {
+      return res.status(403).json({ error: 'Membership is available to CHEW graduates after their engagement completes, not as a first-time engagement. Please choose Focused Builder, Infrastructure, Advanced Infrastructure, or Executive Advisory.' });
+    }
+
     const oneTime = isOneTimeTier(tier);
     if (oneTime && !['pay_in_full', 'monthly'].includes(paymentPlanType)) {
       return res.status(400).json({ error: 'Please choose Pay in Full or the Monthly Plan.' });

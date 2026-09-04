@@ -171,6 +171,22 @@ async function ensureInstallmentRecorded(purchaseId, invoiceId, amountCents, sta
   return { id: existing.rows[0].id, isNew: false };
 }
 
+// Adds one calendar month rather than a flat 30*24*60*60 second offset —
+// "approximately one billing month later" per locked doctrine, computed the
+// same way a human reading a calendar would (Jan 15 -> Feb 15), not a
+// day-count approximation that drifts across months of different lengths.
+// JS Date normalizes day-of-month overflow (e.g. Jan 31 -> Mar 3, since
+// February doesn't have 31 days) — a known, standard trade-off for
+// "add one month" arithmetic, not a bug.
+function addOneCalendarMonthUnix(fromUnixSeconds) {
+  const d = new Date(fromUnixSeconds * 1000);
+  const next = new Date(Date.UTC(
+    d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(),
+    d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds()
+  ));
+  return Math.floor(next.getTime() / 1000);
+}
+
 // Vercel needs the raw request body (unparsed) to verify the Stripe signature.
 module.exports.config = {
   api: { bodyParser: false },
@@ -400,12 +416,44 @@ module.exports = async (req, res) => {
               let nextPaymentDueAt = null;
 
               if (remainingCount > 0) {
-                const startDate = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
+                const startDate = addOneCalendarMonthUnix(Math.floor(Date.now() / 1000));
+
+                // Bind the SAME payment method the client just used for the
+                // initial payment, rather than leaving it to an ambiguous
+                // Stripe Customer default — the Checkout Session saved it
+                // (setup_future_usage: 'off_session') but did not otherwise
+                // designate it as the customer's default anywhere.
+                let defaultPaymentMethod;
+                try {
+                  const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent);
+                  defaultPaymentMethod = paymentIntent.payment_method || undefined;
+                } catch (pmErr) {
+                  console.error(`Could not resolve initial payment method for purchase ${purchase.id}, schedule will fall back to the Customer default:`, pmErr.message);
+                }
+
+                // Idempotency key deterministic per purchase: if Stripe
+                // successfully creates the schedule but the subsequent DB
+                // UPDATE below fails (connection drop, etc.), the row-level
+                // WHERE ...IS NULL guard alone cannot prevent a webhook
+                // retry from calling create() a second time — that would be
+                // a genuine duplicate external Stripe object, not just a
+                // duplicate DB write. Passing the same key on every attempt
+                // makes Stripe return the ORIGINAL schedule instead of
+                // creating a second one.
                 const schedule = await stripe.subscriptionSchedules.create({
                   customer: session.customer,
                   start_date: startDate,
                   end_behavior: 'cancel',
+                  default_settings: defaultPaymentMethod ? { default_payment_method: defaultPaymentMethod } : undefined,
                   phases: [{
+                    // Stripe copies phase metadata onto the underlying
+                    // Subscription when this phase begins, and every invoice
+                    // snapshots it at finalization (invoice.subscription_details.metadata)
+                    // — this is what api/stripe-webhook.js's invoice.payment_*
+                    // handlers use as the primary, spoof-resistant way to
+                    // identify which CHEW purchase an installment belongs to,
+                    // instead of guessing from a bare customer id.
+                    metadata: { purchase_id: String(purchase.id), kind: 'chew_program_installment_plan' },
                     items: [{
                       price_data: {
                         currency: 'usd',
@@ -417,7 +465,7 @@ module.exports = async (req, res) => {
                     }],
                     iterations: remainingCount,
                   }],
-                });
+                }, { idempotencyKey: `plan-schedule:${purchase.id}` });
                 scheduleId = schedule.id;
                 // The schedule's underlying Subscription doesn't exist
                 // until its first phase actually starts (start_date is in
@@ -633,10 +681,33 @@ module.exports = async (req, res) => {
     const subscriptionId = invoice.subscription;
     const customerId = invoice.customer;
     const amountCents = event.type === 'invoice.payment_succeeded' ? invoice.amount_paid : invoice.amount_due;
+    // The most trustworthy signal available: the purchase_id CHEW stamps
+    // onto the Subscription Schedule's phase metadata at creation time
+    // (see the phase === 'plan_payment' branch above), which Stripe copies
+    // onto the underlying Subscription when that phase begins and snapshots
+    // onto every invoice at finalization. An invoice can only carry this key
+    // if it genuinely came from a schedule CHEW created for THIS program
+    // installment plan — Membership's plain Subscription, an unrelated
+    // future Stripe product, or a test invoice never has it, so this can't
+    // be spoofed by coincidence the way a bare customer-id match could be.
+    const metadataPurchaseId = invoice.subscription_details?.metadata?.purchase_id
+      ? Number(invoice.subscription_details.metadata.purchase_id)
+      : null;
 
     try {
       let purchase = null;
-      if (subscriptionId) {
+
+      if (metadataPurchaseId) {
+        const byMetadata = await query(
+          `SELECT id, application_id, agreement_signature_id, client_name, client_email, tier,
+                  installment_count, installments_paid, payment_plan_type
+           FROM program_purchases WHERE id = $1 AND payment_plan_type = 'monthly'`,
+          [metadataPurchaseId]
+        );
+        purchase = byMetadata.rows[0] || null;
+      }
+
+      if (!purchase && subscriptionId) {
         const bySubscription = await query(
           `SELECT id, application_id, agreement_signature_id, client_name, client_email, tier,
                   installment_count, installments_paid, payment_plan_type
@@ -647,11 +718,14 @@ module.exports = async (req, res) => {
       }
 
       if (!purchase && customerId) {
-        // First invoice off a schedule created with a future start_date:
-        // schedule.subscription was still null at creation time (see the
-        // phase === 'plan_payment' branch above), so this is the first
-        // moment the real subscription id is knowable. Backfill it now so
-        // every later invoice event finds this purchase by subscription id.
+        // Last-resort fallback for an invoice with neither metadata nor a
+        // recognized subscription id yet (the very first invoice off a
+        // schedule created with a future start_date, before schedule.subscription
+        // was knowable). Scoped tightly to payment_plan_type = 'monthly' AND
+        // stripe_subscription_id IS NULL, so it can only ever match a
+        // purchase genuinely still waiting for its first installment —
+        // never a Membership row (payment_plan_type is always null there)
+        // and never a purchase that already has a subscription id bound.
         const byCustomer = await query(
           `SELECT id, application_id, agreement_signature_id, client_name, client_email, tier,
                   installment_count, installments_paid, payment_plan_type
@@ -660,9 +734,15 @@ module.exports = async (req, res) => {
           [customerId]
         );
         purchase = byCustomer.rows[0] || null;
-        if (purchase && subscriptionId) {
-          await query(`UPDATE program_purchases SET stripe_subscription_id = $1 WHERE id = $2`, [subscriptionId, purchase.id]);
-        }
+      }
+
+      if (purchase && subscriptionId) {
+        // Idempotent regardless of which lookup path found the purchase —
+        // a no-op once already backfilled.
+        await query(
+          `UPDATE program_purchases SET stripe_subscription_id = $1 WHERE id = $2 AND stripe_subscription_id IS NULL`,
+          [subscriptionId, purchase.id]
+        );
       }
 
       if (!purchase) {

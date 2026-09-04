@@ -91,7 +91,13 @@
     executive: 'For complex, higher-stakes positions that need priority access and deeper strategic work throughout the engagement.',
     membership: 'For CHEW graduates who want ongoing access to their living Position, recalibration, and the CHEW community after their engagement ends.',
   };
-  var TIERS = ['focused_builder', 'infrastructure', 'advanced_infrastructure', 'executive', 'membership'];
+  // Membership is deliberately NOT offered here. At launch it is graduates-only
+  // (completed engagement -> 30-day Continuity -> separate affirmative opt-in),
+  // never a first-time program choice — see PORTAL_INTEGRATION_REQUIREMENTS.md
+  // and api/sign-agreement.js, which rejects tier='membership' from this same
+  // applicant-token flow server-side. buildMembershipCard() below is kept,
+  // unused, for the future graduate-enrollment page to reuse.
+  var TIERS = ['focused_builder', 'infrastructure', 'advanced_infrastructure', 'executive'];
 
   function buildOneTimeCard(tier, deal) {
     var wrap = document.createElement('div');
