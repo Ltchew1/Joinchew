@@ -9,13 +9,21 @@
 // verifies the commercial terms snapshotted below still match live
 // pricing before it will do so (see that file).
 //
-// POST /api/sign-agreement { token, tier, signedName, agreedToTerms }
+// POST /api/sign-agreement { token, tier, signedName, agreedToTerms, paymentPlanType }
 //
 // agreedToTerms must be exactly `true`. The affirmative checkbox in
 // sign-agreement.html was previously enforced only by the browser
 // (`required` on the input) — nothing server-side confirmed a real
 // consent fact was ever sent. This makes that a validated, stored part of
 // the evidence record instead of an assumption the UI didn't tamper.
+//
+// paymentPlanType is required for one-time engagements ('pay_in_full' or
+// 'monthly') and ignored for membership, which keeps its own separate
+// entry-fee-plus-recurring-subscription model. The exact amounts for
+// whichever plan is chosen are snapshotted onto the signature the same
+// way commercial terms already are — see *_at_signing columns below —
+// so api/create-program-checkout-session.js can refuse to charge
+// anything the client didn't actually see and sign for.
 //
 // Signature durability: recording the signature and notifying anyone
 // about it are different facts, same doctrine as api/stripe-webhook.js's
@@ -33,7 +41,7 @@
 
 const crypto = require('crypto');
 const { query, getPool } = require('../lib/db');
-const { getProgram } = require('../lib/programs');
+const { getProgram, isOneTimeTier } = require('../lib/programs');
 const { AGREEMENT_VERSION } = require('../lib/agreement');
 const { renderAgreementHtml, TIER_LABELS } = require('../lib/agreementText');
 const { sendOwnerSignedAgreementNotice, sendClientSignedAgreementCopyEmail } = require('../lib/email');
@@ -87,7 +95,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { token, tier, signedName, agreedToTerms } = req.body || {};
+    const { token, tier, signedName, agreedToTerms, paymentPlanType } = req.body || {};
     if (!token) return res.status(400).json({ error: 'Missing application token.' });
     if (!signedName || !String(signedName).trim()) {
       return res.status(400).json({ error: 'Please type your full legal name to sign.' });
@@ -101,6 +109,27 @@ module.exports = async (req, res) => {
       program = getProgram(tier);
     } catch {
       return res.status(400).json({ error: 'Invalid program tier.' });
+    }
+
+    const oneTime = isOneTimeTier(tier);
+    if (oneTime && !['pay_in_full', 'monthly'].includes(paymentPlanType)) {
+      return res.status(400).json({ error: 'Please choose Pay in Full or the Monthly Plan.' });
+    }
+
+    let totalContractAmount = null;
+    let initialPaymentAmount = null;
+    let installmentAmount = null;
+    let installmentCount = null;
+    const planType = oneTime ? paymentPlanType : null;
+    if (oneTime) {
+      totalContractAmount = program.totalCents;
+      if (paymentPlanType === 'pay_in_full') {
+        initialPaymentAmount = program.totalCents;
+      } else {
+        initialPaymentAmount = program.monthly.initialCents;
+        installmentAmount = program.monthly.installmentCents;
+        installmentCount = program.monthly.installmentCount;
+      }
     }
 
     const appResult = await query(
@@ -138,11 +167,16 @@ module.exports = async (req, res) => {
       await lockClient.query('BEGIN');
       await lockClient.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`sign-agreement:${application.id}:${tier}`]);
 
+      // Matching on payment_plan_type too (via IS NOT DISTINCT FROM, since
+      // it's null for membership): a different payment plan is a
+      // materially different commitment and deserves its own signature,
+      // not a silent reuse of one for a different set of amounts.
       const existing = await lockClient.query(
         `SELECT id, signed_at FROM agreement_signatures
          WHERE application_id = $1 AND tier = $2 AND agreement_version = $3
+           AND payment_plan_type_at_signing IS NOT DISTINCT FROM $4
          ORDER BY signed_at DESC LIMIT 1`,
-        [application.id, tier, AGREEMENT_VERSION]
+        [application.id, tier, AGREEMENT_VERSION, planType]
       );
 
       if (existing.rows[0]) {
@@ -153,16 +187,15 @@ module.exports = async (req, res) => {
           `INSERT INTO agreement_signatures (
              application_id, tier, signed_name, agreement_version, ip_address, user_agent,
              agreement_read_and_accepted, agreement_content_hash, agreement_snapshot_html,
-             entry_amount_cents_at_signing, full_fee_cents_at_signing,
-             remainder_amount_cents_at_signing, recurring_amount_cents_at_signing
+             payment_plan_type_at_signing, total_contract_amount_at_signing,
+             initial_payment_amount_at_signing, installment_amount_at_signing, installment_count_at_signing
            )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
            RETURNING id, signed_at`,
           [
             application.id, tier, String(signedName).trim(), AGREEMENT_VERSION, ipAddress, userAgent,
             true, contentHash, agreementHtml,
-            program.entryAmountCents, program.fullFeeCents || null,
-            program.hasRemainder ? program.remainderAmountCents : null, program.recurringAmountCents || null,
+            planType, totalContractAmount, initialPaymentAmount, installmentAmount, installmentCount,
           ]
         );
         signatureId = insertResult.rows[0].id;

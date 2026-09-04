@@ -290,7 +290,9 @@ async function sendDecisionEmail({ to, name, decision, applicantMessage, selectP
 }
 
 const PROGRAM_LABELS = {
-  infrastructure: 'Infrastructure Program',
+  focused_builder: 'Focused Builder',
+  infrastructure: 'Infrastructure',
+  advanced_infrastructure: 'Advanced Infrastructure',
   executive: 'Executive Advisory',
   membership: 'Membership',
 };
@@ -512,6 +514,110 @@ async function sendClientSignedAgreementCopyEmail({ to, name, program, agreement
   });
 }
 
+// Customer-facing payment-plan notice — one function covers both the
+// initial payment (isInitial: true) and every subsequent installment,
+// since the content difference is just which numbers apply. Never implies
+// payment is complete when it isn't (remainingBalanceCents / next payment
+// date are only included while the plan isn't finished).
+async function sendPlanPaymentReceivedEmail({ to, name, tier, amountPaidCents, isInitial, installmentNumber, installmentCount, remainingBalanceCents, nextPaymentDate }) {
+  const resend = getClient();
+  const programLabel = PROGRAM_LABELS[tier] || tier;
+  const heading = isInitial ? `Payment received, ${name || 'there'}.` : `Installment payment received, ${name || 'there'}.`;
+  const progressLine = isInitial
+    ? `This was your initial payment on the ${escapeHtml(programLabel)} Monthly Plan.`
+    : `This was installment ${escapeHtml(installmentNumber)} of ${escapeHtml(installmentCount)} on your ${escapeHtml(programLabel)} Monthly Plan.`;
+  const remainingLine = remainingBalanceCents > 0
+    ? `<p>Remaining balance: <strong>${formatCents(remainingBalanceCents)}</strong>. Your next payment is scheduled for ${nextPaymentDate ? new Date(nextPaymentDate).toLocaleDateString() : 'next month'}, billed automatically to the payment method on file.</p>`
+    : '';
+
+  return resend.emails.send({
+    from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
+    to,
+    subject: isInitial ? `Payment Received — ${programLabel}` : `Installment Payment Received — ${programLabel}`,
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
+        <h2 style="color: #8F7024;">${heading}</h2>
+        <p>${progressLine}</p>
+        <p>Amount received: <strong>${formatCents(amountPaidCents)}</strong>.</p>
+        ${remainingLine}
+        <p>Questions? Just reply to this email.</p>
+        <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
+      </div>
+    `,
+  });
+}
+
+// Customer-facing failed-installment notice. Calm, factual, no threats —
+// explains what happens next (automatic retry, then a grace period)
+// rather than demanding immediate action.
+async function sendPlanPaymentFailedEmail({ to, name, tier, amountDueCents }) {
+  const resend = getClient();
+  const programLabel = PROGRAM_LABELS[tier] || tier;
+
+  return resend.emails.send({
+    from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
+    to,
+    subject: `Payment Issue — ${programLabel}`,
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
+        <h2 style="color: #8F7024;">A payment didn't go through, ${name || 'there'}.</h2>
+        <p>Your ${escapeHtml(programLabel)} Monthly Plan installment of <strong>${formatCents(amountDueCents)}</strong> could not be charged to the payment method on file.</p>
+        <p>Stripe will automatically retry the charge. If it's still unresolved after a short grace period, your session delivery and Client Portal access may be paused until the balance is cured, per your signed agreement — nothing is deleted, and you won't be charged twice for the same installment.</p>
+        <p>To avoid any interruption, you can update your payment method by replying to this email.</p>
+        <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
+      </div>
+    `,
+  });
+}
+
+// Customer-facing paid-in-full notice — fires once, either immediately
+// (Pay in Full) or after the final Monthly Plan installment clears.
+async function sendPlanPaidInFullEmail({ to, name, tier }) {
+  const resend = getClient();
+  const programLabel = PROGRAM_LABELS[tier] || tier;
+
+  return resend.emails.send({
+    from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
+    to,
+    subject: `${programLabel} — Paid in Full`,
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
+        <h2 style="color: #8F7024;">You're paid in full, ${name || 'there'}.</h2>
+        <p>Your ${escapeHtml(programLabel)} engagement is now paid in full. We're glad to have you.</p>
+        <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
+      </div>
+    `,
+  });
+}
+
+// Owner-facing escalation for an unresolved payment-plan failure —
+// separate from sendOwnerEnrollmentNotice (which covers successful
+// payment events) because this one needs to read as an alert, not a
+// routine notice.
+async function sendOwnerPlanPaymentFailedNotice({ purchaseId, fullName, email, tier, amountDueCents }) {
+  const resend = getClient();
+  const programLabel = PROGRAM_LABELS[tier] || tier;
+
+  return resend.emails.send({
+    from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
+    to: getAdminEmail(),
+    subject: `Payment Failed — ${fullName} — ${programLabel}`,
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
+        <h2 style="color: #8F7024;">Installment payment failed.</h2>
+        <table style="width:100%; border-collapse:collapse; margin:16px 0; font-size:14px;">
+          <tr><td style="padding:6px 0; color:#8F7024; font-weight:bold; width:150px;">Client</td><td style="padding:6px 0;">${escapeHtml(fullName)} (${escapeHtml(email)})</td></tr>
+          <tr><td style="padding:6px 0; color:#8F7024; font-weight:bold;">Program</td><td style="padding:6px 0;">${escapeHtml(programLabel)}</td></tr>
+          <tr><td style="padding:6px 0; color:#8F7024; font-weight:bold;">Amount Due</td><td style="padding:6px 0;">${formatCents(amountDueCents)}</td></tr>
+          <tr><td style="padding:6px 0; color:#8F7024; font-weight:bold;">Purchase ID</td><td style="padding:6px 0;">#${escapeHtml(purchaseId)} (internal)</td></tr>
+        </table>
+        <p>Stripe is retrying automatically. If unresolved after the grace period, service access pauses per the signed agreement.</p>
+        <p style="margin-top: 32px; font-size: 13px; color: #666;">Internal notice — CHEW Admissions</p>
+      </div>
+    `,
+  });
+}
+
 module.exports = {
   sendConfirmationEmail,
   sendReminderEmail,
@@ -522,6 +628,10 @@ module.exports = {
   sendMembershipWelcomeEmail,
   sendRemainderConfirmationEmail,
   sendAdminBonusSessionNotice,
+  sendPlanPaymentReceivedEmail,
+  sendPlanPaymentFailedEmail,
+  sendPlanPaidInFullEmail,
+  sendOwnerPlanPaymentFailedNotice,
   sendOwnerEnrollmentNotice,
   sendMembershipReminderEmail,
   sendOwnerSignedAgreementNotice,

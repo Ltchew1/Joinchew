@@ -1123,3 +1123,84 @@ ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS recurring_amount_cents
 ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS agreement_snapshot_html TEXT;
 ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS owner_agreement_notified_at TIMESTAMPTZ;
 ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS client_agreement_notified_at TIMESTAMPTZ;
+
+-- Approved commercial architecture: 5 engagement classes (was 3), and every
+-- one-time engagement now offers Pay in Full or a finite Monthly Plan
+-- (initial payment + N automatic installments via a Stripe Subscription
+-- Schedule) instead of the old "entry fee now, remainder whenever you're
+-- ready" model. Widening the tier CHECK constraints is additive (no rows
+-- are rewritten); dropping and re-adding by the standard Postgres
+-- auto-generated constraint name is safe to re-run.
+ALTER TABLE program_purchases DROP CONSTRAINT IF EXISTS program_purchases_tier_check;
+ALTER TABLE program_purchases ADD CONSTRAINT program_purchases_tier_check
+  CHECK (tier IN ('focused_builder', 'infrastructure', 'advanced_infrastructure', 'executive', 'membership'));
+ALTER TABLE agreement_signatures DROP CONSTRAINT IF EXISTS agreement_signatures_tier_check;
+ALTER TABLE agreement_signatures ADD CONSTRAINT agreement_signatures_tier_check
+  CHECK (tier IN ('focused_builder', 'infrastructure', 'advanced_infrastructure', 'executive', 'membership'));
+
+-- The plan_payment webhook branch (api/stripe-webhook.js) sets
+-- program_purchases.status = 'active' once a one-time engagement's first
+-- payment confirms — a status the original CHECK never allowed, which
+-- would otherwise make that UPDATE fail in production. Widened the same
+-- additive way as the tier constraints above.
+ALTER TABLE program_purchases DROP CONSTRAINT IF EXISTS program_purchases_status_check;
+ALTER TABLE program_purchases ADD CONSTRAINT program_purchases_status_check
+  CHECK (status IN ('pending_entry', 'pending_remainder', 'complete', 'active'));
+
+-- Payment-plan snapshot at signing time (mirrors the existing
+-- entry/full-fee/remainder/recurring *_at_signing columns' purpose: prove
+-- what commercial terms — including which payment option — the client
+-- actually saw and agreed to, so checkout can refuse to proceed if live
+-- terms have since drifted).
+ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS payment_plan_type_at_signing TEXT CHECK (payment_plan_type_at_signing IN ('pay_in_full', 'monthly'));
+ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS total_contract_amount_at_signing INTEGER;
+ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS initial_payment_amount_at_signing INTEGER;
+ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS installment_amount_at_signing INTEGER;
+ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS installment_count_at_signing INTEGER;
+
+-- New payment-plan state on program_purchases, additive alongside (not
+-- replacing) the existing entry_amount_cents/remainder_* columns, which
+-- stay exactly as they are for the prior entry+remainder model. New
+-- one-time purchases use the columns below instead; payment_plan_type
+-- being non-null is what distinguishes a "new model" purchase row from a
+-- legacy one in application code (api/stripe-webhook.js).
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS payment_plan_type TEXT CHECK (payment_plan_type IN ('pay_in_full', 'monthly'));
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS total_contract_amount_cents INTEGER;
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS initial_payment_amount_cents INTEGER;
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS installment_amount_cents INTEGER;
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS installment_count INTEGER;
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS installments_paid INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS stripe_subscription_schedule_id TEXT;
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS initial_payment_paid_at TIMESTAMPTZ;
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS next_payment_due_at TIMESTAMPTZ;
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS paid_in_full_at TIMESTAMPTZ;
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS payment_plan_status TEXT
+  CHECK (payment_plan_status IN ('current', 'payment_failed', 'retrying', 'past_due', 'paused', 'cured', 'paid_in_full', 'cancelled'));
+
+-- Durable, independently-claimed notification facts for the new payment
+-- model, same doctrine as every other notified_at column in this schema:
+-- payment truth (initial_payment_paid_at, installments_paid) and
+-- notification-sent truth are separate facts, so an email failure never
+-- blocks payment recognition and a Stripe retry never double-sends.
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS initial_payment_customer_notified_at TIMESTAMPTZ;
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS initial_payment_owner_notified_at TIMESTAMPTZ;
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS payment_failed_customer_notified_at TIMESTAMPTZ;
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS payment_failed_owner_notified_at TIMESTAMPTZ;
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS paid_in_full_customer_notified_at TIMESTAMPTZ;
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS paid_in_full_owner_notified_at TIMESTAMPTZ;
+
+-- One installment invoice must never be recorded or notified about twice
+-- even if Stripe redelivers invoice.payment_succeeded — the same
+-- idempotency role entry_stripe_session_id already plays for the entry
+-- payment, keyed by Stripe's own invoice id this time since a payment
+-- plan has many invoices, not one session.
+CREATE TABLE IF NOT EXISTS program_purchase_installments (
+  id                    SERIAL PRIMARY KEY,
+  purchase_id           INTEGER NOT NULL REFERENCES program_purchases (id),
+  stripe_invoice_id     TEXT UNIQUE NOT NULL,
+  amount_cents          INTEGER NOT NULL,
+  status                TEXT NOT NULL CHECK (status IN ('paid', 'failed')),
+  customer_notified_at  TIMESTAMPTZ,
+  created_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_program_purchase_installments_purchase ON program_purchase_installments (purchase_id);

@@ -3,12 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Choose Your Program | CHEW</title>
+<title>Choose Your Engagement | CHEW</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<style>
+  .plan-toggle { display: flex; gap: 8px; margin: 16px 0; flex-wrap: wrap; }
+  .plan-option {
+    flex: 1 1 auto; min-width: 140px; cursor: pointer; border: 1px solid var(--panel-border, rgba(255,255,255,0.14));
+    border-radius: 10px; padding: 10px 12px; transition: border-color 0.2s, background 0.2s;
+  }
+  .plan-option:hover { border-color: var(--gold); }
+  .plan-option input { position: absolute; opacity: 0; pointer-events: none; }
+  .plan-option .plan-option-label { font-weight: 600; font-size: 0.9rem; display: block; }
+  .plan-option .plan-option-detail { font-size: 0.8rem; color: var(--text-dim, rgba(255,255,255,0.65)); margin-top: 2px; display: block; }
+  .plan-option.is-selected { border-color: var(--gold-light); background: rgba(201,162,39,0.1); }
+  .program-meta { list-style: none; padding: 0; margin: 14px 0; font-size: 0.86rem; color: var(--text-dim, rgba(255,255,255,0.7)); }
+  .program-meta li { padding: 3px 0; }
+  .program-meta li strong { color: var(--text); font-weight: 600; }
+</style>
 </head>
 <body>
 <header class="site-header">
@@ -24,9 +39,12 @@
     <div class="hero-glow"></div>
     <div class="container" style="position:relative;">
       <span class="eyebrow">Welcome to CHEW</span>
-      <h1 style="max-width:20ch;">Choose your program.</h1>
+      <h1 style="max-width:24ch;">Choose your engagement.</h1>
       <p class="max-prose" style="font-size:1.05rem; margin-top:16px;">
-        Each entry fee is credited toward your program's full cost.
+        Every tier is the same commercial terms for every client — the price reflects the scope of work,
+        never your income. Pay the full investment today, or split it into fixed monthly payments with
+        no interest or financing charge. Either way, you sign the Client Services Agreement before anything
+        is charged.
       </p>
     </div>
   </section>
@@ -34,26 +52,7 @@
   <section class="section">
     <div class="container">
       <div id="program-status" class="status-note" style="display:none; margin-bottom:24px;"></div>
-      <div class="grid grid--3">
-        <div class="glass card">
-          <h3>Infrastructure Program</h3>
-          <p style="color:var(--gold-light); font-weight:700; margin:10px 0;" id="price-infrastructure">&nbsp;</p>
-          <p>Core program: education, strategy, and implementation accountability.</p>
-          <button type="button" class="btn btn-gold program-select" data-tier="infrastructure" style="margin-top:16px; width:100%; justify-content:center;">Select</button>
-        </div>
-        <div class="glass card">
-          <h3>Executive Advisory</h3>
-          <p style="color:var(--gold-light); font-weight:700; margin:10px 0;" id="price-executive">&nbsp;</p>
-          <p>Premium 1:1 advisory for more complex personal or business situations.</p>
-          <button type="button" class="btn btn-gold program-select" data-tier="executive" style="margin-top:16px; width:100%; justify-content:center;">Select</button>
-        </div>
-        <div class="glass card">
-          <h3>Membership</h3>
-          <p style="color:var(--gold-light); font-weight:700; margin:10px 0;" id="price-membership">&nbsp;</p>
-          <p>Ongoing support after your program. Your first monthly charge begins 30 days after enrollment.</p>
-          <button type="button" class="btn btn-gold program-select" data-tier="membership" style="margin-top:16px; width:100%; justify-content:center;">Select</button>
-        </div>
-      </div>
+      <div class="grid grid--3" id="program-cards" style="align-items:stretch;"></div>
     </div>
   </section>
 </main>
@@ -63,6 +62,7 @@
   var params = new URLSearchParams(window.location.search);
   var token = params.get('token') || '';
   var statusEl = document.getElementById('program-status');
+  var cardsEl = document.getElementById('program-cards');
 
   function showStatus(message) {
     statusEl.textContent = message;
@@ -70,39 +70,109 @@
   }
 
   if (params.get('cancelled') === 'true') {
-    showStatus('Checkout was cancelled — you can select a program again below whenever you\'re ready.');
+    showStatus('Checkout was cancelled — you can select an engagement again below whenever you\'re ready.');
   }
-
   if (!token) {
     showStatus('This page requires a valid invitation link from your acceptance email.');
   }
 
-  // Pull real pricing from the same source api/create-program-checkout-session.js
-  // reads (lib/programs.js, via lib/agreementRegistry.js) instead of keeping a
-  // second hardcoded copy of these numbers.
-  ['infrastructure', 'executive', 'membership'].forEach(function (tier) {
-    var el = document.getElementById('price-' + tier);
-    fetch('/api/deal-sheet?tier=' + tier)
+  function fmt(cents) {
+    return '$' + Math.round(cents / 100).toLocaleString('en-US');
+  }
+
+  // "Who it's for" and short positioning copy for each tier — descriptive
+  // only, not part of the commercial terms (those come from /api/deal-sheet,
+  // the same source api/create-program-checkout-session.js actually charges
+  // against, so this page can never drift from what checkout will show).
+  var TIER_COPY = {
+    focused_builder: 'For one clear, contained move — organizing a specific piece of your financial position with a defined action sequence.',
+    infrastructure: 'For building real financial infrastructure — a full Blueprint, a sequenced plan, and room to work through more than one moving piece.',
+    advanced_infrastructure: 'For integrated personal and business positions — decision sequencing and scenario work across multiple fronts.',
+    executive: 'For complex, higher-stakes positions that need priority access and deeper strategic work throughout the engagement.',
+    membership: 'For CHEW graduates who want ongoing access to their living Position, recalibration, and the CHEW community after their engagement ends.',
+  };
+  var TIERS = ['focused_builder', 'infrastructure', 'advanced_infrastructure', 'executive', 'membership'];
+
+  function buildOneTimeCard(tier, deal) {
+    var wrap = document.createElement('div');
+    wrap.className = 'glass card';
+
+    var html = '';
+    html += '<h3>' + deal.label + '</h3>';
+    html += '<p style="font-size:0.92rem;">' + TIER_COPY[tier] + '</p>';
+    html += '<ul class="program-meta">';
+    html += '<li><strong>' + deal.sessionCount + '</strong> 1:1 sessions &middot; up to <strong>' + deal.durationDays + '</strong> days</li>';
+    html += '<li><strong>' + deal.documentReviewEvents + '</strong> document review event' + (deal.documentReviewEvents === 1 ? '' : 's') + '</li>';
+    html += '</ul>';
+    html += '<p class="ds-value ds-value--price" style="margin:14px 0 2px;">' + fmt(deal.totalCents) + ' total investment</p>';
+
+    html += '<div class="plan-toggle" role="radiogroup" aria-label="Payment option for ' + deal.label + '">';
+    html += '<label class="plan-option is-selected">';
+    html += '<input type="radio" name="plan-' + tier + '" value="pay_in_full" checked>';
+    html += '<span class="plan-option-label">Pay in Full</span>';
+    html += '<span class="plan-option-detail">' + fmt(deal.totalCents) + ' today</span>';
+    html += '</label>';
+    html += '<label class="plan-option">';
+    html += '<input type="radio" name="plan-' + tier + '" value="monthly">';
+    html += '<span class="plan-option-label">Monthly Plan</span>';
+    html += '<span class="plan-option-detail">' + fmt(deal.monthly.initialCents) + ' initial + ' + deal.monthly.installmentCount + ' &times; ' + fmt(deal.monthly.installmentCents) + '/mo</span>';
+    html += '</label>';
+    html += '</div>';
+    html += '<p style="font-size:0.78rem; color:var(--text-dim, rgba(255,255,255,0.6));">Same scope either way. No interest, no financing charge, no hidden total.</p>';
+    html += '<button type="button" class="btn btn-gold program-select" data-tier="' + tier + '" style="margin-top:12px; width:100%; justify-content:center;">Continue</button>';
+
+    wrap.innerHTML = html;
+    return wrap;
+  }
+
+  function buildMembershipCard(tier, deal) {
+    var wrap = document.createElement('div');
+    wrap.className = 'glass card';
+    var html = '';
+    html += '<h3>' + deal.label + '</h3>';
+    html += '<p style="font-size:0.92rem;">' + TIER_COPY[tier] + '</p>';
+    html += '<p class="ds-value ds-value--price" style="margin:14px 0 2px;">' + fmt(deal.entryAmountCents) + ' entry &middot; then ' + fmt(deal.recurringAmountCents) + '/month</p>';
+    html += '<p style="font-size:0.78rem; color:var(--text-dim, rgba(255,255,255,0.6));">Your first monthly charge begins ' + deal.trialPeriodDays + ' days after enrollment. Membership installments are a separate commitment from any program payment plan.</p>';
+    html += '<button type="button" class="btn btn-gold program-select" data-tier="' + tier + '" style="margin-top:16px; width:100%; justify-content:center;">Continue</button>';
+    wrap.innerHTML = html;
+    return wrap;
+  }
+
+  TIERS.forEach(function (tier) {
+    fetch('/api/deal-sheet?tier=' + encodeURIComponent(tier))
       .then(function (res) { return res.json(); })
       .then(function (deal) {
-        if (deal.tier === 'membership') {
-          el.textContent = chewFormatCents(deal.entryAmountCents) + ' entry · then ' + chewFormatCents(deal.recurringAmountCents) + '/month';
-        } else {
-          el.textContent = chewFormatCents(deal.entryAmountCents) + ' entry · credited toward ' + chewFormatCents(deal.fullFeeCents);
-        }
+        var card = deal.oneTime ? buildOneTimeCard(tier, deal) : buildMembershipCard(tier, deal);
+        cardsEl.appendChild(card);
+        wireCard(card);
       })
       .catch(function () {
-        el.textContent = 'See pricing in your agreement';
+        var errCard = document.createElement('div');
+        errCard.className = 'glass card';
+        errCard.innerHTML = '<p>Pricing for this engagement is temporarily unavailable. Please refresh, or reply to your acceptance email.</p>';
+        cardsEl.appendChild(errCard);
       });
   });
 
-  document.querySelectorAll('.program-select').forEach(function (btn) {
+  function wireCard(card) {
+    var radios = card.querySelectorAll('.plan-option input[type="radio"]');
+    radios.forEach(function (radio) {
+      radio.addEventListener('change', function () {
+        card.querySelectorAll('.plan-option').forEach(function (label) { label.classList.remove('is-selected'); });
+        radio.closest('.plan-option').classList.add('is-selected');
+      });
+    });
+
+    var btn = card.querySelector('.program-select');
     btn.addEventListener('click', function () {
       if (!token) return;
       var tier = btn.getAttribute('data-tier');
-      window.location = 'sign-agreement.html?token=' + encodeURIComponent(token) + '&tier=' + encodeURIComponent(tier);
+      var selectedPlan = card.querySelector('.plan-option input[type="radio"]:checked');
+      var url = 'sign-agreement.html?token=' + encodeURIComponent(token) + '&tier=' + encodeURIComponent(tier);
+      if (selectedPlan) url += '&plan=' + encodeURIComponent(selectedPlan.value);
+      window.location = url;
     });
-  });
+  }
 })();
 </script>
 

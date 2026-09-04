@@ -11,7 +11,11 @@
 //      customer.subscription.deleted (the latter two keep membership status in
 //      sync — cancel is client self-service via the Billing Portal; pause is
 //      not a Billing Portal feature, so it only happens if CHEW sets
-//      pause_collection via the API/dashboard directly)
+//      pause_collection via the API/dashboard directly), invoice.payment_succeeded,
+//      invoice.payment_failed (Monthly Plan program-purchase installments,
+//      billed off a Stripe Subscription Schedule — see the phase ===
+//      'plan_payment' handling below. Never fires for Membership, which
+//      bills off a plain Subscription with its own price/webhook path.)
 //   4. Copy the "Signing secret" (starts with whsec_...) into Vercel as
 //      STRIPE_WEBHOOK_SECRET — never in this file.
 //
@@ -28,7 +32,12 @@ const {
   sendRemainderConfirmationEmail,
   sendAdminBonusSessionNotice,
   sendOwnerEnrollmentNotice,
+  sendPlanPaymentReceivedEmail,
+  sendPlanPaymentFailedEmail,
+  sendPlanPaidInFullEmail,
+  sendOwnerPlanPaymentFailedNotice,
 } = require('../lib/email');
+const { PROGRAMS } = require('../lib/programs');
 
 // Payment state (entry_paid_at / remainder_paid_at) and notification state
 // are separate facts, claimed separately -- see db/schema.sql for why.
@@ -53,11 +62,25 @@ const {
 // than trusting a value read before the lock. A send failure rolls back
 // and leaves the column null, so it's always safe to retry -- never a
 // permanently stuck "claimed but never sent" state.
+// Also covers the new payment-plan model's purchase-level notifications:
+// initial payment (the first charge for a one-time engagement, whichever
+// plan), paid-in-full (fires once, from either plan), and payment-failed
+// (an installment declined — see NOTIFICATION_COLUMNS below and the
+// invoice.payment_succeeded/invoice.payment_failed handlers). Per-
+// installment notices are a separate concern (claimAndSendInstallmentNotification)
+// since program_purchase_installments is a genuine one-row-per-event
+// ledger, unlike remainder.
 const NOTIFICATION_COLUMNS = {
   entryCustomer: 'customer_enrollment_notified_at',
   entryOwner: 'owner_enrollment_notified_at',
   remainderCustomer: 'remainder_customer_notified_at',
   remainderOwner: 'remainder_owner_notified_at',
+  initialCustomer: 'initial_payment_customer_notified_at',
+  initialOwner: 'initial_payment_owner_notified_at',
+  paidInFullCustomer: 'paid_in_full_customer_notified_at',
+  paidInFullOwner: 'paid_in_full_owner_notified_at',
+  failedCustomer: 'payment_failed_customer_notified_at',
+  failedOwner: 'payment_failed_owner_notified_at',
 };
 
 async function claimAndSendNotification(purchaseId, kind, sendFn) {
@@ -68,7 +91,10 @@ async function claimAndSendNotification(purchaseId, kind, sendFn) {
     await client.query('BEGIN');
     const result = await client.query(
       `SELECT customer_enrollment_notified_at, owner_enrollment_notified_at,
-              remainder_customer_notified_at, remainder_owner_notified_at
+              remainder_customer_notified_at, remainder_owner_notified_at,
+              initial_payment_customer_notified_at, initial_payment_owner_notified_at,
+              paid_in_full_customer_notified_at, paid_in_full_owner_notified_at,
+              payment_failed_customer_notified_at, payment_failed_owner_notified_at
        FROM program_purchases WHERE id = $1 FOR UPDATE`,
       [purchaseId]
     );
@@ -89,6 +115,60 @@ async function claimAndSendNotification(purchaseId, kind, sendFn) {
   } finally {
     client.release();
   }
+}
+
+// Per-installment counterpart of claimAndSendNotification, scoped to
+// program_purchase_installments — a genuine one-row-per-payment-event
+// ledger (unlike the purchase-level columns above), so each installment's
+// customer receipt is claimed independently on its own row.
+async function claimAndSendInstallmentNotification(installmentId, sendFn) {
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    const result = await client.query(
+      `SELECT customer_notified_at FROM program_purchase_installments WHERE id = $1 FOR UPDATE`,
+      [installmentId]
+    );
+    const row = result.rows[0];
+    if (!row || row.customer_notified_at) {
+      await client.query('ROLLBACK');
+      return false;
+    }
+
+    await sendFn();
+
+    await client.query(`UPDATE program_purchase_installments SET customer_notified_at = now() WHERE id = $1`, [installmentId]);
+    await client.query('COMMIT');
+    return true;
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+// Idempotent installment recording — INSERT ... ON CONFLICT DO NOTHING
+// against the UNIQUE stripe_invoice_id constraint, same role
+// entry_stripe_session_id plays for one-time payments. Stripe redelivers
+// invoice.payment_succeeded/failed on anything but a fast 2xx; this makes
+// a redelivery a no-op read instead of a duplicate charge record.
+async function ensureInstallmentRecorded(purchaseId, invoiceId, amountCents, status) {
+  const insertResult = await query(
+    `INSERT INTO program_purchase_installments (purchase_id, stripe_invoice_id, amount_cents, status)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (stripe_invoice_id) DO NOTHING
+     RETURNING id`,
+    [purchaseId, invoiceId, amountCents, status]
+  );
+  if (insertResult.rows[0]) {
+    return { id: insertResult.rows[0].id, isNew: true };
+  }
+  const existing = await query(
+    `SELECT id FROM program_purchase_installments WHERE stripe_invoice_id = $1`,
+    [invoiceId]
+  );
+  return { id: existing.rows[0].id, isNew: false };
 }
 
 // Vercel needs the raw request body (unparsed) to verify the Stripe signature.
@@ -137,7 +217,10 @@ module.exports = async (req, res) => {
         const purchaseResult = await query(
           `SELECT id, access_token, tier, client_name, client_email, remainder_amount_cents,
                   application_id, agreement_signature_id, entry_paid_at, remainder_paid_at,
-                  membership_first_charge_at, remainder_payment_method, bonus_session_earned
+                  membership_first_charge_at, remainder_payment_method, bonus_session_earned,
+                  payment_plan_type, installment_amount_cents,
+                  installment_count, installments_paid, total_contract_amount_cents,
+                  initial_payment_paid_at
            FROM program_purchases WHERE id = $1`,
           [purchaseId]
         );
@@ -294,6 +377,143 @@ module.exports = async (req, res) => {
               console.error(`OWNER_ENROLLMENT_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
             }
           }
+        } else if (phase === 'plan_payment') {
+          // First payment for a one-time engagement (Focused Builder /
+          // Infrastructure / Advanced Infrastructure / Executive) under
+          // the new pay-in-full-or-monthly model — see
+          // api/create-program-checkout-session.js and lib/programs.js.
+          // Step 2: mark it confirmed idempotently, same WHERE ...IS NULL
+          // pattern as entry/remainder above, decoupled from notification
+          // sends below.
+          if (!purchase.initial_payment_paid_at) {
+            if (purchase.payment_plan_type === 'monthly') {
+              // The Checkout Session (mode: 'payment', setup_future_usage:
+              // 'off_session') just saved a reusable payment method on a
+              // real Stripe Customer. Bill the REMAINING installments only
+              // via a Subscription Schedule — never the initial payment
+              // again — starting ~1 month out, ending itself automatically
+              // after installment_count charges. No interest/financing
+              // charge is ever added (see lib/programs.js / locked doctrine).
+              const remainingCount = purchase.installment_count;
+              let scheduleId = null;
+              let subscriptionId = null;
+              let nextPaymentDueAt = null;
+
+              if (remainingCount > 0) {
+                const startDate = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
+                const schedule = await stripe.subscriptionSchedules.create({
+                  customer: session.customer,
+                  start_date: startDate,
+                  end_behavior: 'cancel',
+                  phases: [{
+                    items: [{
+                      price_data: {
+                        currency: 'usd',
+                        unit_amount: purchase.installment_amount_cents,
+                        recurring: { interval: 'month' },
+                        product_data: { name: `${PROGRAMS[purchase.tier].label} — Monthly Plan Installment` },
+                      },
+                      quantity: 1,
+                    }],
+                    iterations: remainingCount,
+                  }],
+                });
+                scheduleId = schedule.id;
+                // The schedule's underlying Subscription doesn't exist
+                // until its first phase actually starts (start_date is in
+                // the future), so schedule.subscription is null here. The
+                // invoice.payment_succeeded/failed handlers below backfill
+                // stripe_subscription_id the first time they see it.
+                subscriptionId = schedule.subscription || null;
+                nextPaymentDueAt = new Date(startDate * 1000).toISOString();
+              }
+
+              await query(
+                `UPDATE program_purchases
+                 SET initial_payment_paid_at = now(), status = 'active',
+                     stripe_customer_id = $1, stripe_subscription_schedule_id = $2,
+                     stripe_subscription_id = $3, payment_plan_status = $4,
+                     next_payment_due_at = $5
+                 WHERE id = $6 AND initial_payment_paid_at IS NULL`,
+                [
+                  session.customer, scheduleId, subscriptionId,
+                  remainingCount > 0 ? 'current' : 'paid_in_full',
+                  nextPaymentDueAt, purchase.id,
+                ]
+              );
+              if (remainingCount <= 0) {
+                await query(
+                  `UPDATE program_purchases SET paid_in_full_at = now() WHERE id = $1 AND paid_in_full_at IS NULL`,
+                  [purchase.id]
+                );
+              }
+            } else {
+              // pay_in_full: nothing further is ever billed. Both facts —
+              // initial payment confirmed and paid-in-full — are true the
+              // same moment.
+              await query(
+                `UPDATE program_purchases
+                 SET initial_payment_paid_at = now(), paid_in_full_at = now(),
+                     status = 'active', stripe_customer_id = $1, payment_plan_status = 'paid_in_full'
+                 WHERE id = $2 AND initial_payment_paid_at IS NULL`,
+                [session.customer, purchase.id]
+              );
+            }
+          }
+
+          // Steps 3+: attempt only whichever notification is still
+          // missing — initial-payment notice always applies; paid-in-full
+          // notices only apply when this charge finished the plan (i.e.
+          // Pay in Full, or a Monthly Plan with zero remaining installments).
+          try {
+            const sent = await claimAndSendNotification(purchase.id, 'initialCustomer', () => sendPlanPaymentReceivedEmail({
+              to: purchase.client_email,
+              name: purchase.client_name,
+              tier: purchase.tier,
+              amountPaidCents: session.amount_total,
+              isInitial: true,
+              installmentNumber: null,
+              installmentCount: purchase.installment_count,
+              remainingBalanceCents: purchase.payment_plan_type === 'monthly'
+                ? (purchase.installment_amount_cents || 0) * (purchase.installment_count || 0)
+                : 0,
+              nextPaymentDate: null,
+            }));
+            if (!sent) console.log(`Webhook: initial-payment customer notification for purchase ${purchase.id} already sent — skipping.`);
+          } catch (emailErr) {
+            console.error(`PLAN_INITIAL_PAYMENT_CUSTOMER_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
+          }
+
+          try {
+            const sent = await claimAndSendNotification(purchase.id, 'initialOwner', () => sendOwnerEnrollmentNotice({
+              applicationId: purchase.application_id,
+              purchaseId: purchase.id,
+              fullName: purchase.client_name,
+              tier: purchase.tier,
+              amountPaidCents: session.amount_total,
+              paymentStatus: purchase.payment_plan_type === 'pay_in_full' ? 'Paid in full' : 'Initial payment received — monthly plan active',
+              signatureId: purchase.agreement_signature_id,
+              nextAction: purchase.payment_plan_type === 'pay_in_full'
+                ? 'No further payment action needed.'
+                : 'Remaining installments will bill automatically. No action needed unless a charge fails.',
+            }));
+            if (!sent) console.log(`Webhook: initial-payment owner notification for purchase ${purchase.id} already sent — skipping.`);
+          } catch (emailErr) {
+            console.error(`PLAN_INITIAL_PAYMENT_OWNER_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
+          }
+
+          if (purchase.payment_plan_type === 'pay_in_full') {
+            try {
+              const sent = await claimAndSendNotification(purchase.id, 'paidInFullCustomer', () => sendPlanPaidInFullEmail({
+                to: purchase.client_email,
+                name: purchase.client_name,
+                tier: purchase.tier,
+              }));
+              if (!sent) console.log(`Webhook: paid-in-full customer notification for purchase ${purchase.id} already sent — skipping.`);
+            } catch (emailErr) {
+              console.error(`PLAN_PAID_IN_FULL_CUSTOMER_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
+            }
+          }
         }
       } else if (bookingId) {
         // Came from our own custom checkout flow (legacy path, kept for
@@ -384,12 +604,176 @@ module.exports = async (req, res) => {
     }
 
     try {
+      // Scoped to tier = 'membership': stripe_subscription_id is also
+      // populated on one-time-engagement Monthly Plan purchases once their
+      // Subscription Schedule's phase begins (see the invoice.payment_*
+      // handlers below) — those are a finite program payment plan, not
+      // Membership, and must never have membership_status written onto
+      // them just because both happen to use a Stripe Subscription
+      // underneath. "PROGRAM INSTALLMENTS ARE NOT MEMBERSHIP."
       await query(
-        `UPDATE program_purchases SET membership_status = $1 WHERE stripe_subscription_id = $2`,
+        `UPDATE program_purchases SET membership_status = $1 WHERE stripe_subscription_id = $2 AND tier = 'membership'`,
         [membershipStatus, subscription.id]
       );
     } catch (err) {
       console.error('Error syncing subscription status:', err.message);
+    }
+  }
+
+  if (event.type === 'invoice.payment_succeeded' || event.type === 'invoice.payment_failed') {
+    // Fires for each Monthly Plan installment billed off a Subscription
+    // Schedule created in the phase === 'plan_payment' branch above (the
+    // initial payment itself is charged via Checkout, not an invoice, so
+    // it never reaches here). Never fires for Membership, which uses a
+    // plain open-ended Subscription with its own price, not a schedule —
+    // this handler only acts on purchases already marked
+    // payment_plan_type = 'monthly'.
+    const invoice = event.data.object;
+    const invoiceId = invoice.id;
+    const subscriptionId = invoice.subscription;
+    const customerId = invoice.customer;
+    const amountCents = event.type === 'invoice.payment_succeeded' ? invoice.amount_paid : invoice.amount_due;
+
+    try {
+      let purchase = null;
+      if (subscriptionId) {
+        const bySubscription = await query(
+          `SELECT id, application_id, agreement_signature_id, client_name, client_email, tier,
+                  installment_count, installments_paid, payment_plan_type
+           FROM program_purchases WHERE stripe_subscription_id = $1 AND payment_plan_type = 'monthly'`,
+          [subscriptionId]
+        );
+        purchase = bySubscription.rows[0] || null;
+      }
+
+      if (!purchase && customerId) {
+        // First invoice off a schedule created with a future start_date:
+        // schedule.subscription was still null at creation time (see the
+        // phase === 'plan_payment' branch above), so this is the first
+        // moment the real subscription id is knowable. Backfill it now so
+        // every later invoice event finds this purchase by subscription id.
+        const byCustomer = await query(
+          `SELECT id, application_id, agreement_signature_id, client_name, client_email, tier,
+                  installment_count, installments_paid, payment_plan_type
+           FROM program_purchases
+           WHERE stripe_customer_id = $1 AND payment_plan_type = 'monthly' AND stripe_subscription_id IS NULL`,
+          [customerId]
+        );
+        purchase = byCustomer.rows[0] || null;
+        if (purchase && subscriptionId) {
+          await query(`UPDATE program_purchases SET stripe_subscription_id = $1 WHERE id = $2`, [subscriptionId, purchase.id]);
+        }
+      }
+
+      if (!purchase) {
+        console.error(`Webhook: no monthly-plan program_purchases row found for invoice ${invoiceId} (subscription ${subscriptionId}, customer ${customerId}).`);
+      } else if (event.type === 'invoice.payment_succeeded') {
+        const { id: installmentId, isNew } = await ensureInstallmentRecorded(purchase.id, invoiceId, amountCents, 'paid');
+
+        if (isNew) {
+          // A success after a prior failure resolves it — clear the
+          // failed-notification claims so a genuinely later, different
+          // failure can notify again instead of finding the columns
+          // already (stale-)claimed.
+          const updateResult = await query(
+            `UPDATE program_purchases
+             SET installments_paid = installments_paid + 1, payment_plan_status = 'current',
+                 payment_failed_customer_notified_at = NULL, payment_failed_owner_notified_at = NULL
+             WHERE id = $1
+             RETURNING installments_paid, installment_count`,
+            [purchase.id]
+          );
+          const updated = updateResult.rows[0];
+          const paidInFull = updated.installments_paid >= updated.installment_count;
+
+          if (paidInFull) {
+            await query(
+              `UPDATE program_purchases SET paid_in_full_at = now(), payment_plan_status = 'paid_in_full' WHERE id = $1 AND paid_in_full_at IS NULL`,
+              [purchase.id]
+            );
+          }
+
+          try {
+            const sent = await claimAndSendInstallmentNotification(installmentId, () => sendPlanPaymentReceivedEmail({
+              to: purchase.client_email,
+              name: purchase.client_name,
+              tier: purchase.tier,
+              amountPaidCents: amountCents,
+              isInitial: false,
+              installmentNumber: updated.installments_paid,
+              installmentCount: updated.installment_count,
+              remainingBalanceCents: Math.max(0, updated.installment_count - updated.installments_paid) * amountCents,
+              nextPaymentDate: null,
+            }));
+            if (!sent) console.log(`Webhook: installment notification ${installmentId} already sent — skipping.`);
+          } catch (emailErr) {
+            console.error(`INSTALLMENT_PAID_EMAIL_FAILED installment=${installmentId}:`, emailErr.message);
+          }
+
+          if (paidInFull) {
+            try {
+              const sent = await claimAndSendNotification(purchase.id, 'paidInFullCustomer', () => sendPlanPaidInFullEmail({
+                to: purchase.client_email,
+                name: purchase.client_name,
+                tier: purchase.tier,
+              }));
+              if (!sent) console.log(`Webhook: paid-in-full customer notification for purchase ${purchase.id} already sent — skipping.`);
+            } catch (emailErr) {
+              console.error(`PLAN_PAID_IN_FULL_CUSTOMER_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
+            }
+            try {
+              const sent = await claimAndSendNotification(purchase.id, 'paidInFullOwner', () => sendOwnerEnrollmentNotice({
+                applicationId: purchase.application_id,
+                purchaseId: purchase.id,
+                fullName: purchase.client_name,
+                tier: purchase.tier,
+                amountPaidCents: amountCents,
+                paymentStatus: 'Monthly plan paid in full',
+                signatureId: purchase.agreement_signature_id,
+                nextAction: 'No further payment action needed.',
+              }));
+              if (!sent) console.log(`Webhook: paid-in-full owner notification for purchase ${purchase.id} already sent — skipping.`);
+            } catch (emailErr) {
+              console.error(`PLAN_PAID_IN_FULL_OWNER_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
+            }
+          }
+        } else {
+          console.log(`Webhook: installment invoice ${invoiceId} already recorded — skipping.`);
+        }
+      } else {
+        // invoice.payment_failed
+        const { isNew } = await ensureInstallmentRecorded(purchase.id, invoiceId, amountCents, 'failed');
+        if (isNew) {
+          await query(`UPDATE program_purchases SET payment_plan_status = 'payment_failed' WHERE id = $1`, [purchase.id]);
+        }
+
+        try {
+          const sent = await claimAndSendNotification(purchase.id, 'failedCustomer', () => sendPlanPaymentFailedEmail({
+            to: purchase.client_email,
+            name: purchase.client_name,
+            tier: purchase.tier,
+            amountDueCents: amountCents,
+          }));
+          if (!sent) console.log(`Webhook: payment-failed customer notification for purchase ${purchase.id} already sent — skipping.`);
+        } catch (emailErr) {
+          console.error(`PLAN_PAYMENT_FAILED_CUSTOMER_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
+        }
+
+        try {
+          const sent = await claimAndSendNotification(purchase.id, 'failedOwner', () => sendOwnerPlanPaymentFailedNotice({
+            purchaseId: purchase.id,
+            fullName: purchase.client_name,
+            email: purchase.client_email,
+            tier: purchase.tier,
+            amountDueCents: amountCents,
+          }));
+          if (!sent) console.log(`Webhook: payment-failed owner notification for purchase ${purchase.id} already sent — skipping.`);
+        } catch (emailErr) {
+          console.error(`PLAN_PAYMENT_FAILED_OWNER_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
+        }
+      }
+    } catch (err) {
+      console.error(`Error processing ${event.type}:`, err.message);
     }
   }
 

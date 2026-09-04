@@ -1,16 +1,8 @@
 // lib/agreementText.js
 //
 // THE single canonical source for the CHEW LLC Client Services Agreement.
-// Previously this text lived only as static inline HTML in
-// sign-agreement.html, with lib/agreementRegistry.js separately
-// hand-typing verbatim copies of the scope/refund/cancellation/does-not-
-// promise language for the Deal Sheet, and sign-agreement.html's own
-// "Key terms at a glance" box asserting the same numbers a third time.
-// Three places, kept in sync only by developer discipline and a code
-// comment asking nicely. That's the exact drift risk this file removes:
-// every fact below is defined exactly once, as data, and everything that
-// needs to say it (the full agreement body, the Deal Sheet, the Key Terms
-// box) reads the same constant.
+// Every fact below is defined exactly once, as data — the full agreement
+// body, the Deal Sheet, and the Key Terms box all read the same constants.
 //
 // Bump AGREEMENT_VERSION (lib/agreement.js) any time the text below
 // materially changes, so existing signatures stay tied to the version
@@ -18,48 +10,83 @@
 // text at signature time — see agreement_content_hash in db/schema.sql —
 // so an edit made without a version bump is still detectable after the
 // fact, not just discipline-dependent.
+//
+// FLAGGED FOR REVIEW (not silently decided): the "document review event"
+// definition in Section 3.6 and the failed-installment-payment process in
+// Section 3.5 are both new substantive service terms introduced by the
+// approved engagement/payment-plan architecture. Reasonable defaults are
+// proposed below — LEGAL COUNSEL REVIEW RECOMMENDED before this version
+// goes live with real signatures against it.
 
 const { AGREEMENT_VERSION } = require('./agreement');
+const { getProgram, isOneTimeTier } = require('./programs');
 
 const TIER_LABELS = {
+  focused_builder: 'Focused Builder',
   infrastructure: 'Infrastructure Program',
+  advanced_infrastructure: 'Advanced Infrastructure',
   executive: 'Executive Advisory',
   membership: 'Membership',
 };
 
-// Section 1 / Deal Sheet "CHEW provides"
-const SCOPE = {
-  infrastructure: 'Financial Blueprint Assessment; a defined set of strategy sessions; access to the CHEW Client Portal (Blueprint, Tasks, Documents, Advisor); structured task assignments with strategist verification.',
-  executive: 'Everything in the Infrastructure Program, plus additional strategy sessions at an elevated cadence and expanded 1:1 advisory access, as described in the program materials you reviewed before selecting this tier.',
-  membership: 'Ongoing monthly access to the CHEW Client Portal, educational content, and periodic check-ins, billed on a recurring basis after the initial trial period described in Section 3.',
-};
+function formatCents(cents) {
+  return `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 0 })}`;
+}
+
+// Section 1 / Deal Sheet "CHEW provides" — built from the same structured
+// program data api/create-program-checkout-session.js and the Deal Sheet
+// both read (lib/programs.js), so scope, session counts, and document
+// review limits can never drift from what's actually being sold.
+function scopeFor(tier) {
+  const p = getProgram(tier);
+  if (tier === 'membership') {
+    return 'Ongoing monthly access to the CHEW Client Portal, educational content, and periodic check-ins, billed on a recurring basis after the initial trial period described in Section 3.';
+  }
+  const parts = [
+    p.deliverable,
+    `${p.sessionCount} strategy sessions (${p.sessionMinutes} minutes each) over up to ${p.durationDays} days`,
+    `${p.documentReviewEvents} defined document review event${p.documentReviewEvents === 1 ? '' : 's'} (see Section 3.6)`,
+    p.advisoryAccess,
+  ];
+  if (p.responseTarget) parts.push(`Normal response target: ${p.responseTarget.toLowerCase().startsWith('priority') ? p.responseTarget : p.responseTarget}.`);
+  return parts.join('; ') + '.';
+}
+const SCOPE = Object.fromEntries(Object.keys(TIER_LABELS).map((t) => [t, scopeFor(t)]));
 
 // Section 2 / Deal Sheet "CHEW does not promise" — identical across tiers
-// today (the limits on what CHEW can promise don't change by program), so
-// this is one string, not a per-tier map with three copies of the same
-// sentence.
+// (the limits on what CHEW can promise don't change by program).
 const DOES_NOT_PROMISE = 'CHEW does not guarantee any specific financial outcome, income level, credit score change, loan approval, or funding approval, and does not guarantee that you will qualify for, obtain, or be approved for any specific financing, credit product, or business opportunity discussed during the engagement.';
 
-// Section 3.4 / Deal Sheet "Refund"
-const REFUND = {
-  infrastructure: 'The entry fee is refundable in full if you request cancellation in writing within 3 business days of payment, provided you have not yet attended a strategy session or received the Financial Blueprint Assessment. Once a strategy session has been delivered or the Financial Blueprint Assessment has been provided, the entry fee is non-refundable. Remainder balance payments are non-refundable once paid, except where required by applicable law.',
-  executive: 'The entry fee is refundable in full if you request cancellation in writing within 3 business days of payment, provided you have not yet attended a strategy session or received the Financial Blueprint Assessment. Once a strategy session has been delivered or the Financial Blueprint Assessment has been provided, the entry fee is non-refundable. Remainder balance payments are non-refundable once paid, except where required by applicable law.',
-  membership: 'The entry fee is refundable in full if you request cancellation in writing within 3 business days of payment, provided you have not yet attended a strategy session or received the Financial Blueprint Assessment. Once a strategy session has been delivered or the Financial Blueprint Assessment has been provided, the entry fee is non-refundable. Membership fees are non-refundable for any partial month; you may cancel at any time to stop future charges.',
-};
+// Section 3.4 / Deal Sheet "Refund" — economics preserved from the prior
+// approved version (3-business-day window, before first session/delivery),
+// wording generalized from "entry fee" to "initial payment" now that a
+// one-time engagement's first charge can be either the full price
+// (Pay in Full) or the first installment (Monthly).
+function refundFor(tier) {
+  if (tier === 'membership') {
+    return 'The initial payment is refundable in full if you request cancellation in writing within 3 business days of payment, provided you have not yet attended a strategy session or received your Financial Blueprint. Once a strategy session has been delivered or a Financial Blueprint has been provided, the initial payment is non-refundable. Membership fees are non-refundable for any partial month; you may cancel at any time to stop future charges.';
+  }
+  return 'Your initial payment (the full price under Pay in Full, or the first payment under the Monthly Plan) is refundable in full if you request cancellation in writing within 3 business days of payment, provided you have not yet attended a strategy session or received your Financial Blueprint. Once a strategy session has been delivered or a Financial Blueprint has been provided, all amounts paid become non-refundable, and any remaining Monthly Plan installments remain due for services already in progress, except where required by applicable law.';
+}
+const REFUND = Object.fromEntries(Object.keys(TIER_LABELS).map((t) => [t, refundFor(t)]));
 
 // Section 5 / Deal Sheet "Cancellation"
-const CANCELLATION = {
-  infrastructure: 'You may cancel at any time by written notice. Refunds, if any, are governed by the refund terms above. Cancelling does not relieve you of a remainder balance already invoiced for services already delivered.',
-  executive: 'You may cancel at any time by written notice. Refunds, if any, are governed by the refund terms above. Cancelling does not relieve you of a remainder balance already invoiced for services already delivered.',
-  membership: 'You may cancel at any time, effective at the end of the current billing period, through the Client Portal’s billing management or by written notice. There is no early-termination fee.',
-};
+function cancellationFor(tier) {
+  if (tier === 'membership') {
+    return 'You may cancel at any time, effective at the end of the current billing period, through the Client Portal’s billing management or by written notice. There is no early-termination fee.';
+  }
+  return 'You may cancel at any time by written notice. Refunds, if any, are governed by the refund terms above. Cancelling does not relieve you of Monthly Plan installments already invoiced for services already delivered.';
+}
+const CANCELLATION = Object.fromEntries(Object.keys(TIER_LABELS).map((t) => [t, cancellationFor(t)]));
 
 // Deal Sheet "What happens next"
-const NEXT_STEP = {
-  infrastructure: 'You’ll be redirected to Stripe’s secure checkout to pay your entry fee. The remainder balance is billed separately, later, once you’re ready.',
-  executive: 'You’ll be redirected to Stripe’s secure checkout to pay your entry fee. The remainder balance is billed separately, later, once you’re ready.',
-  membership: 'You’ll be redirected to Stripe’s secure checkout to pay your entry fee and set up your membership. Your first monthly charge happens automatically after the 30-day trial, unless you cancel first.',
-};
+function nextStepFor(tier) {
+  if (tier === 'membership') {
+    return 'You’ll be redirected to Stripe’s secure checkout to pay your entry fee and set up your membership. Your first monthly charge happens automatically after the 30-day trial, unless you cancel first.';
+  }
+  return 'You’ll be redirected to Stripe’s secure checkout to pay according to the payment option you selected — the full price today under Pay in Full, or your initial payment today under the Monthly Plan, with installments billed automatically after that.';
+}
+const NEXT_STEP = Object.fromEntries(Object.keys(TIER_LABELS).map((t) => [t, nextStepFor(t)]));
 
 // The "Key terms at a glance" box. These are the exact same facts as the
 // operative sections below (3.4, 4.3, 4.6, 9) — expressed once here, both
@@ -71,6 +98,7 @@ const KEY_TERMS = {
   forfeitureSessions: 2,
   forfeitureDays: 14,
   governingLaw: 'State of Florida',
+  documentReviewLimit: '15 pages or 5 documents submitted together for one related purpose',
 };
 
 function esc(s) {
@@ -83,16 +111,45 @@ function esc(s) {
 // user input) — safe to inject directly.
 function getAgreementSections(tier) {
   if (!TIER_LABELS[tier]) throw new Error(`Unknown tier: ${tier}`);
+  const program = getProgram(tier);
+  const oneTime = isOneTimeTier(tier);
+
+  const paymentOptionsHtml = oneTime ? `
+        <p><strong>3.2 Payment Options.</strong> The total price for your selected engagement is <strong>${esc(formatCents(program.totalCents))}</strong>, quoted and confirmed at checkout. You choose one of two payment options — both total the identical price; the option you choose changes only the timing of payment, never the scope, quality, or total cost of your engagement:</p>
+        <ul>
+          <li><strong>Pay in Full</strong> — one payment of ${esc(formatCents(program.totalCents))} today.</li>
+          <li><strong>Monthly Plan</strong> — ${esc(formatCents(program.monthly.initialCents))} today, then ${esc(program.monthly.installmentCount)} monthly payments of ${esc(formatCents(program.monthly.installmentCents))}, billed automatically to the payment method on file.</li>
+        </ul>
+        <p>Your selected option, and the exact amounts and schedule above, are recorded with your signature below and confirmed again on your Deal Sheet before you pay.</p>
+  ` : '';
+
+  const feesSection = oneTime ? `
+        <p><strong>3.1 Total Engagement Price.</strong> ${esc(formatCents(program.totalCents))}, covering the full scope described in Section 1. CHEW does not charge more than this for the scope you signed for.</p>
+        ${paymentOptionsHtml}
+        <p><strong>3.3 Membership.</strong> Not applicable to this engagement. CHEW Membership, if you choose it after this engagement, is a separate, optional, ongoing service with its own terms.</p>
+        <p><strong>3.4 Refunds.</strong></p>
+        <ul>
+          <li>${esc(REFUND[tier])}</li>
+        </ul>
+        <p><strong>3.5 Late or Failed Monthly Plan Payments.</strong> If a scheduled Monthly Plan installment fails, CHEW's payment processor will automatically retry the charge. If you're on the Monthly Plan, you'll be notified immediately of any failed payment. If the payment remains unresolved after a reasonable grace period, CHEW may pause further session delivery and Client Portal access until the balance is cured, and will notify you before doing so. CHEW will not delete your signed Agreement, delete work already completed, or charge you twice for the same installment. Continued non-payment beyond 15 days of notice is grounds for termination under Section 5.</p>
+        <p><strong>3.6 Document Review Events.</strong> A document review event, as referenced in Section 1, covers up to ${esc(KEY_TERMS.documentReviewLimit)} (for example: one tax return, one month of bank statements, or one business formation document set). A larger or unrelated submission may be split across multiple review events, or may fall outside your engagement's scope and require a new engagement under Section 4.7 below.</p>
+  ` : `
+        <p><strong>3.1 Entry Fee.</strong> You pay the entry fee for Membership at the time of signing this Agreement, as quoted at checkout.</p>
+        <p><strong>3.3 Membership Recurring Fee.</strong> Membership includes a 30-day trial period beginning today. Unless you cancel before the trial ends, CHEW will begin billing the recurring monthly membership fee automatically at the end of the trial period, and monthly thereafter, until cancelled.</p>
+        <p><strong>3.4 Refunds.</strong></p>
+        <ul>
+          <li>${esc(REFUND[tier])}</li>
+        </ul>
+        <p><strong>3.5 Late or Failed Payments.</strong> If a scheduled membership payment fails, CHEW will notify you and attempt to collect payment. CHEW may suspend portal access until payment is resolved. Continued non-payment beyond 15 days of notice is grounds for termination under Section 5.</p>
+  `;
 
   return [
     {
       id: 'scope',
       heading: '1. Scope of Services',
       html: `
-        <p>CHEW provides financial education, strategy, implementation guidance, and accountability support. The specific services you receive depend on the program you selected:</p>
-        <p><strong>Infrastructure Program</strong> — ${esc(SCOPE.infrastructure)}</p>
-        <p><strong>Executive Advisory</strong> — ${esc(SCOPE.executive)}</p>
-        <p><strong>Membership</strong> — ${esc(SCOPE.membership)}</p>
+        <p>CHEW provides financial education, strategy, implementation guidance, and accountability support. The specific services you receive depend on the engagement you selected:</p>
+        <p><strong>${esc(TIER_LABELS[tier])}</strong> — ${esc(SCOPE[tier])}</p>
       `,
     },
     {
@@ -112,19 +169,7 @@ function getAgreementSections(tier) {
     {
       id: 'fees',
       heading: '3. Fees and Payment',
-      html: `
-        <p><strong>3.1 Entry Fee.</strong> You pay the entry fee for the selected program at the time of signing this Agreement, as quoted at checkout.</p>
-        <p><strong>3.2 Remainder Balance (Infrastructure and Executive only).</strong> The balance of the full program fee is due according to the payment option you select at checkout, as a single remaining-balance payment — not an installment plan. Until it's paid in full, CHEW may limit delivery of program components that have not yet been rendered.</p>
-        <p><strong>3.3 Membership Recurring Fee.</strong> Membership includes a 30-day trial period beginning today. Unless you cancel before the trial ends, CHEW will begin billing the recurring monthly membership fee automatically at the end of the trial period, and monthly thereafter, until cancelled.</p>
-        <p><strong>3.4 Refunds.</strong></p>
-        <ul>
-          <li>The entry fee is refundable in full if you request cancellation in writing within ${esc(KEY_TERMS.refundWindow)} of payment, provided you have not yet attended a strategy session or received the Financial Blueprint Assessment.</li>
-          <li>Once a strategy session has been delivered or the Financial Blueprint Assessment has been provided, the entry fee is non-refundable.</li>
-          <li>Remainder balance payments are non-refundable once paid, except where required by applicable law.</li>
-          <li>Membership fees are non-refundable for any partial month; you may cancel at any time to stop future charges, per Section 5.</li>
-        </ul>
-        <p><strong>3.5 Late or Failed Payments.</strong> If a scheduled remainder or membership payment fails, CHEW will notify you and attempt to collect payment. CHEW may suspend portal access and further service delivery until payment is resolved. Continued non-payment beyond 15 days of notice is grounds for termination under Section 5.</p>
-      `,
+      html: feesSection,
     },
     {
       id: 'obligations',
@@ -137,15 +182,15 @@ function getAgreementSections(tier) {
         <p><strong>4.4 Responsiveness.</strong> Respond to strategist communications within a reasonable time. CHEW cannot deliver strategy or verify tasks for a client who cannot be reached.</p>
         <p><strong>4.5 Good-Faith Participation.</strong> Engage with the program honestly and in good faith.</p>
         <p><strong>4.6 Forfeiture of Program Access.</strong> Your spot in the program may be forfeited if: you miss ${esc(KEY_TERMS.forfeitureSessions)} consecutively scheduled sessions without the notice described in 4.3; you are unresponsive to strategist communications for ${esc(KEY_TERMS.forfeitureDays)} consecutive days; you provide materially false information relevant to the strategy being built; or you engage in abusive or harassing conduct toward CHEW staff.</p>
-        <p>Before treating a forfeiture condition as triggered, CHEW will make a reasonable attempt to reach you and confirm the situation. If forfeiture is confirmed: your Client Portal access is revoked, no further sessions or deliverables are provided, amounts already paid are not refunded, and any remainder balance already invoiced under an installment plan remains due under the original payment schedule.</p>
+        <p>Before treating a forfeiture condition as triggered, CHEW will make a reasonable attempt to reach you and confirm the situation. If forfeiture is confirmed: your Client Portal access is revoked, no further sessions or deliverables are provided, amounts already paid are not refunded, and any remaining Monthly Plan installments already invoiced remain due under the original payment schedule.</p>
+        <p><strong>4.7 Scope Expansion.</strong> Your engagement covers the scope described in Section 1 only. If your situation grows to include a materially new objective (for example: a new business, a property purchase, or a major funding project not part of your original scope), CHEW will identify it as a New Move requiring its own scope review and, where appropriate, a new signed engagement — never silently absorbed into your current one, and never begun without telling you first.</p>
       `,
     },
     {
       id: 'term',
       heading: '5. Term, Cancellation, and Termination',
       html: `
-        <p><strong>Infrastructure / Executive</strong> — ${esc(CANCELLATION.infrastructure)}</p>
-        <p><strong>Membership</strong> — ${esc(CANCELLATION.membership)}</p>
+        <p><strong>${esc(TIER_LABELS[tier])}</strong> — ${esc(CANCELLATION[tier])}</p>
         <p>CHEW may terminate this Agreement immediately upon written notice if your conduct meets the forfeiture conditions in Section 4.6, or if a payment failure is not resolved as described in Section 3.5. On termination for any reason, your Client Portal access ends and CHEW's obligation to deliver further services ends.</p>
       `,
     },
@@ -173,7 +218,7 @@ function getAgreementSections(tier) {
       id: 'general',
       heading: '10. General Provisions',
       html: `
-        <p>This Agreement, together with the program materials referenced in Section 1, is the entire agreement between you and CHEW regarding the selected program. CHEW may update this Agreement for future clients at any time; changes do not apply retroactively to your already-signed Agreement without your consent. If any provision is found unenforceable, the remaining provisions remain in full effect. You may not assign this Agreement.</p>
+        <p>This Agreement, together with the program materials referenced in Section 1, is the entire agreement between you and CHEW regarding the selected engagement. CHEW may update this Agreement for future clients at any time; changes do not apply retroactively to your already-signed Agreement without your consent. If any provision is found unenforceable, the remaining provisions remain in full effect. You may not assign this Agreement.</p>
         <p><strong>Electronic Signature.</strong> By checking the box below and typing your full legal name, you consent to sign this Agreement electronically, as permitted under Florida's Uniform Electronic Transaction Act (Fla. Stat. &sect; 668.50). This electronic signature has the same legal effect as a handwritten signature. CHEW retains your typed name, the affirmative checkbox confirmation, the timestamp, an identifier of the exact agreement version and text you were shown, and technical metadata (such as IP address) as evidence of your consent.</p>
       `,
     },

@@ -84,6 +84,7 @@
             <div><dt>Signing as</dt><dd id="sa-identity-name">&nbsp;</dd></div>
             <div><dt>Program</dt><dd id="sa-identity-program">&nbsp;</dd></div>
             <div><dt>Agreement version</dt><dd id="sa-identity-version">&nbsp;</dd></div>
+            <div id="sa-identity-plan-wrap" hidden><dt>Payment plan</dt><dd id="sa-identity-plan">&nbsp;</dd></div>
           </div>
 
           <div class="glass card sa-key-terms">
@@ -138,7 +139,19 @@
   var params = new URLSearchParams(window.location.search);
   var token = params.get('token') || '';
   var tier = params.get('tier') || '';
-  var tierLabels = { infrastructure: 'Infrastructure Program', executive: 'Executive Advisory', membership: 'Membership' };
+  var planParam = params.get('plan') || '';
+  var ONE_TIME_TIERS = ['focused_builder', 'infrastructure', 'advanced_infrastructure', 'executive'];
+  var tierLabels = {
+    focused_builder: 'Focused Builder', infrastructure: 'Infrastructure',
+    advanced_infrastructure: 'Advanced Infrastructure', executive: 'Executive Advisory', membership: 'Membership',
+  };
+  var isOneTime = ONE_TIME_TIERS.indexOf(tier) !== -1;
+  // paymentPlanType travels with the tier from select-program.html's
+  // Pay in Full / Monthly Plan toggle — required for one-time engagements,
+  // ignored for membership, which keeps its own separate entry+recurring
+  // model. See api/sign-agreement.js, which validates this server-side too.
+  var paymentPlanType = isOneTime && (planParam === 'pay_in_full' || planParam === 'monthly') ? planParam : null;
+  var dealData = null;
 
   var loadStatus = document.getElementById('load-status');
   var content = document.getElementById('agreement-content');
@@ -165,6 +178,11 @@
     showLoadError('This page requires a valid program-selection link. Please start from your acceptance email.');
     return;
   }
+  if (isOneTime && !paymentPlanType) {
+    showLoadError('Please choose Pay in Full or the Monthly Plan before signing. Return to the engagement page: ' +
+      'select-program.html?token=' + encodeURIComponent(token));
+    return;
+  }
 
   Promise.all([
     fetch('/api/application-summary?token=' + encodeURIComponent(token)).then(function (res) {
@@ -175,15 +193,32 @@
       if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to load the agreement text.'); });
       return res.json();
     }),
+    fetch('/api/deal-sheet?tier=' + encodeURIComponent(tier)).then(function (res) {
+      if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to load pricing.'); });
+      return res.json();
+    }),
   ])
     .then(function (results) {
       var appData = results[0];
       var agreementData = results[1];
+      dealData = results[2];
 
       nameInput.value = appData.fullName || '';
       document.getElementById('sa-identity-name').textContent = appData.fullName || '—';
       document.getElementById('sa-identity-program').textContent = agreementData.tierLabel;
       document.getElementById('sa-identity-version').textContent = agreementData.version;
+
+      if (isOneTime && dealData && dealData.monthly) {
+        var planWrap = document.getElementById('sa-identity-plan-wrap');
+        var planEl = document.getElementById('sa-identity-plan');
+        planWrap.hidden = false;
+        if (paymentPlanType === 'monthly') {
+          planEl.textContent = chewFormatCents(dealData.monthly.initialCents) + ' today, then ' +
+            dealData.monthly.installmentCount + ' × ' + chewFormatCents(dealData.monthly.installmentCents) + '/mo (total ' + chewFormatCents(dealData.totalCents) + ')';
+        } else {
+          planEl.textContent = chewFormatCents(dealData.totalCents) + ' — Pay in Full';
+        }
+      }
 
       // Key terms — rendered from the same structured data the full
       // sections below use, so the summary can never say something the
@@ -234,7 +269,10 @@
     fetch('/api/sign-agreement', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ token: token, tier: tier, signedName: nameInput.value, agreedToTerms: agreeCheckbox.checked === true }),
+      body: JSON.stringify({
+        token: token, tier: tier, signedName: nameInput.value, agreedToTerms: agreeCheckbox.checked === true,
+        paymentPlanType: paymentPlanType,
+      }),
     })
       .then(function (res) {
         if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to record signature.'); });
@@ -242,18 +280,27 @@
       })
       .then(function (data) {
         pendingSignatureId = data.signatureId;
-        return fetch('/api/deal-sheet?tier=' + encodeURIComponent(tier));
-      })
-      .then(function (res) {
-        if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to load your deal sheet.'); });
-        return res.json();
-      })
-      .then(function (deal) {
-        var priceLine = chewFormatCents(deal.entryAmountCents) + ' entry';
-        if (deal.fullFeeCents) priceLine += ', credited toward ' + chewFormatCents(deal.fullFeeCents) + ' total';
-        var billingLine = deal.transactionType === 'recurring_subscription'
-          ? 'One-time entry fee today, then ' + chewFormatCents(deal.recurringAmountCents) + '/month after a ' + deal.trialPeriodDays + '-day trial'
-          : (deal.hasRemainder ? 'One-time entry fee today; remainder balance billed separately later' : 'One-time payment');
+        var deal = dealData;
+
+        // Exact terms of the plan the client is about to pay, not a
+        // generic price line — same numbers /api/create-program-checkout-session.js
+        // will actually charge, since both read the signature's snapshot.
+        var priceLine, billingLine;
+        if (deal.oneTime) {
+          if (paymentPlanType === 'monthly') {
+            priceLine = chewFormatCents(deal.monthly.initialCents) + ' due today';
+            billingLine = 'Monthly Plan: ' + chewFormatCents(deal.monthly.initialCents) + ' today, then ' +
+              deal.monthly.installmentCount + ' monthly payment' + (deal.monthly.installmentCount === 1 ? '' : 's') +
+              ' of ' + chewFormatCents(deal.monthly.installmentCents) + ' (total ' + chewFormatCents(deal.totalCents) +
+              '). No interest or financing charge — billed automatically to the payment method you use at checkout.';
+          } else {
+            priceLine = chewFormatCents(deal.totalCents) + ' due today';
+            billingLine = 'Pay in Full — one payment today, nothing further due for this engagement.';
+          }
+        } else {
+          priceLine = chewFormatCents(deal.entryAmountCents) + ' entry, then ' + chewFormatCents(deal.recurringAmountCents) + '/month';
+          billingLine = 'One-time entry fee today, then ' + chewFormatCents(deal.recurringAmountCents) + '/month after a ' + deal.trialPeriodDays + '-day trial.';
+        }
         chewRenderDealSheet(dealSheet, {
           product: deal.label,
           price: priceLine,

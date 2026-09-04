@@ -1,29 +1,73 @@
 // lib/programs.js
 //
-// Shared tier definitions for the post-acceptance program-purchase flow.
-// Amounts are hardcoded business terms (not configurable per-request).
-// Entry and membership-recurring amounts are charged via real Stripe Price
-// ids (env vars below); the remainder balance (full fee minus entry, e.g.
-// $1,997 - $297 = $1,700) has no separate Price object and is charged via
-// inline price_data in api/create-remainder-checkout-session.js instead —
-// so remainderAmountCents is the only remainder-related field needed here.
+// Shared engagement/tier definitions. Amounts and scope limits are
+// hardcoded approved business terms (not configurable per-request) —
+// see the "BUSINESS DECISIONS APPROVED" commercial architecture pass.
+//
+// Every one-time engagement (everything except membership) now supports
+// two payment options at the SAME total price — paying in full never
+// costs more or less than the sum of the monthly plan:
+//   payInFull:  one charge for the full amount, today
+//   monthly:    an initial payment today, then N equal monthly
+//               installments (Stripe Subscription Schedule — see
+//               api/create-program-checkout-session.js and
+//               api/stripe-webhook.js)
+// Payment timing never changes scope, quality, or total price. Program
+// installments are a finite schedule, never Membership (a separate,
+// ongoing subscription with its own doctrine below).
 
 const PROGRAMS = {
+  focused_builder: {
+    label: 'Focused Builder',
+    entryPriceEnv: 'STRIPE_PRICE_FOCUSED_BUILDER_FULL',
+    totalCents: 89700,
+    durationDays: 60,
+    sessionCount: 2,
+    sessionMinutes: 60,
+    deliverable: 'Focused Position Map + Action Sequence',
+    documentReviewEvents: 1,
+    advisoryAccess: 'Limited clarification/logistics between sessions — no ongoing advisory entitlement.',
+    responseTarget: null,
+    monthly: { initialCents: 29700, installmentCents: 30000, installmentCount: 2 },
+  },
   infrastructure: {
     label: 'Infrastructure Program',
-    entryPriceEnv: 'STRIPE_PRICE_INFRASTRUCTURE_ENTRY',
-    entryAmountCents: 29700,
-    fullFeeCents: 199700,
-    remainderAmountCents: 170000, // $1,997 - $297
-    hasRemainder: true,
+    entryPriceEnv: 'STRIPE_PRICE_INFRASTRUCTURE_FULL',
+    totalCents: 199700,
+    durationDays: 90,
+    sessionCount: 4,
+    sessionMinutes: 60,
+    deliverable: 'Full Financial Blueprint + Position Map + Sequenced Action Plan',
+    documentReviewEvents: 2,
+    advisoryAccess: 'Limited within-scope advisory between sessions.',
+    responseTarget: 'Within 2 business days',
+    monthly: { initialCents: 49700, installmentCents: 50000, installmentCount: 3 },
+  },
+  advanced_infrastructure: {
+    label: 'Advanced Infrastructure',
+    entryPriceEnv: 'STRIPE_PRICE_ADVANCED_INFRASTRUCTURE_FULL',
+    totalCents: 349700,
+    durationDays: 120,
+    sessionCount: 6,
+    sessionMinutes: 60,
+    deliverable: 'Advanced Financial Blueprint + integrated personal/business position architecture + decision sequencing + appropriate scenario work',
+    documentReviewEvents: 4,
+    advisoryAccess: 'Up to 1 substantive within-scope advisory thread per week.',
+    responseTarget: 'Within 2 business days',
+    monthly: { initialCents: 69700, installmentCents: 70000, installmentCount: 4 },
   },
   executive: {
     label: 'Executive Advisory',
-    entryPriceEnv: 'STRIPE_PRICE_EXECUTIVE_ENTRY',
-    entryAmountCents: 59700,
-    fullFeeCents: 499700,
-    remainderAmountCents: 440000, // $4,997 - $597
-    hasRemainder: true,
+    entryPriceEnv: 'STRIPE_PRICE_EXECUTIVE_FULL',
+    totalCents: 499700,
+    durationDays: 150,
+    sessionCount: 8,
+    sessionMinutes: 60,
+    deliverable: 'Executive Financial Blueprint + advanced decision architecture + priority strategy sequencing + deeper scenario analysis',
+    documentReviewEvents: 6,
+    advisoryAccess: 'High access, not unlimited access: up to 2 substantive within-scope advisory threads per week.',
+    responseTarget: 'Priority — within 1 business day',
+    monthly: { initialCents: 99700, installmentCents: 80000, installmentCount: 5 },
   },
   membership: {
     label: 'Membership',
@@ -32,9 +76,18 @@ const PROGRAMS = {
     recurringPriceEnv: 'STRIPE_PRICE_MEMBERSHIP_RECURRING',
     recurringAmountCents: 9700,
     trialPeriodDays: 30,
-    hasRemainder: false,
+    // Locked doctrine: a client who completed a CHEW engagement pays no
+    // new entry fee for Membership. Determining "graduate" status
+    // requires tracking real program completion, which this schema does
+    // not yet do (see PORTAL INTEGRATION REQUIREMENTS) — so every
+    // membership signup charges the entry fee for now, rather than
+    // silently waiving it for people who can't actually be verified as
+    // graduates. Flip this on once real completion tracking exists.
+    entryFeeWaivedForGraduates: false,
   },
 };
+
+const ONE_TIME_TIERS = ['focused_builder', 'infrastructure', 'advanced_infrastructure', 'executive'];
 
 function getProgram(tier) {
   const program = PROGRAMS[tier];
@@ -42,4 +95,8 @@ function getProgram(tier) {
   return program;
 }
 
-module.exports = { PROGRAMS, getProgram };
+function isOneTimeTier(tier) {
+  return ONE_TIME_TIERS.includes(tier);
+}
+
+module.exports = { PROGRAMS, ONE_TIME_TIERS, getProgram, isOneTimeTier };
