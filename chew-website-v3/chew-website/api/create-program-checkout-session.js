@@ -51,11 +51,38 @@ module.exports = async (req, res) => {
     }
 
     const signatureResult = await query(
-      `SELECT id FROM agreement_signatures WHERE id = $1 AND application_id = $2 AND tier = $3`,
+      `SELECT id, entry_amount_cents_at_signing, full_fee_cents_at_signing,
+              remainder_amount_cents_at_signing, recurring_amount_cents_at_signing
+       FROM agreement_signatures WHERE id = $1 AND application_id = $2 AND tier = $3`,
       [signatureId, application.id, tier]
     );
-    if (!signatureResult.rows[0]) {
+    const signature = signatureResult.rows[0];
+    if (!signature) {
       return res.status(403).json({ error: 'Please sign the Client Services Agreement first.' });
+    }
+
+    // Term-drift guard: the client saw specific commercial terms on the
+    // Deal Sheet at the moment they signed (snapshotted onto the
+    // signature row — see api/sign-agreement.js). If live pricing has
+    // since changed (a deploy to lib/programs.js between signing and
+    // paying), checkout must not silently go ahead against terms the
+    // client never actually reviewed. Signatures from before this
+    // snapshot existed have NULL here and are treated as compatible —
+    // there's nothing to compare against, and re-requiring every
+    // pre-existing signature to re-sign on deploy would be disruptive
+    // without new information to justify it.
+    const termsDrifted = [
+      [signature.entry_amount_cents_at_signing, program.entryAmountCents],
+      [signature.full_fee_cents_at_signing, program.fullFeeCents || null],
+      [signature.remainder_amount_cents_at_signing, program.hasRemainder ? program.remainderAmountCents : null],
+      [signature.recurring_amount_cents_at_signing, program.recurringAmountCents || null],
+    ].some(([snapshot, current]) => snapshot != null && snapshot !== current);
+
+    if (termsDrifted) {
+      return res.status(409).json({
+        error: 'Program terms have changed since you signed the agreement. Please review and sign again before paying.',
+        termsChanged: true,
+      });
     }
 
     const entryPriceId = process.env[program.entryPriceEnv];

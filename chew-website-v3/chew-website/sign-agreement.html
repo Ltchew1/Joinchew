@@ -9,6 +9,42 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<style>
+  .sa-layout { display: grid; grid-template-columns: 200px 1fr; gap: 40px; align-items: start; }
+  @media (max-width: 900px) { .sa-layout { grid-template-columns: 1fr; } }
+
+  .sa-nav { position: sticky; top: 24px; display: flex; flex-direction: column; gap: 2px; }
+  @media (max-width: 900px) {
+    .sa-nav { position: static; flex-direction: row; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  }
+  .sa-nav-eyebrow { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-faint); margin-bottom: 8px; }
+  @media (max-width: 900px) { .sa-nav-eyebrow { display: none; } }
+  .sa-nav a {
+    display: block; padding: 7px 10px; border-radius: 6px; font-size: 0.83rem; color: var(--text-muted);
+    text-decoration: none; border-left: 2px solid transparent; transition: color 0.15s, border-color 0.15s;
+  }
+  @media (max-width: 900px) {
+    .sa-nav a { border-left: none; border: 1px solid rgba(255,255,255,0.12); padding: 6px 10px; border-radius: 20px; font-size: 0.78rem; }
+  }
+  .sa-nav a:hover { color: var(--text); }
+  .sa-nav a.is-active { color: var(--gold-light); border-left-color: var(--gold-light); font-weight: 600; }
+  @media (max-width: 900px) { .sa-nav a.is-active { border-color: var(--gold-light); background: rgba(201,162,39,0.08); } }
+
+  .sa-identity { display: flex; flex-wrap: wrap; gap: 24px; padding: 16px 20px; margin-bottom: 28px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; font-size: 0.85rem; }
+  .sa-identity div dt { color: var(--text-faint); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  .sa-identity div dd { margin: 0; font-weight: 600; }
+
+  .sa-body h2 { scroll-margin-top: 24px; font-size: 1.25rem; margin-top: 40px; }
+  .sa-body h2:first-child { margin-top: 0; }
+  .sa-body p, .sa-body li { font-size: 1rem; line-height: 1.7; }
+  .sa-body { max-width: 68ch; }
+
+  .sa-key-terms { margin-bottom: 40px; }
+  .sa-key-terms h4 { margin-top: 0; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.06em; color: var(--gold-light); }
+  .sa-key-terms ul { margin: 12px 0 0; padding-left: 1.2em; font-size: 0.95rem; }
+
+  .sa-consent { margin-top: 44px; padding-top: 28px; border-top: 1px solid rgba(255,255,255,0.1); }
+</style>
 </head>
 <body>
 <header class="site-header">
@@ -25,108 +61,55 @@
     <div class="container" style="position:relative;">
       <span class="eyebrow">Almost there</span>
       <h1 style="max-width:24ch;">Sign your Client Services Agreement.</h1>
-      <p class="max-prose" style="font-size:1.05rem; margin-top:16px;" id="tier-line">
-        Please review the full agreement below before continuing to payment.
+      <p class="max-prose" style="font-size:1.05rem; margin-top:16px;">
+        Read it in full. Nothing here is rushed — you're entering a real engagement, and CHEW wants you to know exactly what it says before you sign.
       </p>
     </div>
   </section>
 
   <section class="section" style="padding-top:0;">
-    <div class="container max-prose" style="max-width:780px;">
+    <div class="container">
 
-      <div id="load-status" class="status-note" style="display:none; margin-bottom:24px;"></div>
+      <div id="load-status" class="status-note" style="display:none; margin-bottom:24px; max-width:780px;"></div>
 
-      <div id="agreement-content" style="display:none;">
+      <div id="agreement-content" style="display:none;" class="sa-layout">
 
-        <div class="glass card" style="margin-bottom:36px;">
-          <h4 style="margin-top:0; text-transform:uppercase; font-size:0.8rem; letter-spacing:0.06em; color:var(--gold-light);">Key terms at a glance</h4>
-          <ul style="margin:12px 0 0; padding-left:1.2em; font-size:0.95rem;">
-            <li>Refund window: <strong>3 business days</strong> from entry payment, before your first session or Blueprint delivery.</li>
-            <li>Reschedule notice: <strong>24 hours</strong> minimum, no penalty.</li>
-            <li>Forfeiture: <strong>2</strong> consecutive missed sessions, or <strong>14 days</strong> unresponsive, forfeits your remaining program access without refund.</li>
-            <li>Governing law: State of Florida.</li>
-          </ul>
+        <nav class="sa-nav" id="sa-nav" aria-label="Agreement sections">
+          <span class="sa-nav-eyebrow">Sections</span>
+        </nav>
+
+        <div style="max-width:780px;">
+
+          <div class="sa-identity" id="sa-identity">
+            <div><dt>Signing as</dt><dd id="sa-identity-name">&nbsp;</dd></div>
+            <div><dt>Program</dt><dd id="sa-identity-program">&nbsp;</dd></div>
+            <div><dt>Agreement version</dt><dd id="sa-identity-version">&nbsp;</dd></div>
+          </div>
+
+          <div class="glass card sa-key-terms">
+            <h4>Key terms at a glance</h4>
+            <ul id="sa-key-terms-list"></ul>
+          </div>
+
+          <div class="sa-body" id="sa-body"></div>
+
+          <form id="sign-form" class="sa-consent">
+            <label style="display:flex; align-items:flex-start; gap:10px; font-size:0.95rem; margin-bottom:20px; cursor:pointer;">
+              <input type="checkbox" id="agree-checkbox" required style="margin-top:4px;">
+              <span>I have read and agree to the CHEW LLC Client Services Agreement above, including the fees, refund policy, and program participation terms.</span>
+            </label>
+
+            <label for="signed-name" style="display:block; font-size:0.9rem; margin-bottom:6px; color:var(--text-faint);">Type your full legal name to sign</label>
+            <input type="text" id="signed-name" placeholder="Full legal name" required style="width:100%; padding:12px 14px; margin-bottom:20px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.03); color:var(--text); font-size:1rem;">
+
+            <div id="sign-status" class="status-note" style="display:none; margin-bottom:20px;"></div>
+
+            <button type="submit" class="btn btn-gold" id="sign-btn" style="width:100%; justify-content:center;">Sign &amp; Continue to Payment</button>
+          </form>
         </div>
-
-        <h2>1. Scope of Services</h2>
-        <p>CHEW provides financial education, strategy, implementation guidance, and accountability support. The specific services you receive depend on the program you selected:</p>
-        <p><strong>Infrastructure Program</strong> — Financial Blueprint Assessment; a defined set of strategy sessions; access to the CHEW Client Portal (Blueprint, Tasks, Documents, Advisor); structured task assignments with strategist verification.</p>
-        <p><strong>Executive Advisory</strong> — All Infrastructure Program services, at an elevated cadence and scope, including additional strategy sessions and expanded advisory access, as described in the program materials you reviewed before selecting this tier.</p>
-        <p><strong>Membership</strong> — Ongoing monthly access to the CHEW Client Portal, educational content, and periodic check-ins, billed on a recurring basis after the initial trial period described in Section 3.</p>
-
-        <h2>2. Nature of Services; No Credit Services Organization</h2>
-        <p><strong>Nature of Services; No Credit Services Organization.</strong> CHEW provides financial education, strategy, and accountability coaching only. CHEW is not a &ldquo;credit services organization&rdquo; as defined in section 817.7001, Florida Statutes, and does not, for compensation or otherwise, perform, offer to perform, or represent that it will perform any service to improve a client&rsquo;s credit record, history, or rating, to obtain an extension of credit for a client, or to dispute information on a client&rsquo;s behalf.</p>
-        <p>As part of its educational services only, CHEW may teach clients how to review their own consumer credit reports and how to exercise their own rights under the federal Fair Credit Reporting Act, including the right to dispute &mdash; directly with the consumer reporting agencies &mdash; any item the client, in the client&rsquo;s sole judgment, attests they do not recognize or did not authorize. Any dispute is prepared, signed, and submitted by the client, in the client&rsquo;s own name, as an exercise of the client&rsquo;s own rights. CHEW does not prepare, file, submit, transmit, or communicate any dispute on the client&rsquo;s behalf; does not instruct clients to dispute accurate information; does not advise which specific items to dispute; and does not represent, promise, or guarantee any result, score change, or removal of any item. Accurate information cannot be permanently removed from a consumer credit report. Any compensation paid to CHEW is for education, strategy, and accountability, and not for any credit service.</p>
-        <p>CHEW additionally does not:</p>
-        <ul>
-          <li>Guarantee any specific financial outcome, income level, credit score change, loan approval, or funding approval;</li>
-          <li>Act as a registered investment advisor, certified public accountant, or attorney, and nothing provided under this Agreement is investment advice, tax advice, or legal advice;</li>
-          <li>Guarantee that you will qualify for, obtain, or be approved for any specific financing, credit product, or business opportunity discussed during the engagement.</li>
-        </ul>
-        <p>Outcomes depend on your individual circumstances, the accuracy of information you provide, your own execution of assigned tasks, and decisions made by third parties (lenders, credit bureaus, business partners) outside CHEW's control.</p>
-
-        <h2>3. Fees and Payment</h2>
-        <p><strong>3.1 Entry Fee.</strong> You pay the entry fee for the selected program at the time of signing this Agreement, as quoted at checkout.</p>
-        <p><strong>3.2 Remainder Balance (Infrastructure and Executive only).</strong> The balance of the full program fee is due according to the payment option you select at checkout. Until it's paid in full, CHEW may limit delivery of program components that have not yet been rendered.</p>
-        <p><strong>3.3 Membership Recurring Fee.</strong> Membership includes a 30-day trial period beginning today. Unless you cancel before the trial ends, CHEW will begin billing the recurring monthly membership fee automatically at the end of the trial period, and monthly thereafter, until cancelled.</p>
-        <p><strong>3.4 Refunds.</strong></p>
-        <ul>
-          <li>The entry fee is refundable in full if you request cancellation in writing within 3 business days of payment, provided you have not yet attended a strategy session or received the Financial Blueprint Assessment.</li>
-          <li>Once a strategy session has been delivered or the Financial Blueprint Assessment has been provided, the entry fee is non-refundable.</li>
-          <li>Remainder balance payments are non-refundable once paid, except where required by applicable law.</li>
-          <li>Membership fees are non-refundable for any partial month; you may cancel at any time to stop future charges, per Section 5.</li>
-        </ul>
-        <p><strong>3.5 Late or Failed Payments.</strong> If a scheduled remainder or membership payment fails, CHEW will notify you and attempt to collect payment. CHEW may suspend portal access and further service delivery until payment is resolved. Continued non-payment beyond 15 days of notice is grounds for termination under Section 5.</p>
-
-        <h2>4. Client Obligations and Program Participation</h2>
-        <p>Your engagement with CHEW is a two-sided commitment. In exchange for the services described in Section 1, you agree to:</p>
-        <p><strong>4.1 Honest Disclosure.</strong> Provide accurate and complete information about your financial situation, both during the application process and throughout the engagement.</p>
-        <p><strong>4.2 Task Completion.</strong> Complete assigned action items within the timelines set by your strategist. Tasks are tracked in the Client Portal. A task you mark complete is reviewed and verified by CHEW — self-reported completion alone does not constitute program progress.</p>
-        <p><strong>4.3 Session Attendance.</strong> Attend scheduled strategy sessions. You may reschedule any session with at least 24 hours' notice, at no penalty. A session missed without that notice, and not rescheduled within 7 days, is forfeited.</p>
-        <p><strong>4.4 Responsiveness.</strong> Respond to strategist communications within a reasonable time. CHEW cannot deliver strategy or verify tasks for a client who cannot be reached.</p>
-        <p><strong>4.5 Good-Faith Participation.</strong> Engage with the program honestly and in good faith.</p>
-        <p><strong>4.6 Forfeiture of Program Access.</strong> Your spot in the program may be forfeited if: you miss two consecutively scheduled sessions without the notice described in 4.3; you are unresponsive to strategist communications for 14 consecutive days; you provide materially false information relevant to the strategy being built; or you engage in abusive or harassing conduct toward CHEW staff.</p>
-        <p>Before treating a forfeiture condition as triggered, CHEW will make a reasonable attempt to reach you and confirm the situation. If forfeiture is confirmed: your Client Portal access is revoked, no further sessions or deliverables are provided, amounts already paid are not refunded, and any remainder balance already invoiced under an installment plan remains due under the original payment schedule.</p>
-
-        <h2>5. Term, Cancellation, and Termination</h2>
-        <p><strong>Infrastructure / Executive</strong> — You may cancel at any time by written notice. Refunds, if any, are governed by Section 3.4. Cancelling does not relieve you of a remainder balance already invoiced for services already delivered.</p>
-        <p><strong>Membership</strong> — You may cancel at any time, effective at the end of the current billing period, through the Client Portal's billing management or by written notice. There is no early-termination fee.</p>
-        <p>CHEW may terminate this Agreement immediately upon written notice if your conduct meets the forfeiture conditions in Section 4.6, or if a payment failure is not resolved as described in Section 3.5. On termination for any reason, your Client Portal access ends and CHEW's obligation to deliver further services ends.</p>
-
-        <h2>6. Confidentiality</h2>
-        <p>CHEW will treat the financial and personal information you share as confidential, and will not disclose it to third parties except as needed to deliver the services described in this Agreement, as required by law, or with your consent. Your information will not be sold to third parties.</p>
-
-        <h2>7. No Guarantee of Results</h2>
-        <p>Financial strategy and education services carry no guarantee of results. You are solely responsible for decisions you make based on CHEW's guidance, and for the outcome of any application, credit decision, or business decision you pursue.</p>
-
-        <h2>8. Limitation of Liability</h2>
-        <p>To the fullest extent permitted by law, CHEW's total liability to you arising out of this Agreement is limited to the amount you have paid CHEW under this Agreement in the twelve (12) months preceding the claim. CHEW is not liable for indirect, incidental, or consequential damages.</p>
-
-        <h2>9. Dispute Resolution and Governing Law</h2>
-        <p>This Agreement is governed by the laws of the State of Florida, without regard to its conflict-of-law principles. Any dispute will first be addressed through good-faith negotiation; if unresolved after 30 days, either party may pursue the dispute in the state or federal courts located in Florida.</p>
-
-        <h2>10. General Provisions</h2>
-        <p>This Agreement, together with the program materials referenced in Section 1, is the entire agreement between you and CHEW regarding the selected program. CHEW may update this Agreement for future clients at any time; changes do not apply retroactively to your already-signed Agreement without your consent. If any provision is found unenforceable, the remaining provisions remain in full effect. You may not assign this Agreement.</p>
-        <p><strong>Electronic Signature.</strong> By checking the box below and typing your full legal name, you consent to sign this Agreement electronically, as permitted under Florida's Uniform Electronic Transaction Act (Fla. Stat. &sect; 668.50). This electronic signature has the same legal effect as a handwritten signature, and CHEW may retain your typed name, timestamp, and technical metadata (such as IP address) as evidence of your consent.</p>
-
-        <hr style="border:none; border-top:1px solid rgba(255,255,255,0.1); margin:36px 0;">
-
-        <form id="sign-form">
-          <label style="display:flex; align-items:flex-start; gap:10px; font-size:0.95rem; margin-bottom:20px; cursor:pointer;">
-            <input type="checkbox" id="agree-checkbox" required style="margin-top:4px;">
-            <span>I have read and agree to the CHEW LLC Client Services Agreement above, including the fees, refund policy, and program participation terms.</span>
-          </label>
-
-          <label for="signed-name" style="display:block; font-size:0.9rem; margin-bottom:6px; color:var(--text-faint);">Type your full legal name to sign</label>
-          <input type="text" id="signed-name" placeholder="Full legal name" required style="width:100%; padding:12px 14px; margin-bottom:20px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.03); color:var(--text); font-size:1rem;">
-
-          <div id="sign-status" class="status-note" style="display:none; margin-bottom:20px;"></div>
-
-          <button type="submit" class="btn btn-gold" id="sign-btn" style="width:100%; justify-content:center;">Sign &amp; Continue to Payment</button>
-        </form>
       </div>
 
-      <div class="deal-sheet" id="deal-sheet" hidden>
+      <div class="deal-sheet" id="deal-sheet" hidden style="max-width:780px;">
         <div class="deal-sheet-eyebrow">Know the deal before you pay.</div>
         <div class="deal-sheet-grid">
           <div class="deal-sheet-row"><span class="ds-label">You're buying</span><span class="ds-value" id="ds-product"></span></div>
@@ -159,11 +142,14 @@
 
   var loadStatus = document.getElementById('load-status');
   var content = document.getElementById('agreement-content');
-  var tierLine = document.getElementById('tier-line');
+  var navEl = document.getElementById('sa-nav');
+  var bodyEl = document.getElementById('sa-body');
+  var keyTermsList = document.getElementById('sa-key-terms-list');
   var signStatus = document.getElementById('sign-status');
   var signBtn = document.getElementById('sign-btn');
   var form = document.getElementById('sign-form');
   var nameInput = document.getElementById('signed-name');
+  var agreeCheckbox = document.getElementById('agree-checkbox');
   var dealSheet = document.getElementById('deal-sheet');
   var dealSheetStatus = document.getElementById('deal-sheet-status');
   var dealSheetBack = document.getElementById('deal-sheet-back');
@@ -180,15 +166,60 @@
     return;
   }
 
-  fetch('/api/application-summary?token=' + encodeURIComponent(token))
-    .then(function (res) {
+  Promise.all([
+    fetch('/api/application-summary?token=' + encodeURIComponent(token)).then(function (res) {
       if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to load your application.'); });
       return res.json();
-    })
-    .then(function (data) {
-      tierLine.textContent = 'Program selected: ' + tierLabels[tier] + '. Please review the full agreement below before continuing to payment.';
-      nameInput.value = data.fullName || '';
-      content.style.display = 'block';
+    }),
+    fetch('/api/agreement-text?tier=' + encodeURIComponent(tier)).then(function (res) {
+      if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to load the agreement text.'); });
+      return res.json();
+    }),
+  ])
+    .then(function (results) {
+      var appData = results[0];
+      var agreementData = results[1];
+
+      nameInput.value = appData.fullName || '';
+      document.getElementById('sa-identity-name').textContent = appData.fullName || '—';
+      document.getElementById('sa-identity-program').textContent = agreementData.tierLabel;
+      document.getElementById('sa-identity-version').textContent = agreementData.version;
+
+      // Key terms — rendered from the same structured data the full
+      // sections below use, so the summary can never say something the
+      // operative text doesn't.
+      var kt = agreementData.keyTerms;
+      keyTermsList.innerHTML =
+        '<li>Refund window: <strong>' + kt.refundWindow + '</strong> from entry payment, before your first session or Blueprint delivery.</li>' +
+        '<li>Reschedule notice: <strong>' + kt.rescheduleNotice + '</strong> minimum, no penalty.</li>' +
+        '<li>Forfeiture: <strong>' + kt.forfeitureSessions + '</strong> consecutive missed sessions, or <strong>' + kt.forfeitureDays + ' days</strong> unresponsive, forfeits your remaining program access without refund.</li>' +
+        '<li>Governing law: ' + kt.governingLaw + '.</li>';
+
+      // Full agreement body + section-jump nav, built from the same
+      // section list — one data source drives both.
+      var navHtml = '<span class="sa-nav-eyebrow">Sections</span>';
+      var bodyHtml = '';
+      agreementData.sections.forEach(function (s) {
+        navHtml += '<a href="#' + s.id + '" data-section="' + s.id + '">' + s.heading.replace(/^\d+\.\s*/, '') + '</a>';
+        bodyHtml += '<h2 id="' + s.id + '">' + s.heading + '</h2>' + s.html;
+      });
+      navEl.innerHTML = navHtml;
+      bodyEl.innerHTML = bodyHtml;
+
+      // Section-nav active-state on scroll (progress through a long
+      // legal document should be visible, not just theoretical).
+      var navLinks = Array.prototype.slice.call(navEl.querySelectorAll('a'));
+      var sectionEls = agreementData.sections.map(function (s) { return document.getElementById(s.id); });
+      function updateActiveNav() {
+        var scrollPos = window.scrollY + 120;
+        var activeIdx = 0;
+        sectionEls.forEach(function (el, i) { if (el && el.offsetTop <= scrollPos) activeIdx = i; });
+        navLinks.forEach(function (a, i) { a.classList.toggle('is-active', i === activeIdx); });
+      }
+      window.addEventListener('scroll', updateActiveNav, { passive: true });
+      updateActiveNav();
+
+      content.style.display = 'grid';
     })
     .catch(function (err) {
       showLoadError(err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.');
@@ -203,7 +234,7 @@
     fetch('/api/sign-agreement', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ token: token, tier: tier, signedName: nameInput.value }),
+      body: JSON.stringify({ token: token, tier: tier, signedName: nameInput.value, agreedToTerms: agreeCheckbox.checked === true }),
     })
       .then(function (res) {
         if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to record signature.'); });
@@ -247,7 +278,7 @@
 
   dealSheetBack.addEventListener('click', function () {
     dealSheet.hidden = true;
-    content.style.display = 'block';
+    content.style.display = 'grid';
     signBtn.disabled = false;
     signBtn.textContent = 'Sign & Continue to Payment';
     content.scrollIntoView({ behavior: 'smooth', block: 'start' });
