@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Your CHEW Recommendation</title>
 <meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -83,7 +84,10 @@
 
         <div class="rec-section" id="rec-what-needs-section" hidden>
           <span class="rec-label">What Needs to Happen</span>
-          <div class="glass card" id="rec-conditions-list"></div>
+          <div class="glass card">
+            <ul id="rec-priorities-list" style="margin:0 0 10px 18px; padding:0;" hidden></ul>
+            <div id="rec-conditions-list"></div>
+          </div>
         </div>
 
         <div class="rec-section">
@@ -97,6 +101,7 @@
             <h3 id="rec-primary-label"></h3>
             <p id="rec-primary-reason" style="font-size:0.96rem; line-height:1.65;"></p>
             <ul class="rec-engagement-meta" id="rec-primary-meta"></ul>
+            <div class="rec-tradeoff" id="rec-primary-cadence"></div>
             <p class="ds-value ds-value--price" id="rec-primary-price" style="margin:14px 0 2px;"></p>
             <div class="plan-toggle" id="rec-primary-plan-toggle" role="radiogroup" aria-label="Payment option"></div>
             <div id="rec-primary-select-status" class="status-note" style="display:none; margin:12px 0;"></div>
@@ -110,6 +115,7 @@
             <h3 id="rec-alternative-label"></h3>
             <div class="rec-tradeoff" id="rec-alternative-tradeoff"></div>
             <ul class="rec-engagement-meta" id="rec-alternative-meta"></ul>
+            <div class="rec-tradeoff" id="rec-alternative-cadence"></div>
             <p class="ds-value ds-value--price" id="rec-alternative-price" style="margin:14px 0 2px;"></p>
             <div class="plan-toggle" id="rec-alternative-plan-toggle" role="radiogroup" aria-label="Payment option"></div>
             <div id="rec-alternative-select-status" class="status-note" style="display:none; margin:12px 0;"></div>
@@ -140,6 +146,7 @@
 (function () {
   var params = new URLSearchParams(window.location.search);
   var token = params.get('token') || '';
+  var cancelled = params.get('cancelled') === 'true';
 
   var FOCUS_AREA_LABELS = {
     financial_organization: 'FINANCIAL ORGANIZATION', credit_intelligence: 'CREDIT INTELLIGENCE',
@@ -198,6 +205,28 @@
       '<li>' + deal.sessionCount + ' 1:1 sessions (' + deal.sessionMinutes + ' min each) over up to ' + deal.durationDays + ' days</li>' +
       '<li>' + deal.documentReviewEvents + ' document review event' + (deal.documentReviewEvents === 1 ? '' : 's') + '</li>' +
       '<li>' + deal.advisoryAccess + '</li>';
+  }
+
+  // Structural clarity only, not a new commitment — session counts and
+  // durationDays come straight from lib/programs.js and are never changed
+  // here. "Typically" hedges the analysis/build window since no signed
+  // agreement text commits to a specific number of days for it.
+  function buildSessionCadence(deal) {
+    var remaining = deal.sessionCount - 2;
+    var html = '<strong>How the sessions run</strong><br>' +
+      'Positioning Phase — Session 1: Position Session, your starting point. ' +
+      'CHEW then works your position during a typically 5&ndash;10 day analysis and build window, ' +
+      'before Session 2: Strategy Launch, where your plan is presented and set in motion.';
+    if (remaining > 0) {
+      html += '<br>Build &rarr; Reconciliation &rarr; Completion — your remaining ' + remaining +
+        ' session' + (remaining === 1 ? '' : 's') + ' carry the plan forward: implementation work, ' +
+        'a progress check-in against the plan, and a final session to close out deliverables, ' +
+        'generally across the engagement’s up-to-' + deal.durationDays + '-day window.';
+    } else {
+      html += '<br>This engagement is ' + deal.sessionCount + ' sessions total, so positioning is the full engagement — ' +
+        'there is no separate Build/Reconciliation/Completion phase beyond Session 2.';
+    }
+    return html;
   }
 
   function selectedPlanValue(container) {
@@ -260,6 +289,10 @@
     .then(function (rec) {
       recData = rec;
 
+      if (cancelled) {
+        showStatus('Your checkout was cancelled — nothing was charged. You can choose an engagement below whenever you\'re ready.');
+      }
+
       document.getElementById('rec-your-move').textContent = rec.yourMove
         ? 'Your move: ' + rec.yourMove + '.'
         : 'We reviewed your Starting Position.';
@@ -267,6 +300,15 @@
       if (rec.whatChewSees) {
         document.getElementById('rec-what-chew-sees').textContent = rec.whatChewSees;
         document.getElementById('rec-what-chew-sees-section').hidden = false;
+      }
+
+      if (rec.recommendedPriorities && rec.recommendedPriorities.length) {
+        var prioritiesEl = document.getElementById('rec-priorities-list');
+        prioritiesEl.innerHTML = rec.recommendedPriorities.map(function (p) {
+          return '<li style="font-size:0.94rem; line-height:1.6;">' + esc(p) + '</li>';
+        }).join('');
+        prioritiesEl.hidden = false;
+        document.getElementById('rec-what-needs-section').hidden = false;
       }
 
       if (rec.conditions && rec.conditions.length) {
@@ -290,6 +332,7 @@
       document.getElementById('rec-primary-label').textContent = rec.primaryDeal.label;
       document.getElementById('rec-primary-reason').textContent = rec.clientFacingReason;
       document.getElementById('rec-primary-meta').innerHTML = buildMetaList(rec.primaryDeal);
+      document.getElementById('rec-primary-cadence').innerHTML = buildSessionCadence(rec.primaryDeal);
       document.getElementById('rec-primary-price').textContent = fmt(rec.primaryDeal.totalCents) + ' total investment';
       var primaryPlanToggle = document.getElementById('rec-primary-plan-toggle');
       buildPlanToggle(primaryPlanToggle, rec.primaryDeal, 'plan-primary');
@@ -299,6 +342,7 @@
         document.getElementById('rec-alternative-label').textContent = rec.alternativeDeal.label;
         document.getElementById('rec-alternative-tradeoff').textContent = rec.alternativeTradeoff;
         document.getElementById('rec-alternative-meta').innerHTML = buildMetaList(rec.alternativeDeal);
+        document.getElementById('rec-alternative-cadence').innerHTML = buildSessionCadence(rec.alternativeDeal);
         document.getElementById('rec-alternative-price').textContent = fmt(rec.alternativeDeal.totalCents) + ' total investment';
         var altPlanToggle = document.getElementById('rec-alternative-plan-toggle');
         buildPlanToggle(altPlanToggle, rec.alternativeDeal, 'plan-alternative');

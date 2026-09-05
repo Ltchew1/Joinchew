@@ -21,6 +21,10 @@ const { answerLabel } = require('../lib/email');
 const { getConditionsForRecommendation, getActiveSelection } = require('../lib/recommendations');
 
 module.exports = async (req, res) => {
+  // Every response here is either token-personalized or an error about a
+  // token attempt -- never cacheable by a shared cache or browser disk
+  // cache (see closeout doctrine: tokenized surfaces are no-store).
+  res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
     return res.status(405).json({ error: 'Method not allowed' });
@@ -42,13 +46,16 @@ module.exports = async (req, res) => {
 
     const recResult = await query(
       `SELECT id, version, primary_tier, alternative_tier, focus_areas, client_facing_reason,
-              client_facing_summary, alternative_tradeoff, sent_at, viewed_at
+              client_facing_summary, alternative_tradeoff, recommended_priorities, sent_at, viewed_at
        FROM engagement_recommendations WHERE application_id = $1 AND status = 'sent'`,
       [application.id]
     );
     const recommendation = recResult.rows[0];
     if (!recommendation) {
-      return res.status(404).json({ error: 'CHEW is still reviewing your Starting Position — your recommendation isn’t ready yet.' });
+      return res.status(404).json({
+        error: 'CHEW is still reviewing your Starting Position — your recommendation isn’t ready yet.',
+        code: 'RECOMMENDATION_NOT_READY',
+      });
     }
 
     const conditions = (await getConditionsForRecommendation(recommendation.id))
@@ -67,6 +74,7 @@ module.exports = async (req, res) => {
       version: recommendation.version,
       yourMove: answerLabel('primary_move', answers.primary_move),
       whatChewSees: recommendation.client_facing_summary,
+      recommendedPriorities: recommendation.recommended_priorities || [],
       focusAreas: recommendation.focus_areas,
       primaryTier: recommendation.primary_tier,
       primaryDeal,

@@ -416,16 +416,76 @@
       '</div>';
     }).join('');
 
+    var prioritiesHtml = (rec.recommended_priorities || []).map(function (p) {
+      return '<li style="font-size:0.85rem;">' + esc(p) + '</li>';
+    }).join('');
+
     panel.innerHTML =
       '<span class="scope-existing-badge sent">Sent &mdash; v' + rec.version + '</span>' +
       '<p style="font-size:0.9rem;"><strong>Primary:</strong> ' + esc(scopeTierLabel(rec.primary_tier)) + '</p>' +
       (rec.alternative_tier ? '<p style="font-size:0.9rem;"><strong>Alternative:</strong> ' + esc(scopeTierLabel(rec.alternative_tier)) + '</p>' : '') +
       '<p style="font-size:0.9rem;"><strong>Why this fits:</strong> ' + esc(rec.client_facing_reason) + '</p>' +
       (focusHtml ? '<div style="margin:10px 0;">' + focusHtml + '</div>' : '') +
+      (prioritiesHtml ? '<div class="scope-field"><label>What Needs to Happen</label><ul style="margin:4px 0 0 18px; padding:0;">' + prioritiesHtml + '</ul></div>' : '') +
       (condHtml ? '<div class="scope-field"><label>Conditions</label>' + condHtml + '</div>' : '') +
-      (rec.scope_review_requested_at ? '<p style="font-size:0.85rem; color:var(--gold-light);">Scope review requested ' + new Date(rec.scope_review_requested_at).toLocaleString() + (rec.scope_review_message ? ': “' + esc(rec.scope_review_message) + '”' : '') + '</p>' : '') +
+      (rec.scope_review_requested_at ? '<p style="font-size:0.85rem; color:var(--gold-light);">Scope review requested ' + new Date(rec.scope_review_requested_at).toLocaleString() + (rec.scope_review_message ? ': “' + esc(rec.scope_review_message) + '”' : '') +
+        (rec.scope_review_owner_notified_at ? '' : ' <button type="button" class="btn btn-outline btn-sm scope-resend-review-notice-btn" style="margin-left:6px;">Retry Notification</button>') +
+        '</p>' : '') +
+      (rec.client_recommendation_notified_at
+        ? '<p style="font-size:0.8rem; color:var(--text-faint);">Client notified ' + new Date(rec.client_recommendation_notified_at).toLocaleString() + '</p>'
+        : '<p style="font-size:0.8rem; color:#e08a8a;">Notification email not yet delivered. <button type="button" class="btn btn-outline btn-sm scope-resend-notification-btn" style="margin-left:6px;">Retry Notification</button></p>') +
       '<div class="scope-form-status status-note" style="display:none; margin-top:10px;"></div>' +
       '<div class="scope-actions"><button type="button" class="btn btn-outline btn-sm scope-revise-btn">Revise This Recommendation (New Version)</button></div>';
+
+    var resendBtn = panel.querySelector('.scope-resend-notification-btn');
+    if (resendBtn) {
+      resendBtn.addEventListener('click', function () {
+        var statusEl = panel.querySelector('.scope-form-status');
+        resendBtn.disabled = true;
+        resendBtn.textContent = 'Sending…';
+        getAuthToken().then(function (token) {
+          return fetch('/api/resend-recommendation-notification', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (token || '') },
+            body: JSON.stringify({ applicationId: app.id }),
+          });
+        }).then(function (res) {
+          return res.json().then(function (body) { if (!res.ok) throw new Error(body.error || 'Unable to resend.'); return body; });
+        }).then(function () {
+          renderScopeReadOnly(panel, app, Object.assign({}, rec, { client_recommendation_notified_at: new Date().toISOString() }), conditions);
+        }).catch(function (err) {
+          resendBtn.disabled = false;
+          resendBtn.textContent = 'Retry Notification';
+          statusEl.textContent = err.message || 'Something went wrong.';
+          statusEl.style.display = 'block';
+        });
+      });
+    }
+
+    var resendReviewBtn = panel.querySelector('.scope-resend-review-notice-btn');
+    if (resendReviewBtn) {
+      resendReviewBtn.addEventListener('click', function () {
+        var statusEl = panel.querySelector('.scope-form-status');
+        resendReviewBtn.disabled = true;
+        resendReviewBtn.textContent = 'Sending…';
+        getAuthToken().then(function (token) {
+          return fetch('/api/resend-scope-review-notification', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (token || '') },
+            body: JSON.stringify({ applicationId: app.id }),
+          });
+        }).then(function (res) {
+          return res.json().then(function (body) { if (!res.ok) throw new Error(body.error || 'Unable to resend.'); return body; });
+        }).then(function () {
+          renderScopeReadOnly(panel, app, Object.assign({}, rec, { scope_review_owner_notified_at: new Date().toISOString() }), conditions);
+        }).catch(function (err) {
+          resendReviewBtn.disabled = false;
+          resendReviewBtn.textContent = 'Retry Notification';
+          statusEl.textContent = err.message || 'Something went wrong.';
+          statusEl.style.display = 'block';
+        });
+      });
+    }
 
     panel.querySelectorAll('.scope-cond-satisfied').forEach(function (cb) {
       cb.addEventListener('change', function () {
@@ -487,6 +547,7 @@
       '<div class="scope-field"><label>CHEW Focus Areas</label><div class="scope-focus-grid">' + focusHtml + '</div></div>' +
       '<div class="scope-field"><label>What CHEW Sees <span class="field-hint">&mdash; optional, human-authored summary; never raw AI output</span></label><textarea class="scope-summary" rows="2">' + esc(rec ? rec.client_facing_summary || '' : '') + '</textarea></div>' +
       '<div class="scope-field"><label>Why This Fits <span class="field-hint">&mdash; required, this is what the applicant reads</span></label><textarea class="scope-reason" rows="3">' + esc(rec ? rec.client_facing_reason || '' : '') + '</textarea></div>' +
+      '<div class="scope-field"><label>What Needs to Happen <span class="field-hint">&mdash; optional, up to 5 short priorities, one per line</span></label><textarea class="scope-priorities" rows="3" placeholder="e.g. Get all three bureaus pulled and reviewed">' + esc(((rec && rec.recommended_priorities) || []).join('\n')) + '</textarea></div>' +
       '<div class="scope-field"><label>Conditions <span class="field-hint">&mdash; optional</span></label><div class="scope-conditions-list"></div><button type="button" class="btn btn-outline btn-sm scope-add-condition">+ Add Condition</button></div>' +
       '<div class="scope-form-status status-note" style="display:none;"></div>' +
       '<div class="scope-actions"><button type="button" class="btn btn-outline scope-save-draft">Save Draft</button><button type="button" class="btn btn-gold scope-approve-send">Approve &amp; Send</button></div>';
@@ -527,6 +588,8 @@
         conditions: Array.prototype.slice.call(panel.querySelectorAll('.scope-condition-row')).map(function (row) {
           return { text: row.querySelector('.cond-text').value.trim(), blocking: row.querySelector('.cond-blocking').checked };
         }).filter(function (c) { return c.text; }),
+        recommendedPriorities: panel.querySelector('.scope-priorities').value.split('\n')
+          .map(function (line) { return line.trim(); }).filter(Boolean).slice(0, 5),
       };
     }
 
@@ -546,7 +609,7 @@
             applicationId: app.id, action: action, primaryTier: data.primaryTier, alternativeTier: data.alternativeTier,
             focusAreas: data.focusAreas, clientFacingReason: data.clientFacingReason,
             clientFacingSummary: data.clientFacingSummary, alternativeTradeoff: data.alternativeTradeoff,
-            conditions: data.conditions,
+            conditions: data.conditions, recommendedPriorities: data.recommendedPriorities,
           }),
         });
       }).then(function (res) {

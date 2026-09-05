@@ -1327,3 +1327,28 @@ ALTER TABLE agreement_signatures ADD COLUMN IF NOT EXISTS recommendation_version
 ALTER TABLE engagement_recommendations ADD COLUMN IF NOT EXISTS not_viewed_reminder_sent_at TIMESTAMPTZ;
 ALTER TABLE engagement_recommendations ADD COLUMN IF NOT EXISTS no_selection_reminder_sent_at TIMESTAMPTZ;
 ALTER TABLE engagement_recommendations ADD COLUMN IF NOT EXISTS not_signed_reminder_sent_at TIMESTAMPTZ;
+
+-- "Recommendation Is Ready" email delivery, split from the sent_at DB
+-- fact per the same claim-before-send doctrine used for payment emails
+-- (see claimAndSendNotification in api/stripe-webhook.js): sent_at
+-- records that CHEW approved and committed the recommendation;
+-- client_recommendation_notified_at records that the email actually went
+-- out. A Resend failure leaves this NULL without touching sent_at or
+-- creating a new version, so api/save-recommendation.js's claim helper
+-- can safely retry the notification alone on a later call.
+ALTER TABLE engagement_recommendations ADD COLUMN IF NOT EXISTS client_recommendation_notified_at TIMESTAMPTZ;
+
+-- 1-5 short, client-facing "what needs to happen" priority strings set by
+-- the admin in the Scope Builder — distinct from recommendation_conditions
+-- (which can individually be marked satisfied/blocking); priorities are
+-- plain descriptive text with no per-item state, immutable once sent like
+-- every other piece of sent recommendation content (a new version is
+-- required to change them — see api/save-recommendation.js).
+ALTER TABLE engagement_recommendations ADD COLUMN IF NOT EXISTS recommended_priorities JSONB;
+
+-- Scope-review request note ("owner notified a client asked for another
+-- look") split from the request fact (scope_review_requested_at, set
+-- above) by the same doctrine: a Resend failure while notifying CHEW must
+-- never lose the client's already-persisted request, and a retry must
+-- never re-notify for the same request.
+ALTER TABLE engagement_recommendations ADD COLUMN IF NOT EXISTS scope_review_owner_notified_at TIMESTAMPTZ;

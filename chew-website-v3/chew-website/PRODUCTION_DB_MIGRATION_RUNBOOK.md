@@ -95,6 +95,18 @@ is already the file's own top-to-bottom order, listed here for visibility):
     without them (no code path silently falls back to the old
     unrestricted-tier behavior — that would defeat the entire point of
     this migration).
+13. **Recommendation Engine closeout columns** (final-closeout pass, on
+    `engagement_recommendations`): `client_recommendation_notified_at`
+    (claim-before-send fact for the "Recommendation Is Ready" email,
+    separate from `sent_at` — see `api/save-recommendation.js` /
+    `api/resend-recommendation-notification.js`); `recommended_priorities`
+    (JSONB array, admin-authored "What Needs to Happen" list, immutable
+    once sent); `scope_review_owner_notified_at` (claim-before-send fact
+    for the scope-review admin notice, separate from
+    `scope_review_requested_at` — see `api/request-scope-review.js` /
+    `api/resend-scope-review-notification.js`). All three are additive,
+    nullable, `IF NOT EXISTS` columns — safe to run alongside step 12 or
+    afterward.
 
 ## After migration — verify individually (do not stop at "the file ran without error")
 
@@ -187,6 +199,12 @@ WHERE conrelid = 'engagement_recommendations'::regclass AND contype = 'c';
 -- expect: 5 rows (status, primary_tier, alternative_tier, and the two
 -- unnamed CHECKs -- alternative_tier <> primary_tier, and
 -- alternative_tier IS NULL OR alternative_tradeoff IS NOT NULL)
+
+-- 14. Recommendation Engine closeout columns (step 13 above)
+SELECT column_name FROM information_schema.columns
+WHERE table_name = 'engagement_recommendations'
+  AND column_name IN ('client_recommendation_notified_at', 'recommended_priorities', 'scope_review_owner_notified_at');
+-- expect: 3 rows
 ```
 
 Only once every query above returns its expected result:
@@ -201,7 +219,9 @@ Only once every query above returns its expected result:
     `api/recommendation.js`, `api/recommendation-viewed.js`,
     `api/select-engagement.js`, `api/select-payment-plan.js`,
     `api/request-scope-review.js`, `api/recommendation-conditions.js`,
-    `api/send-recommendation-reminders.js`, etc.) — deploying code before
+    `api/send-recommendation-reminders.js`,
+    `api/resend-recommendation-notification.js`,
+    `api/resend-scope-review-notification.js`, etc.) — deploying code before
     the schema exists is the exact ordering mistake this runbook exists
     to prevent, and for the Recommendation Engine specifically it means
     every request to these routes fails outright rather than silently

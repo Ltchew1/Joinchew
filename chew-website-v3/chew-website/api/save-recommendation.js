@@ -37,6 +37,7 @@ const { ONE_TIME_TIERS, PROGRAMS } = require('../lib/programs');
 const { isValidFocusAreaList } = require('../lib/focusAreas');
 const { requireAdmin } = require('../lib/admin-auth');
 const { sendRecommendationReadyEmail } = require('../lib/email');
+const { claimAndSendRecommendationNotification } = require('../lib/recommendations');
 
 function validateConditions(conditions) {
   if (conditions == null) return [];
@@ -46,6 +47,23 @@ function validateConditions(conditions) {
     const text = c && String(c.text || '').trim();
     if (!text) return null;
     cleaned.push({ text: text.slice(0, 1000), blocking: c.blocking !== false });
+  }
+  return cleaned;
+}
+
+// 1-5 short, client-facing "what needs to happen" strings — optional (an
+// admin may rely on conditions alone), but if provided, every entry must
+// be real text (no blank placeholders) and the list is capped at 5 so it
+// stays a short, readable priority list rather than a second essay.
+function validatePriorities(priorities) {
+  if (priorities == null) return null;
+  if (!Array.isArray(priorities)) return undefined;
+  if (priorities.length > 5) return undefined;
+  const cleaned = [];
+  for (const p of priorities) {
+    const text = String(p || '').trim();
+    if (!text) return undefined;
+    cleaned.push(text.slice(0, 300));
   }
   return cleaned;
 }
@@ -62,6 +80,7 @@ module.exports = async (req, res) => {
   const {
     applicationId, action, primaryTier, alternativeTier, focusAreas,
     clientFacingReason, clientFacingSummary, alternativeTradeoff, conditions,
+    recommendedPriorities,
   } = req.body || {};
 
   if (!applicationId) return res.status(400).json({ error: 'Missing applicationId.' });
@@ -80,6 +99,10 @@ module.exports = async (req, res) => {
   }
   const cleanedConditions = validateConditions(conditions);
   if (cleanedConditions === null) return res.status(400).json({ error: 'Each condition needs non-empty text.' });
+  const cleanedPriorities = validatePriorities(recommendedPriorities);
+  if (cleanedPriorities === undefined) {
+    return res.status(400).json({ error: 'Priorities must be 1-5 non-empty strings, or omitted entirely.' });
+  }
 
   const client = await getPool().connect();
   try {
@@ -109,6 +132,23 @@ module.exports = async (req, res) => {
     let version;
     const newStatus = action === 'send' ? 'sent' : 'draft';
 
+    // Must run BEFORE the insert/update below promotes this application's
+    // new row to status='sent' -- idx_engagement_recommendations_one_sent
+    // is a plain (non-deferrable) unique index, so Postgres checks it at
+    // the end of the statement that violates it, not at COMMIT. Super-
+    // seding the prior sent version first means only one row ever holds
+    // status='sent' for this application at any single statement boundary.
+    let supersededPriorVersion = false;
+    if (action === 'send') {
+      const supersedeResult = await client.query(
+        `UPDATE engagement_recommendations
+         SET status = 'superseded', superseded_at = now()
+         WHERE application_id = $1 AND status = 'sent'`,
+        [applicationId]
+      );
+      supersededPriorVersion = supersedeResult.rowCount > 0;
+    }
+
     if (existingDraft) {
       recommendationId = existingDraft.id;
       version = existingDraft.version;
@@ -116,10 +156,12 @@ module.exports = async (req, res) => {
         `UPDATE engagement_recommendations
          SET status = $1, primary_tier = $2, alternative_tier = $3, focus_areas = $4,
              client_facing_reason = $5, client_facing_summary = $6, alternative_tradeoff = $7,
+             recommended_priorities = $8,
              sent_at = CASE WHEN $1 = 'sent' THEN now() ELSE sent_at END
-         WHERE id = $8`,
+         WHERE id = $9`,
         [newStatus, primaryTier, alternativeTier || null, JSON.stringify(focusAreas),
-          clientFacingReason, clientFacingSummary || null, alternativeTradeoff || null, recommendationId]
+          clientFacingReason, clientFacingSummary || null, alternativeTradeoff || null,
+          cleanedPriorities ? JSON.stringify(cleanedPriorities) : null, recommendationId]
       );
       await client.query(`DELETE FROM recommendation_conditions WHERE recommendation_id = $1`, [recommendationId]);
     } else {
@@ -131,11 +173,13 @@ module.exports = async (req, res) => {
       const insertResult = await client.query(
         `INSERT INTO engagement_recommendations (
            application_id, version, status, primary_tier, alternative_tier, focus_areas,
-           client_facing_reason, client_facing_summary, alternative_tradeoff, created_by, sent_at
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CASE WHEN $3 = 'sent' THEN now() ELSE NULL END)
+           client_facing_reason, client_facing_summary, alternative_tradeoff, recommended_priorities,
+           created_by, sent_at
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CASE WHEN $3 = 'sent' THEN now() ELSE NULL END)
          RETURNING id`,
         [applicationId, version, newStatus, primaryTier, alternativeTier || null, JSON.stringify(focusAreas),
-          clientFacingReason, clientFacingSummary || null, alternativeTradeoff || null, adminId]
+          clientFacingReason, clientFacingSummary || null, alternativeTradeoff || null,
+          cleanedPriorities ? JSON.stringify(cleanedPriorities) : null, adminId]
       );
       recommendationId = insertResult.rows[0].id;
     }
@@ -147,29 +191,26 @@ module.exports = async (req, res) => {
       );
     }
 
-    let supersededPriorVersion = false;
-    if (action === 'send') {
-      const supersedeResult = await client.query(
-        `UPDATE engagement_recommendations
-         SET status = 'superseded', superseded_at = now()
-         WHERE application_id = $1 AND status = 'sent' AND id <> $2`,
-        [applicationId, recommendationId]
-      );
-      supersededPriorVersion = supersedeResult.rowCount > 0;
-    }
-
     await client.query('COMMIT');
 
+    // The recommendation itself is already durably committed above ('sent',
+    // with its version, superseding any prior sent version) regardless of
+    // what happens next. Notification is a separate, independently
+    // retryable fact (client_recommendation_notified_at) — a Resend
+    // failure here never undoes the send, never creates another version,
+    // and (via the claim's FOR UPDATE + NULL check) never double-sends if
+    // this same recommendationId is ever notified again later (e.g. an
+    // admin-triggered retry — see api/resend-recommendation-notification.js).
     if (action === 'send') {
       try {
         const appInfo = await query(`SELECT full_name, email, access_token FROM applications WHERE id = $1`, [applicationId]);
-        await sendRecommendationReadyEmail({
+        await claimAndSendRecommendationNotification(recommendationId, 'client_recommendation_notified_at', () => sendRecommendationReadyEmail({
           to: appInfo.rows[0].email,
           name: appInfo.rows[0].full_name,
           engagementLabel: PROGRAMS[primaryTier].label,
           clientFacingReason,
           recommendationUrl: `${process.env.SITE_URL}/recommendation.html?token=${encodeURIComponent(appInfo.rows[0].access_token)}`,
-        });
+        }));
       } catch (emailErr) {
         console.error(`RECOMMENDATION_READY_EMAIL_FAILED recommendation=${recommendationId}:`, emailErr.message);
       }

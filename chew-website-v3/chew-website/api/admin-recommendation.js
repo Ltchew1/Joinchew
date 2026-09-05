@@ -33,7 +33,7 @@ module.exports = async (req, res) => {
     const draftResult = await query(
       `SELECT id, application_id, version, status, primary_tier, alternative_tier,
               focus_areas, client_facing_reason, client_facing_summary, alternative_tradeoff,
-              created_at, sent_at
+              recommended_priorities, created_at, sent_at
        FROM engagement_recommendations WHERE application_id = $1 AND status = 'draft'`,
       [applicationId]
     );
@@ -44,7 +44,9 @@ module.exports = async (req, res) => {
       const sentResult = await query(
         `SELECT id, application_id, version, status, primary_tier, alternative_tier,
                 focus_areas, client_facing_reason, client_facing_summary, alternative_tradeoff,
-                created_at, sent_at, viewed_at, scope_review_requested_at, scope_review_message
+                recommended_priorities, created_at, sent_at, viewed_at,
+                client_recommendation_notified_at,
+                scope_review_requested_at, scope_review_message, scope_review_owner_notified_at
          FROM engagement_recommendations WHERE application_id = $1 AND status = 'sent'`,
         [applicationId]
       );

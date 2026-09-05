@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sign Your Client Services Agreement | CHEW</title>
 <meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -115,6 +116,7 @@
         <div class="deal-sheet-grid">
           <div class="deal-sheet-row" id="ds-focus-areas-row" hidden><span class="ds-label">CHEW is focused on</span><span class="ds-value" id="ds-focus-areas"></span></div>
           <div class="deal-sheet-row" id="ds-why-fits-row" hidden><span class="ds-label">Why this fits</span><span class="ds-value" id="ds-why-fits"></span></div>
+          <div class="deal-sheet-row" id="ds-priorities-row" hidden><span class="ds-label">Initial priorities</span><span class="ds-value" id="ds-priorities"></span></div>
           <div class="deal-sheet-row"><span class="ds-label">You're buying</span><span class="ds-value" id="ds-product"></span></div>
           <div class="deal-sheet-row"><span class="ds-label">You're paying</span><span class="ds-value ds-value--price" id="ds-price"></span></div>
           <div class="deal-sheet-row"><span class="ds-label">Billing</span><span class="ds-value" id="ds-billing"></span></div>
@@ -328,6 +330,12 @@
         if (recommendationData && recommendationData.clientFacingReason) {
           document.getElementById('ds-why-fits').textContent = recommendationData.clientFacingReason;
           whyFitsRow.hidden = false;
+        }
+        if (recommendationData && recommendationData.recommendedPriorities && recommendationData.recommendedPriorities.length) {
+          // Descriptive starting focus only -- not a promised sequence or
+          // an outcome guarantee (see agreement's doesNotPromise language).
+          document.getElementById('ds-priorities').textContent = recommendationData.recommendedPriorities.join(' · ');
+          document.getElementById('ds-priorities-row').hidden = false;
         }
 
         // Exact terms of the plan the client is about to pay, not a
