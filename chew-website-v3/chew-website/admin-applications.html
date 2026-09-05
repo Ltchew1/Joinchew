@@ -180,6 +180,24 @@
     return window.Clerk.session.getToken().catch(function () { return null; });
   }
 
+  // Clerk API errors normally arrive as a ClerkAPIResponseError with an
+  // .errors array of { code, message, longMessage } -- surfacing that
+  // (rather than a fixed generic string) turns an otherwise invisible
+  // Dashboard-side rejection into something readable directly on this
+  // page, with no DevTools access needed. Falls back gracefully for a
+  // plain JS error (e.g. Clerk.openSignIn simply not existing) or an
+  // unrecognized shape.
+  function describeClerkError(err) {
+    if (!err) return 'No error detail was provided.';
+    if (Array.isArray(err.errors) && err.errors.length) {
+      return err.errors.map(function (e) {
+        return (e.code ? '[' + e.code + '] ' : '') + (e.longMessage || e.message || '');
+      }).join(' ');
+    }
+    if (err.message) return err.message;
+    try { return JSON.stringify(err); } catch (jsonErr) { return String(err); }
+  }
+
   // openSignIn() previously had no error handling at all here: if it
   // threw (Clerk not fully ready, a Dashboard-side restriction rejecting
   // this origin, an unrecognized option) the button stayed disabled
@@ -192,7 +210,7 @@
     function handleOpenSignInFailure(err) {
       console.error('Clerk sign-in failed to open:', err);
       signInBtn.disabled = false;
-      showAccessForm('Unable to open the sign-in window. Please try again, or contact support if this persists.');
+      showAccessForm('Unable to open the sign-in window: ' + describeClerkError(err));
     }
     try {
       var result = window.Clerk.openSignIn({
