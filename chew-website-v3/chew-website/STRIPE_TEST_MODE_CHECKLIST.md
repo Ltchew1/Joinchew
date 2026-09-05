@@ -47,6 +47,16 @@ conditioned on Sequences G and H actually being run, not merely written.
       share one application (Sequence G reuses a graduate produced by
       completing the original engagement in Sequence H first), so set
       these before starting either.
+    - `CLERK_PUBLISHABLE_KEY` — a DIFFERENT, separate variable from
+      `CLERK_SECRET_KEY` above (same Clerk instance, different key pair —
+      public/client-side vs. private/server-side). Missing this is the
+      exact cause of admin-applications.html showing "Admin sign-in is
+      not configured yet." (`api/admin-auth-config.js`'s 503) — without
+      it a human operator cannot sign into the admin queue at all, which
+      blocks the Accept decision, Scope Builder, and Delivery & Completion
+      steps both sequences need. Find it in Clerk Dashboard → API Keys →
+      Publishable key (`pk_test_...` in test mode) — same page as the
+      secret key, easy to copy one and miss the other.
     - `ADMIN_CLERK_USER_ID` — required to authenticate into the admin
       queue at all (`lib/admin-auth.js`), which both sequences need for
       the admin Accept decision, Scope Builder, and Delivery & Completion
@@ -58,6 +68,14 @@ conditioned on Sequences G and H actually being run, not merely written.
     - `SITE_URL` — required for correct Checkout `success_url`/
       `cancel_url` and the Clerk invitation's `redirect_url`
       (`PORTAL_URL/sign-up`).
+
+    Vercel scopes every env var per environment (Production / Preview /
+    Development) independently — setting one only under Production and
+    testing against a Preview deployment (or vice versa) reproduces
+    exactly the "not configured yet" symptom above even though the
+    Dashboard shows the variable as "set." Confirm the Preview checkbox
+    specifically for every variable in this list, then redeploy — Vercel
+    does not pick up env var changes until the next deploy.
 5. Use Stripe's documented test cards throughout: `4242 4242 4242 4242`
    (any future expiry, any CVC) for a successful charge;
    `4000 0000 0000 0341` for a card that's valid at Checkout but fails on
