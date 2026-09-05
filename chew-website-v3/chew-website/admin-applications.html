@@ -173,10 +173,41 @@
   // CLERK_UI_VERSION "1" matches @clerk/shared's own default pairing:
   // its versionSelector() resolves the UI package to major version "1"
   // for this clerk-js generation (see node_modules/@clerk/shared/dist/
-  // versionSelector.js) -- jsdelivr resolves "@1" to the latest 1.x
-  // release, the same major-version-tag approach the official loader
-  // itself falls back to when no exact version is pinned.
+  // versionSelector.js).
   var CLERK_UI_VERSION = '1';
+
+  // Both scripts must be served from the SAME host @clerk/shared's own
+  // buildScriptHost() resolves to by default (no proxyUrl, no custom
+  // domain configured here): the tenant's own Clerk Frontend API domain,
+  // derived from the publishable key itself -- NOT jsdelivr. An earlier
+  // pass loaded ui.browser.js from jsdelivr and it failed to load
+  // ("Failed to load the sign-in system.") -- @clerk/clerk-js happens to
+  // also be mirrored on jsdelivr as a public npm package, which is why
+  // clerk.browser.js loading via jsdelivr worked well enough to reach
+  // window.Clerk, but that was never the officially correct host for
+  // either script, only one that partially worked by coincidence.
+  //
+  // This replicates @clerk/shared's own parsePublishableKey() logic
+  // exactly (node_modules/@clerk/shared/dist/keys.js): a Clerk
+  // publishable key is `pk_test_<base64>` or `pk_live_<base64>`, where
+  // the base64 payload decodes to `<frontend-api-host>$`. Verified by
+  // running the real installed parsePublishableKey() against a synthetic
+  // key before writing this. No build tooling needed -- atob() is a
+  // native browser API, so this needs no bundler for a static .html page.
+  function frontendApiFromPublishableKey(publishableKey) {
+    var parts = String(publishableKey || '').split('_');
+    if (parts.length !== 3) throw new Error('Clerk publishable key is not in the expected pk_test_/pk_live_ format.');
+    var decoded;
+    try {
+      decoded = atob(parts[2]);
+    } catch (decodeErr) {
+      throw new Error('Could not decode the Clerk publishable key.');
+    }
+    if (decoded.charAt(decoded.length - 1) !== '$') {
+      throw new Error('Decoded Clerk publishable key is not in the expected format.');
+    }
+    return decoded.slice(0, -1);
+  }
 
   function loadScriptTag(src, publishableKey) {
     return new Promise(function (resolve, reject) {
@@ -192,8 +223,9 @@
   }
 
   function loadClerkScript(publishableKey) {
-    var coreUrl = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@' + CLERK_JS_VERSION + '/dist/clerk.browser.js';
-    var uiUrl = 'https://cdn.jsdelivr.net/npm/@clerk/ui@' + CLERK_UI_VERSION + '/dist/ui.browser.js';
+    var frontendApi = frontendApiFromPublishableKey(publishableKey);
+    var coreUrl = 'https://' + frontendApi + '/npm/@clerk/clerk-js@' + CLERK_JS_VERSION + '/dist/clerk.browser.js';
+    var uiUrl = 'https://' + frontendApi + '/npm/@clerk/ui@' + CLERK_UI_VERSION + '/dist/ui.browser.js';
     return Promise.all([
       loadScriptTag(coreUrl, publishableKey).then(function () { return window.Clerk.load(); }),
       loadScriptTag(uiUrl, publishableKey),
