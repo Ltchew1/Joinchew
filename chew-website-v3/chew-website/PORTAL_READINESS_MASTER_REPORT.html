@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Portal Readiness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf8f2;
+    --surface: #ffffff;
+    --surface-2: #f2efe4;
+    --border: rgba(28,27,20,0.12);
+    --border-strong: rgba(28,27,20,0.22);
+    --text: #1c1b14;
+    --text-dim: rgba(28,27,20,0.72);
+    --text-faint: rgba(28,27,20,0.46);
+    --gold: #8f7024;
+    --gold-light: #b08f2e;
+    --gold-wash: rgba(143,112,36,0.09);
+    --steel: #3f5f76;
+    --steel-wash: rgba(63,95,118,0.09);
+    --good: #2f8a5c;
+    --good-wash: rgba(47,138,92,0.1);
+    --warn: #8a6d1f;
+    --warn-wash: rgba(138,109,31,0.1);
+    --bad: #b3453f;
+    --bad-wash: rgba(179,69,63,0.1);
+    --shadow: 0 1px 2px rgba(28,27,20,0.04), 0 8px 24px rgba(28,27,20,0.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14140f;
+      --surface: #1b1b15;
+      --surface-2: #21211a;
+      --border: rgba(242,239,230,0.1);
+      --border-strong: rgba(242,239,230,0.18);
+      --text: #f2efe6;
+      --text-dim: rgba(242,239,230,0.72);
+      --text-faint: rgba(242,239,230,0.44);
+      --gold: #d3ae4e;
+      --gold-light: #e8ce7a;
+      --gold-wash: rgba(211,174,78,0.1);
+      --steel: #8fb2c9;
+      --steel-wash: rgba(143,178,201,0.1);
+      --good: #7fd9a4;
+      --good-wash: rgba(127,217,164,0.1);
+      --warn: #e0c26a;
+      --warn-wash: rgba(224,194,106,0.1);
+      --bad: #e08a8a;
+      --bad-wash: rgba(224,138,138,0.1);
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14140f;
+    --surface: #1b1b15;
+    --surface-2: #21211a;
+    --border: rgba(242,239,230,0.1);
+    --border-strong: rgba(242,239,230,0.18);
+    --text: #f2efe6;
+    --text-dim: rgba(242,239,230,0.72);
+    --text-faint: rgba(242,239,230,0.44);
+    --gold: #d3ae4e;
+    --gold-light: #e8ce7a;
+    --gold-wash: rgba(211,174,78,0.1);
+    --steel: #8fb2c9;
+    --steel-wash: rgba(143,178,201,0.1);
+    --good: #7fd9a4;
+    --good-wash: rgba(127,217,164,0.1);
+    --warn: #e0c26a;
+    --warn-wash: rgba(224,194,106,0.1);
+    --bad: #e08a8a;
+    --bad-wash: rgba(224,138,138,0.1);
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Work Sans', system-ui, sans-serif; line-height: 1.6; }
+  h1, h2, h3, h4 { font-family: 'Fraunces', Georgia, serif; text-wrap: balance; color: var(--text); letter-spacing: -0.01em; }
+  code, .mono, .field, td.mono, .pill-code { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+  a { color: var(--gold); }
+
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 24px 120px; }
+  .wide { max-width: 1180px; }
+
+  header.masthead {
+    border-bottom: 1px solid var(--border);
+    padding: 40px 0 28px;
+  }
+  .masthead .eyebrow {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--gold); display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+  }
+  .masthead .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); display: inline-block; }
+  .masthead h1 { font-size: clamp(2rem, 4.5vw, 2.9rem); font-weight: 600; margin: 0 0 10px; }
+  .masthead .sub { color: var(--text-dim); font-size: 1.05rem; max-width: 62ch; margin: 0 0 20px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 0.84rem; color: var(--text-faint); font-family: 'IBM Plex Mono', monospace; }
+  .meta-row strong { color: var(--text-dim); font-weight: 500; }
+
+  nav.toc {
+    position: sticky; top: 0; z-index: 10; background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px; margin: 0 0 8px;
+    display: flex; gap: 4px; overflow-x: auto; white-space: nowrap;
+    backdrop-filter: blur(6px);
+  }
+  nav.toc a {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.03em;
+    color: var(--text-faint); text-decoration: none; padding: 6px 10px; border-radius: 6px;
+  }
+  nav.toc a:hover { color: var(--text); background: var(--surface-2); }
+
+  section { padding: 44px 0; border-bottom: 1px solid var(--border); }
+  section:last-of-type { border-bottom: none; }
+  section > .tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--gold); background: var(--gold-wash); padding: 4px 10px; border-radius: 20px; margin-bottom: 14px;
+  }
+  section h2 { font-size: 1.6rem; margin: 0 0 6px; }
+  section .dek { color: var(--text-dim); font-size: 1rem; max-width: 68ch; margin: 0 0 26px; }
+
+  h3 { font-size: 1.15rem; margin: 30px 0 10px; }
+  h4 { font-size: 0.98rem; margin: 20px 0 8px; color: var(--text-dim); font-weight: 600; font-family: 'Work Sans', sans-serif; text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.78rem; }
+  p { margin: 0 0 14px; max-width: 72ch; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; max-width: 72ch; }
+  li { margin-bottom: 6px; }
+  strong { color: var(--text); font-weight: 600; }
+
+  .callout {
+    border-left: 3px solid var(--gold); background: var(--gold-wash);
+    padding: 14px 18px; border-radius: 0 10px 10px 0; margin: 18px 0; font-size: 0.94rem;
+  }
+  .callout.finding { border-left-color: var(--bad); background: var(--bad-wash); }
+  .callout.good { border-left-color: var(--good); background: var(--good-wash); }
+  .callout strong.label {
+    display: block; font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.08em;
+    text-transform: uppercase; margin-bottom: 6px; color: inherit;
+  }
+
+  .table-wrap { overflow-x: auto; margin: 18px 0; border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.86rem; background: var(--surface); }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); background: var(--surface-2); white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  td.num, th.num { font-variant-numeric: tabular-nums; }
+
+  .chip { display: inline-flex; align-items: center; gap: 5px; font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; letter-spacing: 0.02em; padding: 2px 8px; border-radius: 20px; white-space: nowrap; font-weight: 500; }
+  .chip.good { color: var(--good); background: var(--good-wash); }
+  .chip.warn { color: var(--warn); background: var(--warn-wash); }
+  .chip.bad { color: var(--bad); background: var(--bad-wash); }
+  .chip.neutral { color: var(--text-faint); background: var(--surface-2); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+  @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } }
+  .card { border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; background: var(--surface); }
+  .card h4 { margin-top: 0; }
+
+  .stage-block { margin: 30px 0; padding: 22px 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); }
+  .stage-block .stage-num { font-family: 'IBM Plex Mono', monospace; color: var(--gold); font-size: 0.78rem; letter-spacing: 0.08em; }
+  .stage-block h3 { margin: 4px 0 12px; font-size: 1.25rem; }
+  .stage-dims dt { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); margin-top: 12px; }
+  .stage-dims dd { margin: 3px 0 0; }
+  .stage-dims { margin: 0; }
+
+  .order-list { list-style: none; padding: 0; margin: 20px 0; counter-reset: step; }
+  .order-list li { counter-increment: step; position: relative; padding: 14px 0 14px 46px; border-bottom: 1px solid var(--border); margin: 0; }
+  .order-list li:last-child { border-bottom: none; }
+  .order-list li::before {
+    content: counter(step); position: absolute; left: 0; top: 12px;
+    width: 30px; height: 30px; border-radius: 8px; background: var(--gold-wash); color: var(--gold);
+    display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 0.86rem; font-weight: 600;
+  }
+  .order-list strong { display: block; margin-bottom: 3px; }
+
+  .exec-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 24px 0 8px; }
+  @media (max-width: 860px) { .exec-summary { grid-template-columns: repeat(2, 1fr); } }
+  .exec-tile { border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; background: var(--surface); }
+  .exec-tile .n { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 600; color: var(--gold); line-height: 1; }
+  .exec-tile .l { font-size: 0.78rem; color: var(--text-faint); margin-top: 6px; }
+
+  footer.endnote { padding: 40px 0 10px; color: var(--text-faint); font-size: 0.86rem; }
+  footer.endnote .table-wrap { margin-top: 14px; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap wide">
+    <div class="eyebrow"><span class="dot"></span> Audit only — zero files changed</div>
+    <h1>Portal Readiness Master Report</h1>
+    <p class="sub">A full-lifecycle audit of the CHEW commercial funnel — cold visitor through long-term client — tracing the actual code and database, not the intended one, so the Client Portal is built on a lifecycle that is already airtight underneath it.</p>
+    <div class="meta-row">
+      <span><strong>Repo</strong> Ltchew1/Joinchew</span>
+      <span><strong>Branch</strong> preview/contract-agreement-intelligence</span>
+      <span><strong>Baseline commit</strong> d71aeea</span>
+      <span><strong>Method</strong> direct code + schema read, no assumptions</span>
+      <span><strong>Status</strong> report only — no commercial-engine or portal code touched</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#exec">Summary</a>
+  <a href="#lifecycle-a">A · Current lifecycle</a>
+  <a href="#lifecycle-b">B · Intended lifecycle</a>
+  <a href="#gaps">C · Gaps</a>
+  <a href="#blockers">D · Launch blockers</a>
+  <a href="#commercial">E · Commercial</a>
+  <a href="#agreement">F · Agreement gates</a>
+  <a href="#service">G · Service architecture</a>
+  <a href="#data">H · Data architecture</a>
+  <a href="#portal-deps">I · Portal dependencies</a>
+  <a href="#security">J · Security boundaries</a>
+  <a href="#notifications">K · Notifications</a>
+  <a href="#failure">L · Failure/recovery</a>
+  <a href="#buildorder">M · Build order</a>
+</nav>
+
+<main class="wrap wide">
+
+<section id="exec">
+  <div class="tag">Executive summary</div>
+  <h2>The lifecycle underneath the portal is mostly real. Two seams aren't sewn shut yet.</h2>
+  <p class="dek">Everything from Application through Payment Confirmation is genuinely built, tested against real Postgres, and already enforces "no blind payment" server-side. The gaps are specific and named below — they cluster at the two edges: <strong>the handoff into the portal</strong> (fires too early, and there's no read surface yet) and <strong>the handoff out of a completed engagement</strong> (service completion, Continuity, and graduate status have no tracked state at all). Neither is a redesign. Both are additive.</p>
+
+  <div class="exec-summary">
+    <div class="exec-tile"><div class="n">10/18</div><div class="l">lifecycle stages fully built &amp; server-verified</div></div>
+    <div class="exec-tile"><div class="n">4/18</div><div class="l">stages with zero tracked backend state today</div></div>
+    <div class="exec-tile"><div class="n">2</div><div class="l">genuine launch blockers before portal work starts</div></div>
+    <div class="exec-tile"><div class="n">0</div><div class="l">files changed producing this report</div></div>
+  </div>
+
+  <div class="callout finding">
+    <strong class="label">The single most important finding</strong>
+    The Client Portal invitation (<code>lib/clerk.js</code> → <code>createPortalInvitation</code>) fires from <code>api/send-decision.js</code> at the moment an application is <strong>accepted</strong> — before a recommendation exists, before an agreement is signed, before a dollar has moved. This predates the Recommendation Engine and was never reconciled with it. A portal built today would need to represent a signed-in client who has no engagement, no agreement, and no payment yet — a state the portal has no vocabulary for, and this backend has no read API to describe (see §I).
+  </div>
+
+  <div class="callout good">
+    <strong class="label">What's already solid — don't re-litigate this</strong>
+    Recommendation → Agreement → Signature → Payment is a real, server-enforced gate, not a UI convention. <code>api/sign-agreement.js</code> and <code>api/create-program-checkout-session.js</code> derive tier, price, and payment-plan terms entirely from the applicant's own <code>engagement_selections</code> row and the currently-active <code>engagement_recommendations</code> row — never from anything the client submits. A stale or superseded selection returns <code>409 RECOMMENDATION_UPDATED</code>, not a checkout session. This has 180+ real-Postgres assertions behind it as of the last closeout pass.
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="lifecycle-a">
+  <div class="tag">A · Current lifecycle</div>
+  <h2>What is actually implemented, stage by stage</h2>
+  <p class="dek">18 stages, traced against real files and real schema. The overview table below answers the four questions that matter most for portal-readiness at a glance; full detail for every stage — including the 14 remaining dimensions you asked about (auth, idempotency, cancellation, what AI may/may never decide, etc.) — follows underneath for the stages where it's substantive. Stages with no backend behavior say so plainly rather than being padded out.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Stage</th><th>Entry condition</th><th>Exit condition</th><th>DB source of truth</th><th>Status</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>1. Marketing Site</td><td>Any visit</td><td>Clicks Make Your Move</td><td class="mono">none (static)</td><td><span class="chip good">built</span></td></tr>
+        <tr><td>2. Make Your Move</td><td>Lands on <span class="mono">apply.html</span></td><td>Submits the 10-question intake</td><td class="mono">none client-side</td><td><span class="chip good">built</span></td></tr>
+        <tr><td>3. Application</td><td>Form submitted</td><td>Row created, AI-scored or scoring failed gracefully</td><td class="mono">applications</td><td><span class="chip good">built</span></td></tr>
+        <tr><td>4. Admissions Review</td><td>Row has <span class="mono">status IN (submitted, scored)</span></td><td>Admin sends a decision</td><td class="mono">applications</td><td><span class="chip good">built</span></td></tr>
+        <tr><td>5. Decision</td><td>Admin submits decision</td><td>Decision email sent, portal invite fired if accepted</td><td class="mono">applications.decision</td><td><span class="chip warn">built, mistimed</span></td></tr>
+        <tr><td>6. Recommendation</td><td>Decision is ACCEPT / ACCEPT_WITH_CONDITIONS</td><td>Admin sends a scoped recommendation</td><td class="mono">engagement_recommendations</td><td><span class="chip good">built</span></td></tr>
+        <tr><td>7. Agreement</td><td>Active <span class="mono">sent</span> recommendation exists</td><td>Client selects tier + payment plan</td><td class="mono">engagement_selections</td><td><span class="chip good">built</span></td></tr>
+        <tr><td>8. Signature</td><td>Active selection with tier + plan set</td><td>Signature recorded, snapshot/hash stored</td><td class="mono">agreement_signatures</td><td><span class="chip good">built</span></td></tr>
+        <tr><td>9. Pricing / Engagement</td><td>N/A — folded into stage 6/7</td><td colspan="1">—</td><td class="mono">lib/programs.js</td><td><span class="chip neutral">not a separate stage</span></td></tr>
+        <tr><td>10. Payment</td><td>Valid signature bound to current recommendation/selection</td><td>Stripe Checkout Session created</td><td class="mono">program_purchases</td><td><span class="chip good">built</span></td></tr>
+        <tr><td>11. Payment Plan</td><td>Client chose Monthly at selection</td><td>Subscription Schedule active, tracking installments</td><td class="mono">program_purchases, program_purchase_installments</td><td><span class="chip good">built</span></td></tr>
+        <tr><td>12. Enrollment</td><td>Stripe webhook confirms payment</td><td>Purchase marked complete/active, client + owner notified</td><td class="mono">program_purchases.status</td><td><span class="chip good">built</span></td></tr>
+        <tr><td>13. Service/Capability Selection</td><td>Enrolled</td><td>—</td><td class="mono">none</td><td><span class="chip bad">not built</span></td></tr>
+        <tr><td>14. Execution</td><td>Enrolled</td><td>—</td><td class="mono">none</td><td><span class="chip bad">not built</span></td></tr>
+        <tr><td>15. Progress</td><td>Sessions delivered</td><td>—</td><td class="mono">none</td><td><span class="chip bad">not built</span></td></tr>
+        <tr><td>16. Continuity</td><td>Engagement "complete"</td><td>—</td><td class="mono">none</td><td><span class="chip bad">not built</span></td></tr>
+        <tr><td>17. Expansion / Renewal</td><td>Continuity window, or new need</td><td>New recommendation OR Membership OR new application</td><td class="mono">engagement_recommendations (new version), program_purchases (membership)</td><td><span class="chip warn">partially built</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Full detail — the stages with real substance</h3>
+
+  <div class="stage-block">
+    <div class="stage-num">STAGE 3 / 4 / 5</div>
+    <h3>Application → Admissions Review → Decision</h3>
+    <dl class="stage-dims">
+      <dt>Client-visible state</dt><dd>Nothing until decided — no status page exists between submission and decision (by design; there is no applicant-facing "your application is under review" screen, only the confirmation email at submission and the decision email later).</dd>
+      <dt>Admin-visible state</dt><dd><span class="mono">admin-applications.html</span> — full pipeline queue with AI score, dimension scores, recommendation, rationale, one flag / one strength, internal note, applicant-facing message, all separated (internal never leaks — repo-wide grep-audited this pass and in an earlier pass).</dd>
+      <dt>Required emails</dt><dd>Applicant confirmation on submit; owner "new application" notice on submit; applicant decision email on decision.</dd>
+      <dt>Required authorization</dt><dd>Submission: none (public form). Review/decision: <span class="mono">requireAdmin</span> — real Clerk session verification, pinned to one <span class="mono">ADMIN_CLERK_USER_ID</span>, no RBAC.</dd>
+      <dt>Idempotency</dt><dd><span class="mono">api/send-decision.js</span> checks <span class="mono">status = 'decided'</span> before acting — a repeat decision call returns <span class="mono">alreadyDecided: true</span> rather than re-sending or re-deciding.</dd>
+      <dt>What AI may recommend</dt><dd><span class="mono">lib/scoring.js</span> — a 0–100 score across 4 dimensions and one of 5 recommendation labels, <strong>advisory only</strong>. It never reaches the applicant and never writes <span class="mono">applications.decision</span> directly.</dd>
+      <dt>What AI must never autonomously decide</dt><dd>The actual decision. <span class="mono">api/send-decision.js</span> requires an explicit human-submitted <span class="mono">decision</span> value — there is no code path where <span class="mono">ai_recommendation</span> auto-populates <span class="mono">decision</span>.</dd>
+      <dt>Failure/retry</dt><dd>Scoring failure is caught and stored as <span class="mono">ai_error</span> — the application still submits and can still be manually decided with zero AI input. Email failure inside decision-sending is <strong>not currently wrapped</strong> in a try/catch the way every other lifecycle email is (see Gaps §C-2).</dd>
+    </dl>
+  </div>
+
+  <div class="stage-block">
+    <div class="stage-num">STAGE 6</div>
+    <h3>Recommendation</h3>
+    <dl class="stage-dims">
+      <dt>Entry / exit</dt><dd>Entry: application is accepted. Exit: admin clicks Approve &amp; Send in the Scope Builder, creating a <span class="mono">status='sent'</span> row.</dd>
+      <dt>DB source of truth</dt><dd><span class="mono">engagement_recommendations</span> — versioned, at most one <span class="mono">sent</span> and one <span class="mono">draft</span> row per application, enforced by partial unique indexes at the database level, not just application discipline.</dd>
+      <dt>Client-visible state</dt><dd><span class="mono">recommendation.html</span> — primary tier, optional alternative tier (with a mandatory tradeoff explanation), CHEW's focus areas, "What Needs to Happen" (priorities + conditions), session cadence. A draft is <strong>never</strong> returned by the client-facing GET, by construction.</dd>
+      <dt>Admin-visible state</dt><dd>Scope Builder in <span class="mono">admin-applications.html</span> — full form when drafting/revising, read-only summary once sent, including notification-delivery status and a manual retry control.</dd>
+      <dt>What AI may recommend</dt><dd><strong>Nothing.</strong> This is the load-bearing fact for the whole portal-readiness question: the commercial engagement recommendation is 100% admin-authored. There is no AI call anywhere in <span class="mono">api/save-recommendation.js</span>. The only AI touchpoint in the entire funnel is the admissions triage score three stages earlier.</dd>
+      <dt>Authorization</dt><dd>Write: <span class="mono">requireAdmin</span>. Read (client): <span class="mono">access_token</span> query param, no session.</dd>
+      <dt>Idempotency / notification durability</dt><dd>Sending is claim-before-send (<span class="mono">client_recommendation_notified_at</span>, separate from the <span class="mono">sent_at</span> DB fact) — an email-provider failure never blocks the recommendation from committing and is independently retryable via <span class="mono">api/resend-recommendation-notification.js</span>, never a duplicate send.</dd>
+      <dt>What the client can change</dt><dd>Nothing about the recommendation's content. They can request a scope review (durable, independently retryable notice to CHEW) or select among the offered tier(s).</dd>
+      <dt>What only CHEW can change</dt><dd>Everything about scope, focus areas, conditions, priorities, tier(s) offered — always via a new version once sent; sent content is immutable.</dd>
+    </dl>
+  </div>
+
+  <div class="stage-block">
+    <div class="stage-num">STAGE 7 / 8</div>
+    <h3>Agreement → Signature</h3>
+    <dl class="stage-dims">
+      <dt>Entry condition</dt><dd>An active <span class="mono">sent</span> recommendation with no unsatisfied blocking condition.</dd>
+      <dt>Exit condition</dt><dd>A row in <span class="mono">agreement_signatures</span> bound to the exact recommendation id + version the client selected against.</dd>
+      <dt>Required payment state</dt><dd>None yet — signature happens before payment, always. This is already the directive's required sequence, verified server-side.</dd>
+      <dt>Security requirement</dt><dd><span class="mono">api/sign-agreement.js</span> re-derives tier and price server-side from <span class="mono">engagement_selections</span> — it does not read <span class="mono">tier</span>/<span class="mono">plan</span> from the request body at all, even if a client attempts to smuggle one (directly tested: a smuggled <span class="mono">tier</span> field is silently ignored).</dd>
+      <dt>Failure/retry</dt><dd>A superseded recommendation (a new version sent after the client started this flow) returns <span class="mono">409 RECOMMENDATION_UPDATED</span> rather than allowing a stale signature.</dd>
+      <dt>What must eventually appear in the portal</dt><dd><span class="mono">agreement_snapshot_html</span> (the literal signed HTML), <span class="mono">agreement_content_hash</span>, <span class="mono">signed_at</span>, tier and payment-plan terms at signing — all already portal-safe, per §H below.</dd>
+    </dl>
+  </div>
+
+  <div class="stage-block">
+    <div class="stage-num">STAGE 10 / 11 / 12</div>
+    <h3>Payment → Payment Plan → Enrollment</h3>
+    <dl class="stage-dims">
+      <dt>Entry condition</dt><dd>Valid, current, matching signature — re-verified server-side by <span class="mono">api/create-program-checkout-session.js</span> against the live recommendation/selection state, not trusted from the client.</dd>
+      <dt>Exit condition</dt><dd>Stripe's <strong>webhook</strong> confirms the event — never the browser's redirect back to <span class="mono">booking-confirmed.html</span>, which polls an authoritative status API instead of reading its own URL params.</dd>
+      <dt>Payment plan structure</dt><dd>Pay in Full (one charge) or Monthly (initial charge + N fixed installments via a Stripe Subscription Schedule) — same total price either way, timing only. <span class="mono">end_behavior: 'cancel'</span> means the schedule terminates itself at the agreed endpoint; verified no N+1 invoice is generated after the final installment.</dd>
+      <dt>Idempotency</dt><dd>Entry/checkout session ids are unique-constrained; a Subscription Schedule is created with an idempotency key (<span class="mono">plan-schedule:&lt;purchase_id&gt;</span>) so a redelivered <span class="mono">checkout.session.completed</span> can never create a second schedule; a redelivered installment event upgrades a <span class="mono">'failed'</span> ledger row to <span class="mono">'paid'</span> on the same invoice id rather than creating a duplicate.</dd>
+      <dt>Failure/retry</dt><dd>A declined installment sets <span class="mono">payment_plan_status = 'payment_failed'</span>, notifies both parties once, and relies on Stripe's own automatic retry against the <em>same</em> invoice id — a later success on that id is treated as a genuine cure, not a new event, and does not re-notify.</dd>
+      <dt>Cancellation/refund</dt><dd><strong>Not implemented as an operator action anywhere in this codebase.</strong> The agreement text describes refund/cancellation terms (Section 3.4/5 of <span class="mono">lib/agreementText.js</span>) but no API, admin control, or Stripe-side refund/cancellation flow exists to execute them. This is a real gap — see §C.</dd>
+      <dt>Required notifications</dt><dd>Customer + owner, separately, for: initial payment, payment failure, paid-in-full — each independently claim-before-send per <span class="mono">program_purchases</span>'s six <span class="mono">*_notified_at</span> columns.</dd>
+    </dl>
+  </div>
+
+  <div class="stage-block">
+    <div class="stage-num">STAGES 13–16</div>
+    <h3>Service/Capability Selection → Execution → Progress → Continuity</h3>
+    <p style="margin-bottom:0;">None of these four stages has any tracked backend state today — this is stated in the codebase's own <span class="mono">PORTAL_INTEGRATION_REQUIREMENTS.md</span> (§5, §6, §9) and independently confirmed here: no <span class="mono">service_completed_at</span>, no session-attendance record, no <span class="mono">continuity_started_at</span>/<span class="mono">continuity_ends_at</span>, no "capability selected/completed" record of any kind. <span class="mono">program_purchases.status</span> distinguishes <span class="mono">pending_entry</span> / <span class="mono">pending_remainder</span> / <span class="mono">complete</span> / <span class="mono">active</span> — none of which mean "sessions are being delivered" vs. "sessions are done." A client can be fully paid while the engagement is mid-delivery, or (rarer) fully delivered with a Monthly Plan still owing installments — the schema tracks the payment half of that split only.</p>
+  </div>
+
+  <div class="stage-block">
+    <div class="stage-num">STAGE 17</div>
+    <h3>Expansion / Renewal</h3>
+    <dl class="stage-dims">
+      <dt>What exists</dt><dd>A client can receive a brand-new recommendation version at any time (admin-initiated, e.g. after a scope review) — mechanically identical to the first recommendation, fully versioned and tested. Membership exists as a separate, graduate-only continuity offer.</dd>
+      <dt>What doesn't exist</dt><dd>Any <em>automatic</em> or <em>eligibility-checked</em> path into Membership. <span class="mono">lib/programs.js</span> deliberately sets <span class="mono">entryFeeWaivedForGraduates: false</span> — not a bug, an honest placeholder, because there is no "graduate" determination available (depends on the missing service-completion tracking above). Every Membership signup charges the full entry fee today, to no one in practice, since Membership is unreachable through the current recommendation flow for a first-time applicant by design.</dd>
+      <dt>Core-principle check</dt><dd>This already satisfies the directive's explicit requirement — "Membership must NOT automatically continue at the original engagement price merely because someone completed an initial engagement" — trivially, because there is currently no automatic continuation of any kind. The commercial transition CHEW should design (§E) is the harder, better version of "trivially safe."</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="lifecycle-b">
+  <div class="tag">B · Intended lifecycle</div>
+  <h2>What changes, stated as a delta — not a re-narration</h2>
+  <p class="dek">Stages 1–12 need no structural change. What follows is only what should be different, and why.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Stage</th><th>Change</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>5. Decision</td><td>Portal invitation should fire at <strong>confirmed enrollment</strong> (successful webhook), not at admissions acceptance.</td><td>An accepted-but-not-yet-paying applicant has nothing for the portal to show; inviting them early creates a signed-in user in an undefined state and starts the clock on a Clerk seat/invitation with no corresponding commercial relationship yet.</td></tr>
+        <tr><td>13. Service/Capability Selection</td><td>Introduce a real, queryable "what's next" surface distinct from tier selection — RECOMMENDED / INCLUDED / AVAILABLE NEXT / OPTIONAL / NOT NEEDED RIGHT NOW (§G).</td><td>Directive requirement; also the natural place to reconnect the dormant Capability Network schema (§G) instead of inventing a parallel one.</td></tr>
+        <tr><td>14–15. Execution / Progress</td><td>Add a minimal service-delivery fact: at least <span class="mono">service_completed_at</span> (admin-set), ideally a lightweight session/attendance ledger.</td><td>Every downstream gap (Continuity, graduate waiver, "days remaining," portal's own "what happens next") depends on this one fact existing. It is the single highest-leverage addition in this report.</td></tr>
+        <tr><td>16. Continuity</td><td>Derive a Continuity window from <span class="mono">service_completed_at + 30 days</span>, tracked, not just asserted by the CHEW team.</td><td>Cannot be computed until 14–15 exist. Directive requires Membership not inherit the engagement price automatically — Continuity's whole purpose is to be the free bridge that makes that transition honest.</td></tr>
+        <tr><td>17. Expansion / Renewal</td><td>Membership entry-fee waiver becomes conditional on a real graduate flag, not a permanent <span class="mono">false</span>.</td><td>Currently correct by omission, not by design — should become correct by design once the underlying fact exists.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="gaps">
+  <div class="tag">C · Gaps register</div>
+  <h2>Every discrepancy found, named once</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th class="num">#</th><th>Gap</th><th>Current</th><th>Desired</th><th>Location</th><th>Blocks portal?</th></tr></thead>
+      <tbody>
+        <tr><td class="num">C-1</td><td>Portal invite timing</td><td>Fires on admissions acceptance</td><td>Fires on confirmed enrollment</td><td class="mono">api/send-decision.js:94-103</td><td><span class="chip bad">yes</span></td></tr>
+        <tr><td class="num">C-2</td><td>Decision email not fault-isolated</td><td><span class="mono">sendDecisionEmail</span> in <span class="mono">api/send-decision.js</span> is not wrapped in its own try/catch the way every other lifecycle email is — a Resend outage here throws before the decision/invite logic runs</td><td>Same claim-before-send doctrine used for recommendation/payment/scope-review emails</td><td class="mono">api/send-decision.js:87-92</td><td><span class="chip neutral">no, but should fix</span></td></tr>
+        <tr><td class="num">C-3</td><td>No portal-facing read API</td><td>Every field a portal needs requires a direct database read</td><td>A purpose-built, token- or Clerk-scoped read surface (see §I)</td><td>does not exist</td><td><span class="chip bad">yes</span></td></tr>
+        <tr><td class="num">C-4</td><td>No service-completion tracking</td><td><span class="mono">program_purchases.status</span> has no "delivery complete" value</td><td><span class="mono">service_completed_at</span>, admin-set</td><td class="mono">db/schema.sql</td><td><span class="chip bad">yes</span></td></tr>
+        <tr><td class="num">C-5</td><td>No Continuity window</td><td>Asserted by the CHEW team, not computed</td><td>Derived from C-4</td><td>does not exist</td><td><span class="chip warn">indirectly</span></td></tr>
+        <tr><td class="num">C-6</td><td>No graduate determination</td><td><span class="mono">entryFeeWaivedForGraduates: false</span>, permanently</td><td>Derived from C-4</td><td class="mono">lib/programs.js:86</td><td><span class="chip neutral">no</span></td></tr>
+        <tr><td class="num">C-7</td><td><span class="mono">next_payment_due_at</span> set once</td><td>Not refreshed per installment — stale after the first one</td><td>Update on each successful installment</td><td class="mono">api/stripe-webhook.js</td><td><span class="chip warn">yes, for a portal "next payment" tile</span></td></tr>
+        <tr><td class="num">C-8</td><td>No stored Financial Blueprint artifact</td><td>The Blueprint is delivered work product, not a stored document</td><td>Storage/authoring decision, not assumed here</td><td>does not exist</td><td><span class="chip warn">yes, if portal must show it</span></td></tr>
+        <tr><td class="num">C-9</td><td>No cancellation/refund execution path</td><td>Agreement text describes terms; no code enforces or records them</td><td>Admin-actioned refund/cancellation flow with a durable record</td><td>does not exist</td><td><span class="chip neutral">no, but a real business gap</span></td></tr>
+        <tr><td class="num">C-10</td><td>Two unrelated "recommendation" systems share vocabulary</td><td><span class="mono">engagement_recommendations</span> (commercial) vs. the Intelligence Engine's <span class="mono">recommendations</span>/<span class="mono">capabilities</span>/<span class="mono">capability_relevance_rules</span> (My Position/Playbook) are entirely disconnected</td><td>Named and scoped before the portal has to reconcile both in one UI</td><td class="mono">ARCHITECTURE.md vs. lib/recommendations.js</td><td><span class="chip bad">yes — naming/model collision risk</span></td></tr>
+        <tr><td class="num">C-11</td><td>Stale institutional docs</td><td><span class="mono">CHEW_MASTER_CONTEXT.md</span> and <span class="mono">CHEW_Architecture_and_Roadmap.md</span> both still describe the original $97/$197/$297 single-session model — no mention of the 5-tier Recommendation Engine anywhere in either file</td><td>Updated, or clearly marked historical</td><td class="mono">CHEW_MASTER_CONTEXT.md, CHEW_Architecture_and_Roadmap.md</td><td><span class="chip neutral">no, but a real "contradictory information" risk</span></td></tr>
+        <tr><td class="num">C-12</td><td>No modular service/scope components</td><td>Scope differentiation happens only at the tier level (4 fixed tiers); no à la carte add-on catalog with prerequisites</td><td>See §G for whether this is actually a gap or already the right answer</td><td class="mono">lib/programs.js</td><td><span class="chip neutral">design question, not a defect</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="blockers">
+  <div class="tag">D · Launch blockers</div>
+  <h2>What must be fixed before the portal can safely be built</h2>
+  <p class="dek">Two items. Everything else in §C is real but does not block starting portal design work — it blocks specific portal <em>features</em>, which is different.</p>
+  <div class="grid-2">
+    <div class="card">
+      <h4>D-1 · Reconcile the portal-invite trigger (C-1)</h4>
+      <p style="margin-bottom:0;">Move it from decision-time to enrollment-time, or explicitly decide (and document) that early portal access is intentional and design the portal's empty/pre-payment state on purpose. Either is fine. Leaving it unexamined is not — it's the one place today where "the client is in a system" and "the client has a commercial relationship" are silently different facts.</p>
+    </div>
+    <div class="card">
+      <h4>D-2 · Build the portal read API (C-3)</h4>
+      <p style="margin-bottom:0;"><span class="mono">PORTAL_INTEGRATION_REQUIREMENTS.md</span> already specifies exactly what it must expose (§H below) and what it must never expose. No portal screen can be built against direct database access without re-deriving payment/agreement truth client-side — precisely the anti-pattern this entire engagement has spent its effort preventing on the marketing-site side.</p>
+    </div>
+  </div>
+  <p>Everything else — service completion, Continuity, graduate status, the Blueprint artifact, cancellation/refund, stale docs — should be scoped and prioritized, but none of them prevents starting the read API or the invite-timing fix.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="commercial">
+  <div class="tag">E · Commercial architecture</div>
+  <h2>Recommended pricing / payment / continuity structure</h2>
+  <p class="dek">The directive asks CHEW not to force one price on everyone, not to invent bespoke pricing, and not to race to the bottom. The current 4-tier + admin-scoped-recommendation model already does this — the finding here is that it does it correctly, and the actual open question is Continuity, not tier pricing.</p>
+
+  <h3>Why the current tier model already satisfies the core principle</h3>
+  <p>Four fixed, published, non-negotiable tiers (Focused Builder $897 / Infrastructure $1,997 / Advanced Infrastructure $3,497 / Executive $4,997), each with a fixed deliverable, session count, and document-review allotment — <strong>and</strong> a human admin who reads the applicant's actual Starting Position and recommends the appropriate one, with an optional narrower alternative and explicit tradeoff language. This is exactly "starting position + needs + complexity → appropriate commercial recommendation," not a menu the applicant free-selects from and not a bespoke price invented per person. The <span class="mono">recommended_priorities</span> and <span class="mono">recommendation_conditions</span> fields already let CHEW explain, internally and to the client, <em>why</em> a given tier and scope were recommended — the "Recommended scope = X, Recommended price = Y, Reason = A/B/C" requirement in the original directive is already implemented, just not literally phrased that way in the admin UI.</p>
+
+  <div class="callout">
+    <strong class="label">What is genuinely missing: layer B</strong>
+    Core Engagement (A) and Continuity (C) both exist as distinct commercial concepts. Service/Scope Components (B) — additional, individually selectable workstreams layered onto a core engagement — do not exist; the tiers themselves <em>are</em> the scope differentiation. Whether CHEW wants true modular add-ons (e.g., "add a second document-review event," "add an expedited-response upgrade") is a real product decision, not a technical gap — recommend deferring it until the portal surfaces real demand signal, rather than building a component catalog speculatively.
+  </div>
+
+  <h3>The Continuity transition — the actual hard problem</h3>
+  <p>The directive is explicit: Membership must not simply continue the original engagement price. Today it doesn't, because Membership isn't reachable from the recommendation flow at all yet for a first-timer. The clean transition, once service-completion tracking (C-4) exists:</p>
+  <ol>
+    <li><strong>Engagement ends</strong> — <span class="mono">service_completed_at</span> set by admin action.</li>
+    <li><strong>30-day Continuity begins automatically</strong> — no charge, no re-engagement pressure, access to records preserved (already the locked doctrine per <span class="mono">PORTAL_INTEGRATION_REQUIREMENTS.md</span> §8).</li>
+    <li><strong>Membership is offered, never auto-enrolled</strong> — a distinct, affirmative opt-in at a distinct price ($147 entry, waived for graduates once C-6 exists; $97/mo recurring) that is explicitly <em>not</em> a renewal of the original engagement fee.</li>
+    <li><strong>No engagement fee ever silently recurs.</strong> One-time tiers stay one-time by construction — there is no subscription object anywhere in the one-time-tier checkout path (verified: it uses <span class="mono">mode: 'payment'</span>, never <span class="mono">mode: 'subscription'</span>, for all four one-time tiers).</li>
+  </ol>
+
+  <h3>Payment structure — already meets every stated requirement</h3>
+  <table>
+    <thead><tr><th>Requirement</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>States total obligation, count, amount, frequency, end</td><td><span class="chip good">met</span> — Deal Sheet + agreement snapshot both render exact numbers before payment</td></tr>
+      <tr><td>States what happens after a failed payment</td><td><span class="chip warn">partially</span> — the agreement text describes grace/pause; no code enforces a pause yet (C-9-adjacent)</td></tr>
+      <tr><td>Automatically terminates at the agreed endpoint</td><td><span class="chip good">met</span> — <span class="mono">end_behavior: 'cancel'</span>, verified no N+1 invoice</td></tr>
+      <tr><td>Never silently becomes indefinite</td><td><span class="chip good">met</span> — fixed installment count, not an open-ended subscription</td></tr>
+      <tr><td>Uses existing Stripe mechanism, no parallel payment engine</td><td><span class="chip good">met</span> — Subscription Schedules, the existing webhook/idempotency architecture, no new payment code</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<section id="agreement">
+  <div class="tag">F · Agreement architecture</div>
+  <h2>The exact contract / signature / payment gate</h2>
+  <p class="dek">This is the part of the directive already fully built and adversarially tested. Stated precisely so nothing here gets re-litigated as if it were still open.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Gate</th><th>Enforced where</th><th>Bypass attempt tested</th></tr></thead>
+      <tbody>
+        <tr><td>Client can't select an unapproved tier</td><td class="mono">api/select-engagement.js</td><td>Selecting a tier not on the active recommendation → 403, no row created</td></tr>
+        <tr><td>Client can't sign for a different tier than approved</td><td class="mono">api/sign-agreement.js</td><td>Smuggled <span class="mono">tier</span> field in the request body is silently ignored — signature always reflects the server-derived approved tier</td></tr>
+        <tr><td>Client can't check out without a valid, matching signature</td><td class="mono">api/create-program-checkout-session.js</td><td>Re-derives tier/price/payment-plan entirely from <span class="mono">agreement_signatures</span> + <span class="mono">engagement_selections</span>, never the client</td></tr>
+        <tr><td>Membership can never be a first-time purchase</td><td>DB CHECK constraint on <span class="mono">engagement_recommendations.primary_tier</span>/<span class="mono">alternative_tier</span> + explicit code check in checkout</td><td>Direct-inserted signature row with <span class="mono">tier='membership'</span> still blocked at checkout — defense in depth, not single-layer</td></tr>
+        <tr><td>Stale recommendation can't be paid against</td><td>Superseded recommendation → <span class="mono">409 RECOMMENDATION_UPDATED</span> at both sign and checkout</td><td>Verified directly: v2 supersedes v1, a continuation attempt on v1 is rejected</td></tr>
+        <tr><td>Non-accepted applicant can't reach any paid step</td><td><span class="mono">api/recommendation.js</span> returns 403 unless <span class="mono">decision IN (ACCEPT, ACCEPT_WITH_CONDITIONS)</span></td><td>Verified for WAITLIST/REFER_ELSEWHERE/REAPPLY_LATER and no-decision states</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="service">
+  <div class="tag">G · Service architecture</div>
+  <h2>Matching clients to capabilities without a confusing catalog</h2>
+  <p class="dek">The directive wants: Recommended for You / Included in Your Engagement / Available Next / Optional / Not Needed Right Now. Mapping the request onto what exists today:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Directive category</th><th>Closest existing concept</th><th>Gap</th></tr></thead>
+      <tbody>
+        <tr><td>Recommended for You</td><td><span class="mono">engagement_recommendations.primary_tier</span> + <span class="mono">client_facing_reason</span></td><td>None — this exists and is exactly right</td></tr>
+        <tr><td>Included in Your Engagement</td><td><span class="mono">PROGRAMS[tier]</span> deliverable/session/document-review fields</td><td>None — already portal-safe, per §H</td></tr>
+        <tr><td>Available Next</td><td><span class="mono">recommendation_conditions</span> (blocking prerequisites) partially covers this</td><td>Conditions gate <em>purchase</em>, not <em>post-purchase</em> next steps — no equivalent exists once enrolled</td></tr>
+        <tr><td>Optional</td><td><span class="mono">alternative_tier</span> is a peer alternative, not an add-on — there is no true "optional extra" concept</td><td>Real gap — this is layer B from §E, deferred by design, not by oversight</td></tr>
+        <tr><td>Not Needed Right Now</td><td>No concept at all</td><td>Real gap, low cost to add later as a simple label, not urgent</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout finding">
+    <strong class="label">Reusable mechanism, currently dormant</strong>
+    A separate, pre-existing subsystem — <span class="mono">capabilities</span>, <span class="mono">capability_provider_links</span>, <span class="mono">capability_relevance_rules</span>, <span class="mono">network_providers</span> (documented in <span class="mono">CAPABILITY_NETWORK.md</span>) — already models exactly "what capability is relevant given a client's state, gated by an AND-chain of eligibility rules." It is deliberately seeded with zero real providers today and is entirely disconnected from the commercial <span class="mono">engagement_recommendations</span> engine. Before building a new modular-service catalog for the portal, this is the mechanism to extend, not duplicate — but the two systems currently share confusingly similar names ("recommendation," "capability") for genuinely unrelated concepts, and that collision should be resolved in naming before either system grows further (C-10).
+  </div>
+  <p><strong>Who decides what's shown:</strong> per §A stage 6, 100% CHEW (admin), never AI, never the client's own free selection. This already satisfies "based on the client's approved situation... not simply what produces the largest sale" — there is no algorithmic upsell logic anywhere in this path.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="data">
+  <div class="tag">H · Data architecture</div>
+  <h2>Exact entities the portal will depend on</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Table</th><th>Portal-safe fields</th><th>Never expose</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">applications</td><td>full_name, email (own record only)</td><td>internal_note, ai_score, ai_dimension_scores, ai_rationale, ai_one_flag/strength, id as a client-facing identifier</td></tr>
+        <tr><td class="mono">engagement_recommendations</td><td>primary_tier, alternative_tier, focus_areas, client_facing_reason, client_facing_summary, alternative_tradeoff, recommended_priorities, sent_at, viewed_at</td><td>created_by, internal notification-claim columns as raw booleans (fine to derive a status label from them, not to expose the column)</td></tr>
+        <tr><td class="mono">recommendation_conditions</td><td>condition_text, blocking, satisfied</td><td>satisfied_by (internal admin identity)</td></tr>
+        <tr><td class="mono">engagement_selections</td><td>selected_tier, selected_at, selected_payment_plan</td><td>—</td></tr>
+        <tr><td class="mono">agreement_signatures</td><td>agreement_snapshot_html, agreement_content_hash, agreement_version, signed_at, signed_name, tier, payment_plan_type_at_signing, total_contract_amount_at_signing</td><td>ip_address, user_agent, recommendation_id (internal FK — fine to resolve, not to expose raw)</td></tr>
+        <tr><td class="mono">program_purchases</td><td>tier, payment_plan_type, total_contract_amount_cents, installment_amount_cents, installment_count, installments_paid, payment_plan_status, initial_payment_paid_at, paid_in_full_at, membership_status</td><td>stripe_customer_id, stripe_subscription_id, stripe_subscription_schedule_id, any <span class="mono">*_session_id</span>, access_token, id</td></tr>
+        <tr><td class="mono">program_purchase_installments</td><td>amount_cents, status, created_at</td><td>stripe_invoice_id (or expose only as an opaque reference if a receipt link is needed)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Full field-by-field rationale for every row above already exists in <span class="mono">PORTAL_INTEGRATION_REQUIREMENTS.md</span> §2–§8 — this table is the condensed cross-reference, not a re-derivation.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="portal-deps">
+  <div class="tag">I · Portal architecture dependencies</div>
+  <h2>Everything the portal needs to consume, and in what shape</h2>
+  <ol>
+    <li><strong>One read API, not a database connection.</strong> The portal should never read Postgres directly — every field in §H should come through a purpose-built endpoint that applies the never-expose rules server-side, the same way <span class="mono">api/recommendation.js</span> already does for the client-facing recommendation page.</li>
+    <li><strong>A single "where is this client right now" status.</strong> Not scattered across five tables — one composed read that answers: accepted? recommendation sent? viewed? selected? signed? paid? plan status? engagement complete? in Continuity? Membership status? This is the literal backend equivalent of the portal's first-screen "you're in / here's what happens next."</li>
+    <li><strong>Auth model decision, explicitly not made here.</strong> Today's client-facing pages use a bare <span class="mono">access_token</span> query param (fine for a single-purpose page, not durable enough for a persistent portal session). The portal's own Clerk session is the natural fit — but linking a Clerk identity to an <span class="mono">applications</span> row (by email, presumably) is a real design decision with real edge cases (email changes, duplicate applications) that this report flags rather than resolves.</li>
+    <li><strong>Write-back routes through this backend, never forks state.</strong> Any portal-originated action (request a new recommendation, request Membership, eventually request cancellation) should call back into this backend's existing APIs rather than the portal maintaining its own copy of payment or contract truth.</li>
+  </ol>
+</section>
+
+<!-- ============================================================ -->
+<section id="security">
+  <div class="tag">J · Security boundaries</div>
+  <h2>Client vs. admin vs. AI permissions</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Actor</th><th>Can read</th><th>Can write</th><th>Auth mechanism</th></tr></thead>
+      <tbody>
+        <tr><td>Client (applicant)</td><td>Their own application/recommendation/selection/agreement/purchase state</td><td>Submit application; select tier/plan; sign; request scope review; initiate checkout</td><td>Opaque <span class="mono">access_token</span> per application</td></tr>
+        <tr><td>Admin (CHEW)</td><td>Everything, including internal notes and AI scoring</td><td>Decision; recommendation content (draft/send/revise); condition satisfaction; notification retries</td><td>Clerk session, pinned to one <span class="mono">ADMIN_CLERK_USER_ID</span>, no RBAC</td></tr>
+        <tr><td>AI (Claude, via <span class="mono">lib/scoring.js</span>)</td><td>One application's answers, at scoring time only</td><td>Nothing directly — writes only ever land as <span class="mono">ai_*</span> advisory columns, never <span class="mono">decision</span>, never any commercial field</td><td>Server-side API key, never client-reachable</td></tr>
+        <tr><td>Stripe (webhook)</td><td>N/A</td><td>Payment truth columns only, signature-verified</td><td>Webhook signing secret</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>AI must never autonomously decide, full stop:</strong> the admissions decision, the recommended tier/scope, the price, the payment plan, whether a payment succeeded. All four are either explicitly human-authored (decision, recommendation) or explicitly Stripe/webhook-authoritative (payment) — there is no code path today where a model output becomes a commercial fact without a human or Stripe in between.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="notifications">
+  <div class="tag">K · Notification architecture</div>
+  <h2>Email, portal notifications, and owner alerts</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Event</th><th>Customer email</th><th>Owner email</th><th>Durability</th></tr></thead>
+      <tbody>
+        <tr><td>Application submitted</td><td>✓</td><td>✓</td><td>Best-effort, not claim-columned (low-stakes, single-shot)</td></tr>
+        <tr><td>Decision sent</td><td>✓</td><td>—</td><td><span class="chip warn">not fault-isolated</span> (C-2)</td></tr>
+        <tr><td>Recommendation sent</td><td>✓</td><td>—</td><td>Claim-before-send, independently retryable</td></tr>
+        <tr><td>Scope review requested</td><td>—</td><td>✓</td><td>Claim-before-send, distinguishes a new ask from a pending retry</td></tr>
+        <tr><td>Agreement signed</td><td>✓</td><td>✓</td><td>Claim-before-send, both directions</td></tr>
+        <tr><td>Initial payment</td><td>✓</td><td>✓</td><td>Claim-before-send, both directions</td></tr>
+        <tr><td>Payment failed</td><td>✓</td><td>✓ (escalation)</td><td>Claim-before-send, cure-aware (no re-notify after a same-invoice cure)</td></tr>
+        <tr><td>Paid in full</td><td>✓</td><td>✓</td><td>Claim-before-send, both directions</td></tr>
+        <tr><td>Recommendation follow-ups (not viewed / no selection / not signed)</td><td>✓</td><td>—</td><td>Single-shot claim-once, hourly-checked cron, honest 24h/3d/7d thresholds, no fake urgency</td></tr>
+        <tr><td>Portal notifications (in-product)</td><td colspan="2">Do not exist — nothing in this repository pushes to a portal UI; every notification today is email-only</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="failure">
+  <div class="tag">L · Failure / recovery matrix</div>
+  <h2>What happens when each layer fails</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Failure</th><th>Current behavior</th></tr></thead>
+      <tbody>
+        <tr><td>AI scoring fails</td><td>Caught, stored as <span class="mono">ai_error</span>, application still submits and can be manually decided</td></tr>
+        <tr><td>Decision email fails</td><td><span class="chip warn">Throws unwrapped</span> — blocks the decision write and portal invite from completing (C-2)</td></tr>
+        <tr><td>Recommendation email fails</td><td>Recommendation still commits as <span class="mono">sent</span>; notification independently retryable, never a duplicate send</td></tr>
+        <tr><td>Signature attempted against stale recommendation</td><td><span class="mono">409 RECOMMENDATION_UPDATED</span>, no signature created</td></tr>
+        <tr><td>Checkout session creation fails</td><td>No purchase row corrupted; client can retry from the same selection</td></tr>
+        <tr><td>Webhook delivered twice (duplicate)</td><td>Unique constraints + idempotency keys make the redelivery a no-op — verified directly with Stripe's own Resend mechanism in mind</td></tr>
+        <tr><td>Webhook delivered out of order</td><td>Cure logic is one-directional — a stale failed-event can never downgrade an already-paid state</td></tr>
+        <tr><td>Installment payment fails then cures</td><td>Ledger row upgrades <span class="mono">failed → paid</span> on the same invoice id; no duplicate notice sent for the cure</td></tr>
+        <tr><td>Scope-review notice fails</td><td>Request persists regardless; retry distinguishes "still pending, retry the send" from "already delivered, this is a new ask"</td></tr>
+        <tr><td>Cron fires twice for the same reminder window</td><td>Claim-once column prevents a second send</td></tr>
+        <tr><td>Portal invitation fails</td><td>Caught, logged, does not fail the decision — admin can re-invite manually from Clerk's dashboard</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="buildorder">
+  <div class="tag">M · Final build order</div>
+  <h2>The sequence, not a list</h2>
+  <ol class="order-list">
+    <li><strong>Fix decision-email fault isolation (C-2).</strong> One try/catch, matching the existing convention everywhere else. Smallest possible change, closes a real gap before anything else touches this file.</li>
+    <li><strong>Decide and implement the portal-invite timing fix (D-1).</strong> Either move the trigger to enrollment, or explicitly design for early access — but decide on purpose.</li>
+    <li><strong>Add <span class="mono">service_completed_at</span> (C-4).</strong> One nullable column, admin-set. Unlocks Continuity computation, graduate determination, and a real "days remaining" fact — the single highest-leverage schema change in this report.</li>
+    <li><strong>Derive and store the Continuity window (C-5)</strong> from step 3, once it exists.</li>
+    <li><strong>Wire the graduate-waiver flag (C-6)</strong> from step 3 — flip <span class="mono">entryFeeWaivedForGraduates</span> from a permanent placeholder to a real per-client determination.</li>
+    <li><strong>Refresh <span class="mono">next_payment_due_at</span> per installment (C-7).</strong> Small, isolated fix inside the existing webhook handler.</li>
+    <li><strong>Resolve the naming collision between the two "recommendation" systems (C-10)</strong> before either grows further, or before a portal UI has to explain both to the same user.</li>
+    <li><strong>Design and build the portal read API (D-2)</strong> against everything specified in §H and §I — the actual first portal-adjacent engineering work, and the last thing before any portal UI can start.</li>
+    <li><strong>Decide on the modular-service-component question (§E, §G)</strong> — extend the dormant Capability Network, or explicitly defer. Either is a valid decision; drifting into it by accident is not.</li>
+    <li><strong>Update or clearly retire the stale institutional docs (C-11).</strong> Cheap, unblocks nothing technical, but stops the next engineering or legal reader from building on a three-tier, single-session mental model that hasn't been true for a long time.</li>
+  </ol>
+</section>
+
+</main>
+
+<footer class="endnote">
+  <div class="wrap wide">
+    <p>Zero files were changed to produce this report. Nothing here authorizes commercial-engine changes or portal implementation — both remain pending explicit sign-off per item, in the order above.</p>
+  </div>
+</footer>
+
+</body>
+</html>
