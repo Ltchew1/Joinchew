@@ -157,19 +157,47 @@
     }
   }
 
-  function loadClerkScript(publishableKey) {
+  // Clerk v5+ ("Core 2", which clerk-js 6.31.0 belongs to) ships its
+  // prebuilt Sign In/Sign Up UI as a SEPARATE package and script --
+  // @clerk/ui's ui.browser.js -- loaded independently of clerk.browser.js.
+  // Confirmed directly from @clerk/shared's own loadClerkJsScript.js
+  // (this project's node_modules): it defines loadClerkJSScript (checks
+  // window.Clerk) and loadClerkUIScript (checks
+  // window.__internal_ClerkUICtor) as two parallel, independently-loaded
+  // scripts. Loading only clerk.browser.js (as this file previously did)
+  // leaves window.Clerk fully functional for session/token management,
+  // but calling openSignIn()/openSignUp() throws exactly "Clerk was not
+  // loaded with Ui components" -- the __internal_ClerkUICtor constructor
+  // those methods need is never registered.
+  //
+  // CLERK_UI_VERSION "1" matches @clerk/shared's own default pairing:
+  // its versionSelector() resolves the UI package to major version "1"
+  // for this clerk-js generation (see node_modules/@clerk/shared/dist/
+  // versionSelector.js) -- jsdelivr resolves "@1" to the latest 1.x
+  // release, the same major-version-tag approach the official loader
+  // itself falls back to when no exact version is pinned.
+  var CLERK_UI_VERSION = '1';
+
+  function loadScriptTag(src, publishableKey) {
     return new Promise(function (resolve, reject) {
       var script = document.createElement('script');
       script.async = true;
       script.crossOrigin = 'anonymous';
       script.setAttribute('data-clerk-publishable-key', publishableKey);
-      script.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@' + CLERK_JS_VERSION + '/dist/clerk.browser.js';
-      script.addEventListener('load', function () {
-        window.Clerk.load().then(resolve).catch(reject);
-      });
+      script.src = src;
+      script.addEventListener('load', function () { resolve(); });
       script.addEventListener('error', function () { reject(new Error('Failed to load the sign-in system.')); });
       document.head.appendChild(script);
     });
+  }
+
+  function loadClerkScript(publishableKey) {
+    var coreUrl = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@' + CLERK_JS_VERSION + '/dist/clerk.browser.js';
+    var uiUrl = 'https://cdn.jsdelivr.net/npm/@clerk/ui@' + CLERK_UI_VERSION + '/dist/ui.browser.js';
+    return Promise.all([
+      loadScriptTag(coreUrl, publishableKey).then(function () { return window.Clerk.load(); }),
+      loadScriptTag(uiUrl, publishableKey),
+    ]);
   }
 
   // Always asks Clerk for a token fresh (never cached across calls) —
