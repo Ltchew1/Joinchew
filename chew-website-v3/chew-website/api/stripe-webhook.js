@@ -24,7 +24,8 @@
 
 const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-const { query, getPool } = require('../lib/db');
+const { query, getPool, claimAndSend } = require('../lib/db');
+const { createPortalInvitation } = require('../lib/clerk');
 const {
   sendConfirmationEmail,
   sendProgramEntryConfirmationEmail,
@@ -38,6 +39,18 @@ const {
   sendOwnerPlanPaymentFailedNotice,
 } = require('../lib/email');
 const { PROGRAMS } = require('../lib/programs');
+
+// Portal access is granted at CONFIRMED ENROLLMENT -- the first moment a
+// one-time-tier purchase is genuinely paid-and-active -- never at
+// admissions acceptance (see api/send-decision.js, which no longer calls
+// this). Deliberately per-application (portal_invited_at lives on
+// applications, not program_purchases): a client who later buys
+// Membership already has portal access from their original engagement
+// and must never be re-invited, so this is never called for
+// tier === 'membership' at either call site below.
+async function maybeInvitePortal(applicationId, email, name) {
+  return claimAndSend('applications', 'id', applicationId, 'portal_invited_at', () => createPortalInvitation({ email, name }));
+}
 
 // Payment state (entry_paid_at / remainder_paid_at) and notification state
 // are separate facts, claimed separately -- see db/schema.sql for why.
@@ -537,6 +550,16 @@ module.exports = async (req, res) => {
               hasRetryableFailure = true;
             }
           }
+
+          // Confirmed enrollment (legacy entry+remainder model): the
+          // engagement is now fully paid. This is the first point at
+          // which portal access should exist for this application.
+          try {
+            await maybeInvitePortal(purchase.application_id, purchase.client_email, purchase.client_name);
+          } catch (invitationErr) {
+            console.error(`PORTAL_INVITATION_FAILED application=${purchase.application_id}:`, invitationErr.message);
+            hasRetryableFailure = true;
+          }
         } else if (phase === 'plan_payment') {
           // First payment for a one-time engagement (Focused Builder /
           // Infrastructure / Advanced Infrastructure / Executive) under
@@ -702,6 +725,18 @@ module.exports = async (req, res) => {
             if (!sent) console.log(`Webhook: initial-payment owner notification for purchase ${purchase.id} already sent — skipping.`);
           } catch (emailErr) {
             console.error(`PLAN_INITIAL_PAYMENT_OWNER_EMAIL_FAILED purchase=${purchase.id}:`, emailErr.message);
+            hasRetryableFailure = true;
+          }
+
+          // Confirmed enrollment (current payment-plan model): the initial
+          // charge just cleared, which is true whether Pay in Full or
+          // Monthly — either way this is the first real moment the client
+          // is a paying, enrolled client. Portal access starts here, never
+          // at admissions acceptance.
+          try {
+            await maybeInvitePortal(purchase.application_id, purchase.client_email, purchase.client_name);
+          } catch (invitationErr) {
+            console.error(`PORTAL_INVITATION_FAILED application=${purchase.application_id}:`, invitationErr.message);
             hasRetryableFailure = true;
           }
 

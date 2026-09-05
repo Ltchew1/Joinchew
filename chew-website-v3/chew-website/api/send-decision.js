@@ -29,11 +29,8 @@
 
 const { getPool } = require('../lib/db');
 const { sendDecisionEmail } = require('../lib/email');
-const { createPortalInvitation } = require('../lib/clerk');
 const { VALID_RECOMMENDATIONS } = require('../lib/scoring');
 const { requireAdmin, legacySecretAuthorized } = require('../lib/admin-auth');
-
-const PORTAL_DECISIONS = ['ACCEPT', 'ACCEPT_WITH_CONDITIONS'];
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -84,22 +81,26 @@ module.exports = async (req, res) => {
       return res.status(200).json({ id, status: 'decided', decision: application.decision, alreadyDecided: true });
     }
 
-    await sendDecisionEmail({
-      to: application.email,
-      name: application.full_name,
-      decision,
-      applicantMessage: cleanApplicantMessage,
-    });
-
-    if (PORTAL_DECISIONS.includes(decision)) {
-      try {
-        await createPortalInvitation({ email: application.email, name: application.full_name });
-      } catch (invitationErr) {
-        // Don't fail the whole decision over a portal-invite hiccup — the
-        // applicant still got their decision email, and an admin can
-        // re-invite manually from Clerk's dashboard if needed.
-        console.error('Portal invitation error:', invitationErr.message);
-      }
+    // A Resend outage here no longer blocks the decision itself from
+    // recording -- the decision is the durable fact; the email is a
+    // best-effort notice, same doctrine as every other outbound email in
+    // this codebase. An admin can see the application is decided even if
+    // this particular send failed, and resend it manually if needed.
+    //
+    // Portal invitation is deliberately NOT sent from here — acceptance
+    // alone must never create portal access (Pre-Portal Master
+    // Specification, item 12). It now fires from api/stripe-webhook.js at
+    // confirmed enrollment instead, the only point at which "this
+    // applicant is now a paying client" is actually true.
+    try {
+      await sendDecisionEmail({
+        to: application.email,
+        name: application.full_name,
+        decision,
+        applicantMessage: cleanApplicantMessage,
+      });
+    } catch (emailErr) {
+      console.error('Decision email error:', emailErr.message);
     }
 
     await client.query(

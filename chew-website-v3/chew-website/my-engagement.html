@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Engagement | CHEW</title>
+<meta name="description" content="Your CHEW engagement — progress, completion, and Continuity status.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .eng-progress-track { height: 8px; border-radius: 20px; background: rgba(255,255,255,0.08); overflow: hidden; margin-top: 8px; }
+  .eng-progress-fill { height: 100%; background: var(--gold-light); border-radius: 20px; }
+  .eng-stat-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.9rem; margin-bottom: 4px; }
+  .eng-stat-row strong { font-size: 0.85rem; color: var(--text-faint); font-weight: 600; }
+  .eng-section { margin-top: 28px; }
+  .eng-pill { display:inline-block; padding:4px 12px; border-radius:20px; font-size:0.72rem; font-weight:700; letter-spacing:0.03em; text-transform:uppercase; }
+  .eng-pill--active { background: rgba(74,181,120,0.15); color: #7fd9a4; }
+  .eng-pill--waiting { background: rgba(122,163,232,0.15); color: #9db8e8; }
+  .eng-pill--ended { background: rgba(255,255,255,0.08); color: var(--text-muted); }
+  .eng-membership-form { margin-top: 20px; display: flex; flex-direction: column; gap: 14px; max-width: 460px; }
+  .eng-membership-form label { display:block; font-size:0.85rem; font-weight:600; margin-bottom:6px; }
+  .eng-membership-form input[type="text"] {
+    width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15);
+    background:rgba(255,255,255,0.03); color:var(--text); font-size:0.9rem; font-family:inherit;
+  }
+  .eng-checkbox-row { display:flex; align-items:flex-start; gap:8px; font-size:0.85rem; font-weight:400; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="brand">
+      <img src="assets/chew-logo-monument.png" alt="CHEW" width="40" height="40">
+    </a>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="container" style="position:relative; max-width:780px;">
+      <span class="eyebrow">Your Engagement</span>
+      <h1 id="eng-heading" style="max-width:24ch;">Here's where things stand.</h1>
+      <div id="eng-status" class="status-note" style="margin-top:20px; display:none;"></div>
+      <div id="eng-cancelled-note" class="status-note" style="margin-top:20px; display:none;">Your last checkout attempt was cancelled — nothing was charged. You can try again below.</div>
+
+      <div id="eng-content" hidden>
+        <div class="glass card eng-section" style="padding:24px;">
+          <div class="eng-stat-row"><strong>Engagement</strong><span id="eng-tier-label"></span></div>
+          <div class="eng-stat-row"><strong>Status</strong><span id="eng-status-pill"></span></div>
+          <div id="eng-deliverable-row" class="eng-stat-row" style="display:none;"><strong>Deliverable</strong><span id="eng-deliverable"></span></div>
+        </div>
+
+        <div id="eng-progress-card" class="glass card eng-section" style="padding:24px; display:none;">
+          <h3 style="font-size:1.05rem; margin-bottom:14px;">Delivery Progress</h3>
+          <div id="eng-sessions-block" style="display:none;">
+            <div class="eng-stat-row"><span>Sessions delivered</span><span id="eng-sessions-text"></span></div>
+            <div class="eng-progress-track"><div class="eng-progress-fill" id="eng-sessions-fill"></div></div>
+          </div>
+          <div id="eng-reviews-block" style="display:none; margin-top:18px;">
+            <div class="eng-stat-row"><span>Document reviews used</span><span id="eng-reviews-text"></span></div>
+            <div class="eng-progress-track"><div class="eng-progress-fill" id="eng-reviews-fill"></div></div>
+          </div>
+        </div>
+
+        <div id="eng-completion-card" class="glass card eng-section" style="padding:24px; display:none;">
+          <h3 style="font-size:1.05rem; margin-bottom:10px;" id="eng-completion-heading"></h3>
+          <p id="eng-completion-body" style="font-size:0.9rem; color:var(--text-muted);"></p>
+        </div>
+
+        <div id="eng-membership-card" class="glass card eng-section" style="padding:24px; display:none;">
+          <span class="deal-sheet-eyebrow">CHEW Membership</span>
+          <h3 style="font-size:1.2rem; margin:8px 0 10px;">You've earned it — ongoing access, at graduate pricing.</h3>
+          <p style="font-size:0.9rem; color:var(--text-muted);">
+            Membership is CHEW's ongoing relationship for graduates: continued access to CHEW between
+            engagements, at a standing monthly rate. It is never automatic — nothing changes unless you
+            choose to join.
+          </p>
+          <div class="eng-stat-row" style="margin-top:16px;"><strong>Entry fee</strong><span id="mem-entry-fee"></span></div>
+          <div class="eng-stat-row"><strong>Monthly</strong><span id="mem-recurring"></span></div>
+          <div class="eng-stat-row"><strong>Trial</strong><span id="mem-trial"></span></div>
+          <div class="eng-stat-row"><strong>Cancellation</strong><span>Cancel anytime — no long-term commitment.</span></div>
+
+          <div class="eng-membership-form">
+            <div>
+              <label>Type your full legal name to join <span style="font-weight:400; color:var(--text-faint);">— must match your application exactly</span></label>
+              <input type="text" id="mem-signed-name">
+            </div>
+            <label class="eng-checkbox-row"><input type="checkbox" id="mem-agree"> I have read and agree to the CHEW Membership terms.</label>
+            <div id="mem-status" class="status-note" style="display:none;"></div>
+            <button type="button" class="btn btn-gold" id="mem-join-btn" style="align-self:flex-start;">Join CHEW Membership</button>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" id="eng-retry" class="btn btn-gold" style="display:none; margin-top:16px;">Try again</button>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var token = params.get('token') || '';
+  var statusEl = document.getElementById('eng-status');
+  var retryBtn = document.getElementById('eng-retry');
+  var contentEl = document.getElementById('eng-content');
+  var cancelledNote = document.getElementById('eng-cancelled-note');
+
+  if (params.get('cancelled') === 'true') cancelledNote.style.display = 'block';
+
+  function showStatus(message) {
+    statusEl.textContent = message;
+    statusEl.style.display = 'block';
+  }
+
+  function pillHtml(label, kind) {
+    return '<span class="eng-pill eng-pill--' + kind + '">' + label + '</span>';
+  }
+
+  function lifecyclePill(status) {
+    if (status === 'IN_DELIVERY') return pillHtml('In Progress', 'active');
+    if (status === 'IN_CONTINUITY') return pillHtml('Complete — Continuity Active', 'active');
+    if (status === 'CONTINUITY_ENDED') return pillHtml('Complete', 'ended');
+    return pillHtml(status || 'Unknown', 'waiting');
+  }
+
+  function membershipPill(status) {
+    if (status === 'trialing') return pillHtml('Trialing', 'waiting');
+    if (status === 'active') return pillHtml('Active', 'active');
+    if (status === 'paused') return pillHtml('Paused', 'waiting');
+    if (status === 'cancelled') return pillHtml('Cancelled', 'ended');
+    return pillHtml(status || 'Unknown', 'waiting');
+  }
+
+  function renderProgress(data) {
+    var sessionsBlock = document.getElementById('eng-sessions-block');
+    var reviewsBlock = document.getElementById('eng-reviews-block');
+    var progressCard = document.getElementById('eng-progress-card');
+    var anyProgress = false;
+
+    if (data.sessionCeiling) {
+      anyProgress = true;
+      sessionsBlock.style.display = 'block';
+      document.getElementById('eng-sessions-text').textContent = data.sessionsDelivered + ' / ' + data.sessionCeiling;
+      document.getElementById('eng-sessions-fill').style.width = Math.min(100, (data.sessionsDelivered / data.sessionCeiling) * 100) + '%';
+    }
+    if (data.documentReviewCeiling) {
+      anyProgress = true;
+      reviewsBlock.style.display = 'block';
+      document.getElementById('eng-reviews-text').textContent = data.documentReviewsUsed + ' / ' + data.documentReviewCeiling;
+      document.getElementById('eng-reviews-fill').style.width = Math.min(100, (data.documentReviewsUsed / data.documentReviewCeiling) * 100) + '%';
+    }
+    progressCard.style.display = anyProgress ? 'block' : 'none';
+  }
+
+  function renderCompletion(data) {
+    var card = document.getElementById('eng-completion-card');
+    var heading = document.getElementById('eng-completion-heading');
+    var body = document.getElementById('eng-completion-body');
+
+    if (data.lifecycleStatus === 'IN_CONTINUITY') {
+      card.style.display = 'block';
+      heading.textContent = 'Your engagement is complete.';
+      body.textContent = 'You are in your 30-day Continuity window, through ' +
+        new Date(data.continuityEndsAt).toLocaleDateString() + '. There is nothing you need to do.';
+    } else if (data.lifecycleStatus === 'CONTINUITY_ENDED') {
+      card.style.display = 'block';
+      heading.textContent = 'Your engagement is complete.';
+      body.textContent = 'Your Continuity window has ended. Nothing further is required, and standard CHEW Membership pricing applies whenever you choose to join.';
+    } else {
+      card.style.display = 'none';
+    }
+  }
+
+  function renderMembership(data) {
+    var card = document.getElementById('eng-membership-card');
+    if (data.isMembership || !data.membershipEligible) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+
+    fetch('/api/deal-sheet?tier=membership')
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (deal) {
+        // Reaching this card at all requires membershipEligible (graduate
+        // status) -- the same fact that waives the entry fee (see
+        // lib/programs.js entryFeeWaivedForGraduates), so this offer never
+        // shows the undiscounted list price.
+        document.getElementById('mem-entry-fee').textContent = 'Waived — you’ve completed a CHEW engagement';
+        if (deal) {
+          document.getElementById('mem-recurring').textContent = chewFormatCents(deal.recurringAmountCents) + ' / month';
+          document.getElementById('mem-trial').textContent = deal.trialPeriodDays + '-day free trial';
+        }
+      })
+      .catch(function () {});
+
+    var joinBtn = document.getElementById('mem-join-btn');
+    var memStatus = document.getElementById('mem-status');
+    joinBtn.addEventListener('click', function () {
+      memStatus.style.display = 'none';
+      var signedName = document.getElementById('mem-signed-name').value;
+      var agreed = document.getElementById('mem-agree').checked;
+      if (!agreed) {
+        memStatus.textContent = 'Please confirm you agree to the Membership terms.';
+        memStatus.style.display = 'block';
+        return;
+      }
+      joinBtn.disabled = true;
+      joinBtn.textContent = 'Joining…';
+
+      fetch('/api/select-membership', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ token: token, signedName: signedName, agreedToTerms: agreed }),
+      })
+        .then(function (res) { return res.json().then(function (body) { if (!res.ok) throw new Error(body.error || 'Unable to join Membership.'); return body; }); })
+        .then(function (signResult) {
+          joinBtn.textContent = 'Redirecting to secure checkout…';
+          return fetch('/api/create-program-checkout-session', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ token: token, signatureId: signResult.signatureId }),
+          });
+        })
+        .then(function (res) { return res.json().then(function (body) { if (!res.ok) throw new Error(body.error || 'Unable to start checkout.'); return body; }); })
+        .then(function (checkoutResult) { window.location = checkoutResult.url; })
+        .catch(function (err) {
+          joinBtn.disabled = false;
+          joinBtn.textContent = 'Join CHEW Membership';
+          memStatus.textContent = err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.';
+          memStatus.style.display = 'block';
+        });
+    });
+  }
+
+  function load() {
+    if (!token) {
+      showStatus('This page requires a valid link from your CHEW confirmation email.');
+      return;
+    }
+    fetch('/api/my-engagement-status?token=' + encodeURIComponent(token))
+      .then(function (res) {
+        if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Unable to load your engagement.'); });
+        return res.json();
+      })
+      .then(function (data) {
+        document.getElementById('eng-heading').textContent = data.fullName ? 'Hi ' + data.fullName.split(' ')[0] + ' — here’s where things stand.' : 'Here’s where things stand.';
+        document.getElementById('eng-tier-label').textContent = data.label;
+        document.getElementById('eng-status-pill').innerHTML = data.isMembership ? membershipPill(data.membershipStatus) : lifecyclePill(data.lifecycleStatus);
+        if (data.deliverable) {
+          document.getElementById('eng-deliverable-row').style.display = 'flex';
+          document.getElementById('eng-deliverable').textContent = data.deliverable;
+        }
+        if (!data.isMembership) {
+          renderProgress(data);
+          renderCompletion(data);
+        }
+        renderMembership(data);
+        contentEl.hidden = false;
+      })
+      .catch(function (err) {
+        showStatus(err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.');
+        retryBtn.style.display = 'inline-flex';
+      });
+  }
+
+  retryBtn.addEventListener('click', function () {
+    statusEl.style.display = 'none';
+    retryBtn.style.display = 'none';
+    load();
+  });
+  load();
+})();
+</script>
+
+<footer class="site-footer">
+  <div class="container">
+    <a href="index.html" class="footer-mini-brand">
+      <img src="assets/chew-logo-monument.png" alt="CHEW" width="48" height="48">
+    </a>
+    <div class="footer-legal">
+      <span>&copy; 2026 CHEW LLC. All rights reserved.</span>
+      <span>CHEW LLC is a financial education and business-infrastructure company. CHEW does not provide credit repair services, does not promise or guarantee funding, approvals, score changes, or removal of information, and does not provide legal, tax, or investment advice. Results depend on individual circumstances, participation, and third-party decisions. See our <a href="disclaimer.html" style="color:inherit;">disclaimer</a>.</span>
+    </div>
+  </div>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>

@@ -77,13 +77,16 @@ const PROGRAMS = {
     recurringAmountCents: 9700,
     trialPeriodDays: 30,
     // Locked doctrine: a client who completed a CHEW engagement pays no
-    // new entry fee for Membership. Determining "graduate" status
-    // requires tracking real program completion, which this schema does
-    // not yet do (see PORTAL INTEGRATION REQUIREMENTS) — so every
-    // membership signup charges the entry fee for now, rather than
-    // silently waiving it for people who can't actually be verified as
-    // graduates. Flip this on once real completion tracking exists.
-    entryFeeWaivedForGraduates: false,
+    // new entry fee for Membership. Graduate status is now a real,
+    // queryable fact (program_purchases.service_completed_at — see
+    // db/schema.sql and api/select-membership.js), and reaching this
+    // checkout branch at all already requires it (Membership has no
+    // non-graduate entry point — see api/select-membership.js and the
+    // tier === 'membership' guard in api/create-program-checkout-session.js),
+    // so the waiver applies here unconditionally today. The flag stays
+    // separate from the access gate rather than being collapsed into it,
+    // in case a future non-graduate Membership path is ever approved.
+    entryFeeWaivedForGraduates: true,
   },
 };
 

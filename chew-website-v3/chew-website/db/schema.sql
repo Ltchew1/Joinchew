@@ -1352,3 +1352,68 @@ ALTER TABLE engagement_recommendations ADD COLUMN IF NOT EXISTS recommended_prio
 -- never lose the client's already-persisted request, and a retry must
 -- never re-notify for the same request.
 ALTER TABLE engagement_recommendations ADD COLUMN IF NOT EXISTS scope_review_owner_notified_at TIMESTAMPTZ;
+
+-- ============================================================
+-- Pre-Portal lifecycle closure: service completion, Continuity, and the
+-- portal-invitation handoff (see PRE_PORTAL_MASTER_SPECIFICATION.html).
+-- ============================================================
+
+-- service_completed_at is a deliberate, one-way admin action (never
+-- inferred from session/document-review counts, never automatic) --
+-- locked decision: no undo endpoint exists, a genuine correction is an
+-- exceptional direct-database operator action, not a routine workflow.
+-- continuity_ends_at is computed ONCE at completion time (service_completed_at
+-- + 30 days) and stored rather than recomputed on read, so it survives
+-- even if a tier's terms change later. Continuity's end is a quiet,
+-- non-eventful state transition per locked decision -- nothing reads
+-- continuity_ends_at to gate anything client-facing; it exists purely as
+-- a durable record of when the free window was.
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS service_completed_at TIMESTAMPTZ;
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS continuity_ends_at TIMESTAMPTZ;
+
+-- portal_invited_at is the claim-before-send column for moving the
+-- portal invitation off admissions-acceptance and onto confirmed
+-- enrollment (see api/stripe-webhook.js). Lives on applications, NOT
+-- program_purchases: an application can accumulate more than one
+-- purchase over its lifetime (an original engagement, later Membership),
+-- and the portal invitation is a once-ever-per-client fact, not a
+-- once-per-purchase one -- a graduate buying Membership already has
+-- portal access from their original engagement and must never be
+-- re-invited.
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS portal_invited_at TIMESTAMPTZ;
+-- Separate from service_completed_at itself, same doctrine as every other
+-- fact/notification split in this schema: the completion + Continuity
+-- window are authoritative the instant service_completed_at is set,
+-- regardless of whether the client's notice email actually goes out.
+ALTER TABLE program_purchases ADD COLUMN IF NOT EXISTS continuity_notice_customer_notified_at TIMESTAMPTZ;
+
+-- Execution ledgers -- one row per real, dated event, same convention as
+-- program_purchase_installments above. Deliberately NOT a bare counter:
+-- "sessions_delivered"/"document_reviews_used" are always COUNT(*) reads
+-- against these tables, never a separately-stored number that could drift
+-- from the actual event history (locked decision: the database records
+-- reality, counts are derived).
+CREATE TABLE IF NOT EXISTS program_purchase_sessions (
+  id            SERIAL PRIMARY KEY,
+  purchase_id   INTEGER NOT NULL REFERENCES program_purchases (id),
+  session_number INTEGER NOT NULL,
+  delivered_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  logged_by     TEXT,
+  notes         TEXT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (purchase_id, session_number)
+);
+CREATE INDEX IF NOT EXISTS idx_program_purchase_sessions_purchase ON program_purchase_sessions (purchase_id);
+
+CREATE TABLE IF NOT EXISTS program_purchase_document_reviews (
+  id                 SERIAL PRIMARY KEY,
+  purchase_id        INTEGER NOT NULL REFERENCES program_purchases (id),
+  review_number      INTEGER NOT NULL,
+  reviewed_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  logged_by          TEXT,
+  documents_reviewed TEXT,
+  notes              TEXT,
+  created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (purchase_id, review_number)
+);
+CREATE INDEX IF NOT EXISTS idx_program_purchase_document_reviews_purchase ON program_purchase_document_reviews (purchase_id);

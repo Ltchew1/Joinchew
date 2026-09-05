@@ -106,6 +106,17 @@
     background: rgba(201,162,39,0.12); border: 1px solid rgba(201,162,39,0.3); color: var(--gold-light); margin: 0 6px 6px 0;
   }
 
+  .delivery-toggle { cursor:pointer; color: var(--gold-light); font-size:0.85rem; margin-top:12px; display:inline-block; }
+  .delivery-panel { display:none; margin-top:14px; padding:18px; border:1px solid rgba(201,162,39,0.25); border-radius:10px; background: rgba(201,162,39,0.04); }
+  .delivery-panel.is-open { display:block; }
+  .delivery-log-row { display:flex; gap:8px; align-items:center; margin:8px 0 4px; }
+  .delivery-log-row input[type="number"] {
+    width:90px; padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.15);
+    background:rgba(255,255,255,0.03); color:var(--text); font-size:0.85rem; font-family:inherit;
+  }
+  .app-badge--graduate { background: rgba(74,181,120,0.15); color: #7fd9a4; }
+  .app-badge--portal { background: rgba(122,163,232,0.15); color: #9db8e8; }
+
   .pipeline-filter-chip {
     padding: 5px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em;
     border: 1px solid rgba(255,255,255,0.15); background: none; color: var(--text-muted); cursor: pointer;
@@ -347,6 +358,17 @@
     if (stage === 'Paid') return 'PAID';
     return null; // decided but not ACCEPT/ACCEPT_WITH_CONDITIONS (waitlisted etc.) -- no pipeline filter applies
   }
+
+  // Same per-tier session/document-review ceilings as lib/programs.js
+  // PROGRAMS[tier].sessionCount / .documentReviewEvents (one-time tiers
+  // only — Membership has no session/review ceiling to log against, see
+  // api/log-session-delivered.js).
+  var TIER_DELIVERY_LIMITS = {
+    focused_builder: { sessionCount: 2, documentReviewEvents: 1 },
+    infrastructure: { sessionCount: 4, documentReviewEvents: 2 },
+    advanced_infrastructure: { sessionCount: 6, documentReviewEvents: 4 },
+    executive: { sessionCount: 8, documentReviewEvents: 6 },
+  };
 
   function scopeTierLabel(v) {
     var m = SCOPE_TIERS.filter(function (t) { return t.value === v; })[0];
@@ -633,6 +655,147 @@
     panel.querySelector('.scope-approve-send').addEventListener('click', function () { submitScope('send', this); });
   }
 
+  // Delivery & Completion panel — admin controls for the execution ledger
+  // (program_purchase_sessions / program_purchase_document_reviews) and
+  // the one-way service-completion action, per the Pre-Portal Master
+  // Specification. Counts arrive already computed (COUNT(*) against the
+  // ledger tables, see api/admin-applications.js) — this panel never
+  // maintains its own counter, it only reflects and appends to the real
+  // event history.
+  function canLogDelivery(app) {
+    return Boolean(app.purchase_id) && Boolean(TIER_DELIVERY_LIMITS[app.purchase_tier])
+      && Boolean(app.entry_paid_at || app.initial_payment_paid_at);
+  }
+
+  function buildDeliveryToggleHtml(app) {
+    return '<span class="delivery-toggle" data-app="' + app.id + '">Delivery &amp; Completion &darr;</span>' +
+      '<div class="delivery-panel" id="delivery-panel-' + app.id + '"></div>';
+  }
+
+  function renderDeliveryPanelBody(panel, app, state) {
+    var limits = TIER_DELIVERY_LIMITS[app.purchase_tier];
+    var completedHtml = state.serviceCompletedAt
+      ? '<p style="font-size:0.85rem; color:var(--gold-light); margin-top:14px;">Service completed ' +
+          new Date(state.serviceCompletedAt).toLocaleDateString() +
+          (state.continuityEndsAt ? ' &mdash; Continuity window ends ' + new Date(state.continuityEndsAt).toLocaleDateString() : '') +
+        '</p>'
+      : '<div style="margin-top:14px;"><button type="button" class="btn btn-outline btn-sm delivery-mark-complete-btn">Mark Service Complete</button>' +
+        '<p style="font-size:0.72rem; color:var(--text-faint); margin-top:6px;">One-way — cannot be undone from this panel. Starts the client’s 30-day Continuity window.</p></div>';
+
+    panel.innerHTML =
+      '<p style="font-size:0.85rem;">Sessions delivered: <strong>' + state.sessionsUsed + ' / ' + limits.sessionCount + '</strong></p>' +
+      (state.sessionsUsed < limits.sessionCount
+        ? '<div class="delivery-log-row"><input type="number" class="delivery-session-num" min="1" max="' + limits.sessionCount + '" placeholder="#" value="' + (state.sessionsUsed + 1) + '">' +
+          '<button type="button" class="btn btn-outline btn-sm delivery-log-session-btn">Log Session</button></div>'
+        : '') +
+      (limits.documentReviewEvents
+        ? '<p style="font-size:0.85rem; margin-top:14px;">Document reviews used: <strong>' + state.reviewsUsed + ' / ' + limits.documentReviewEvents + '</strong></p>' +
+          (state.reviewsUsed < limits.documentReviewEvents
+            ? '<div class="delivery-log-row"><input type="number" class="delivery-review-num" min="1" max="' + limits.documentReviewEvents + '" placeholder="#" value="' + (state.reviewsUsed + 1) + '">' +
+              '<button type="button" class="btn btn-outline btn-sm delivery-log-review-btn">Log Review</button></div>'
+            : '')
+        : '') +
+      '<div class="delivery-status status-note" style="display:none; margin-top:10px;"></div>' +
+      completedHtml;
+
+    var statusEl = panel.querySelector('.delivery-status');
+    function showError(err) {
+      statusEl.textContent = (err && err.message) || 'Something went wrong.';
+      statusEl.style.display = 'block';
+    }
+
+    var logSessionBtn = panel.querySelector('.delivery-log-session-btn');
+    if (logSessionBtn) {
+      logSessionBtn.addEventListener('click', function () {
+        var num = Number(panel.querySelector('.delivery-session-num').value);
+        if (!Number.isInteger(num) || num < 1) { showError({ message: 'Enter a valid session number.' }); return; }
+        logSessionBtn.disabled = true;
+        getAuthToken().then(function (token) {
+          return fetch('/api/log-session-delivered', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (token || '') },
+            body: JSON.stringify({ purchaseId: app.purchase_id, sessionNumber: num }),
+          });
+        }).then(function (res) {
+          return res.json().then(function (body) { if (!res.ok) throw new Error(body.error || 'Unable to log session.'); return body; });
+        }).then(function (result) {
+          renderDeliveryPanelBody(panel, app, Object.assign({}, state, { sessionsUsed: result.sessionsDelivered }));
+        }).catch(function (err) {
+          logSessionBtn.disabled = false;
+          showError(err);
+        });
+      });
+    }
+
+    var logReviewBtn = panel.querySelector('.delivery-log-review-btn');
+    if (logReviewBtn) {
+      logReviewBtn.addEventListener('click', function () {
+        var num = Number(panel.querySelector('.delivery-review-num').value);
+        if (!Number.isInteger(num) || num < 1) { showError({ message: 'Enter a valid review number.' }); return; }
+        logReviewBtn.disabled = true;
+        getAuthToken().then(function (token) {
+          return fetch('/api/log-document-review', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (token || '') },
+            body: JSON.stringify({ purchaseId: app.purchase_id, reviewNumber: num }),
+          });
+        }).then(function (res) {
+          return res.json().then(function (body) { if (!res.ok) throw new Error(body.error || 'Unable to log review.'); return body; });
+        }).then(function (result) {
+          renderDeliveryPanelBody(panel, app, Object.assign({}, state, { reviewsUsed: result.documentReviewsUsed }));
+        }).catch(function (err) {
+          logReviewBtn.disabled = false;
+          showError(err);
+        });
+      });
+    }
+
+    var completeBtn = panel.querySelector('.delivery-mark-complete-btn');
+    if (completeBtn) {
+      completeBtn.addEventListener('click', function () {
+        if (!window.confirm('Mark this engagement’s service as complete? This cannot be undone from this panel and starts the client’s Continuity window.')) return;
+        completeBtn.disabled = true;
+        completeBtn.textContent = 'Marking complete…';
+        getAuthToken().then(function (token) {
+          return fetch('/api/mark-service-complete', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (token || '') },
+            body: JSON.stringify({ purchaseId: app.purchase_id }),
+          });
+        }).then(function (res) {
+          return res.json().then(function (body) { if (!res.ok) throw new Error(body.error || 'Unable to mark complete.'); return body; });
+        }).then(function (result) {
+          renderDeliveryPanelBody(panel, app, Object.assign({}, state, {
+            serviceCompletedAt: result.serviceCompletedAt, continuityEndsAt: result.continuityEndsAt,
+          }));
+        }).catch(function (err) {
+          completeBtn.disabled = false;
+          completeBtn.textContent = 'Mark Service Complete';
+          showError(err);
+        });
+      });
+    }
+  }
+
+  function wireDeliveryPanel(card, app) {
+    var toggle = card.querySelector('.delivery-toggle');
+    var panel = card.querySelector('.delivery-panel');
+    var loaded = false;
+
+    toggle.addEventListener('click', function () {
+      if (panel.classList.contains('is-open')) { panel.classList.remove('is-open'); return; }
+      panel.classList.add('is-open');
+      if (loaded) return;
+      loaded = true;
+      renderDeliveryPanelBody(panel, app, {
+        sessionsUsed: app.sessions_delivered || 0,
+        reviewsUsed: app.document_reviews_used || 0,
+        serviceCompletedAt: app.service_completed_at,
+        continuityEndsAt: app.continuity_ends_at,
+      });
+    });
+  }
+
   function renderApplication(app) {
     var card = document.createElement('div');
     card.className = 'glass card app-card';
@@ -669,6 +832,9 @@
       if (app.decision === 'ACCEPT' || app.decision === 'ACCEPT_WITH_CONDITIONS') {
         decisionHtml += buildScopeToggleHtml(app);
       }
+      if (canLogDelivery(app)) {
+        decisionHtml += buildDeliveryToggleHtml(app);
+      }
     } else {
       decisionHtml =
         '<div class="decision-fields">' +
@@ -688,7 +854,10 @@
 
     card.innerHTML =
       '<div class="app-top-row">' + reviewBadge(app) + '<span class="app-badge app-badge--stage">' + journeyStage(app) + '</span>' +
-      (pipelineStage ? '<span class="app-badge app-badge--pipeline">' + pipelineStage + '</span>' : '') + '</div>' +
+      (pipelineStage ? '<span class="app-badge app-badge--pipeline">' + pipelineStage + '</span>' : '') +
+      (app.is_graduate ? '<span class="app-badge app-badge--graduate">Membership Eligible</span>' : '') +
+      (app.portal_invited_at ? '<span class="app-badge app-badge--portal">Portal Invited ' + new Date(app.portal_invited_at).toLocaleDateString() + '</span>' : '') +
+      '</div>' +
       '<div class="app-meta">#' + app.id + ' &middot; Submitted ' + new Date(app.created_at).toLocaleString() + '</div>' +
       '<h3 style="margin-bottom:4px;">' + esc(app.full_name) + '</h3>' +
       '<div class="app-meta">' + esc(app.email) + (app.phone ? ' &middot; ' + esc(app.phone) : '') + '</div>' +
@@ -752,6 +921,9 @@
 
     if (decided && (app.decision === 'ACCEPT' || app.decision === 'ACCEPT_WITH_CONDITIONS')) {
       wireScopeBuilder(card, app);
+    }
+    if (decided && canLogDelivery(app)) {
+      wireDeliveryPanel(card, app);
     }
 
     return card;

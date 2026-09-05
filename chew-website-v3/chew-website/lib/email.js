@@ -706,6 +706,35 @@ async function sendPlanPaidInFullEmail({ to, name, tier }) {
   });
 }
 
+// Sent once, when an admin marks the engagement's service delivery
+// complete (see api/mark-service-complete.js). Deliberately no countdown,
+// no urgency language, no "act now" — the locked doctrine for Continuity
+// is that it's a defined window of continued access, not a pressure
+// mechanism. Membership is mentioned as available whenever the client is
+// ready, never as an expiring offer.
+async function sendContinuityStartedEmail({ to, name, tier, continuityEndsAt }) {
+  const resend = getClient();
+  const programLabel = PROGRAM_LABELS[tier] || tier;
+  const endsLabel = continuityEndsAt
+    ? new Date(continuityEndsAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : null;
+
+  return resend.emails.send({
+    from: process.env.FROM_EMAIL || 'CHEW <admissions@joinchew.com>',
+    to,
+    subject: `Your ${programLabel} Engagement Is Complete`,
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1B1815;">
+        <h2 style="color: #8F7024;">Your engagement is complete, ${escapeHtml(name || 'there')}.</h2>
+        <p>Your ${escapeHtml(programLabel)} engagement with CHEW is now marked complete. You keep full access to your signed agreement, Deal Sheet, and payment records regardless of anything below.</p>
+        ${endsLabel ? `<p>You're now in a 30-day Continuity period, through ${endsLabel}, at no additional cost.</p>` : ''}
+        <p>Whenever you're ready — no deadline, no pressure — CHEW Membership is available to continue the relationship: ongoing access, recalibration, and the CHEW community. There's nothing to do right now unless you want to.</p>
+        <p style="margin-top: 32px; font-size: 13px; color: #666;">CHEW LLC &mdash; Creating Honest Economic Wealth</p>
+      </div>
+    `,
+  });
+}
+
 // Owner-facing escalation for an unresolved payment-plan failure —
 // separate from sendOwnerEnrollmentNotice (which covers successful
 // payment events) because this one needs to read as an alert, not a
@@ -753,6 +782,7 @@ module.exports = {
   sendPlanPaymentReceivedEmail,
   sendPlanPaymentFailedEmail,
   sendPlanPaidInFullEmail,
+  sendContinuityStartedEmail,
   sendOwnerPlanPaymentFailedNotice,
   sendOwnerEnrollmentNotice,
   sendMembershipReminderEmail,

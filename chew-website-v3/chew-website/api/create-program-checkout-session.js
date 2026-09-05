@@ -88,12 +88,22 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Invalid program tier.' });
     }
 
-    // Defense in depth alongside api/sign-agreement.js's guard: Membership is
-    // not a first-time engagement, so no checkout session for it should ever
-    // be created through this applicant-token flow, even if a signature
-    // somehow already exists (e.g. one signed before this guard existed).
+    // Membership is never a first-time engagement. A membership-tier
+    // signature can now legitimately exist (see api/select-membership.js,
+    // gated on graduate status there), so this re-checks the SAME
+    // graduate fact independently here rather than trusting that the
+    // signature step's gate is still true — the exact defense-in-depth
+    // doctrine every other gate in this file already follows.
     if (tier === 'membership') {
-      return res.status(403).json({ error: 'Membership is available to CHEW graduates after their engagement completes, not as a first-time engagement.' });
+      const graduateResult = await query(
+        `SELECT EXISTS(
+           SELECT 1 FROM program_purchases WHERE application_id = $1 AND service_completed_at IS NOT NULL
+         ) AS graduate`,
+        [application.id]
+      );
+      if (!graduateResult.rows[0].graduate) {
+        return res.status(403).json({ error: 'Membership is available to CHEW graduates after their engagement completes, not as a first-time engagement.' });
+      }
     }
 
     const oneTime = isOneTimeTier(tier);
@@ -190,26 +200,44 @@ module.exports = async (req, res) => {
     );
     const purchaseId = insertResult.rows[0].id;
 
+    // A graduate has no active recommendation to return to on cancel —
+    // recommendation.html would just error for them. Route back to their
+    // own engagement-status page instead (my-engagement.html), which is
+    // also where the Membership offer itself lives.
+    const cancelUrl = tier === 'membership'
+      ? `${process.env.SITE_URL}/my-engagement.html?token=${encodeURIComponent(token)}&cancelled=true`
+      : `${process.env.SITE_URL}/recommendation.html?token=${encodeURIComponent(token)}&cancelled=true`;
+
     const sessionConfig = {
       customer_email: application.email,
       success_url: `${process.env.SITE_URL}/booking-confirmed.html?program=1&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.SITE_URL}/recommendation.html?token=${encodeURIComponent(token)}&cancelled=true`,
+      cancel_url: cancelUrl,
     };
 
     let session;
     if (tier === 'membership') {
-      const entryPriceId = process.env[program.entryPriceEnv];
       const recurringPriceId = process.env[program.recurringPriceEnv];
-      if (!entryPriceId) return res.status(503).json({ error: `${program.entryPriceEnv} is not configured yet.` });
       if (!recurringPriceId) return res.status(503).json({ error: `${program.recurringPriceEnv} is not configured yet.` });
+
+      // Reaching this branch already required graduate status (checked
+      // above), and the locked doctrine (Pre-Portal Master Specification)
+      // makes that same graduate fact the fee-waiver determination too —
+      // see lib/programs.js entryFeeWaivedForGraduates. So the entry-fee
+      // line item is simply omitted for every purchase that reaches here
+      // today, rather than charged and never actually waived.
+      const waiveEntryFee = program.entryFeeWaivedForGraduates;
+      const lineItems = [{ price: recurringPriceId, quantity: 1 }];
+      if (!waiveEntryFee) {
+        const entryPriceId = process.env[program.entryPriceEnv];
+        if (!entryPriceId) return res.status(503).json({ error: `${program.entryPriceEnv} is not configured yet.` });
+        lineItems.unshift({ price: entryPriceId, quantity: 1 });
+      }
+
       session = await stripe.checkout.sessions.create({
         ...sessionConfig,
-        metadata: { purchase_id: String(purchaseId), tier, phase: 'entry' },
+        metadata: { purchase_id: String(purchaseId), tier, phase: 'entry', entry_fee_waived: String(waiveEntryFee) },
         mode: 'subscription',
-        line_items: [
-          { price: entryPriceId, quantity: 1 },
-          { price: recurringPriceId, quantity: 1 },
-        ],
+        line_items: lineItems,
         subscription_data: { trial_period_days: program.trialPeriodDays },
       });
     } else {
