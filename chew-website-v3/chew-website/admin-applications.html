@@ -222,14 +222,32 @@
     });
   }
 
+  // Verified by executing the real @clerk/clerk-js@6.31.0 dist bundle in
+  // an actual browser (offline, network mocked), not by re-reading
+  // source: Clerk.load() does NOT automatically pick up
+  // window.__internal_ClerkUICtor on its own. It only wires up the
+  // internal components-ready state assertComponentsReady() checks (the
+  // exact thing openSignIn()/"Clerk was not loaded with Ui components"
+  // depends on) when the caller explicitly passes that constructor via
+  // the clerkUICtor load option. Framework SDKs (@clerk/clerk-react
+  // etc.) do this wiring internally; a raw script-tag integration like
+  // this one has to do it explicitly. The previous pass loaded the
+  // right script (ui.browser.js) but never passed clerkUICtor, and
+  // called .load() before the UI script even finished -- reproduced
+  // both defects directly: calling load() with no options threw exactly
+  // "Clerk was not loaded with Ui components" against the real bundle;
+  // passing { clerkUICtor: window.__internal_ClerkUICtor } after both
+  // scripts finish loading did not.
   function loadClerkScript(publishableKey) {
     var frontendApi = frontendApiFromPublishableKey(publishableKey);
     var coreUrl = 'https://' + frontendApi + '/npm/@clerk/clerk-js@' + CLERK_JS_VERSION + '/dist/clerk.browser.js';
     var uiUrl = 'https://' + frontendApi + '/npm/@clerk/ui@' + CLERK_UI_VERSION + '/dist/ui.browser.js';
     return Promise.all([
-      loadScriptTag(coreUrl, publishableKey).then(function () { return window.Clerk.load(); }),
+      loadScriptTag(coreUrl, publishableKey),
       loadScriptTag(uiUrl, publishableKey),
-    ]);
+    ]).then(function () {
+      return window.Clerk.load({ clerkUICtor: window.__internal_ClerkUICtor });
+    });
   }
 
   // Always asks Clerk for a token fresh (never cached across calls) —
