@@ -205,6 +205,19 @@ SELECT column_name FROM information_schema.columns
 WHERE table_name = 'engagement_recommendations'
   AND column_name IN ('client_recommendation_notified_at', 'recommended_priorities', 'scope_review_owner_notified_at');
 -- expect: 3 rows
+
+-- 15. Plain (non-partial-unique) lookup indexes on the three Recommendation
+--     Engine tables -- distinct from the 3 partial unique indexes in
+--     query 12, these are the ordinary FK-lookup indexes every join/query
+--     against these tables relies on for performance
+SELECT indexname FROM pg_indexes
+WHERE indexname IN (
+  'idx_engagement_recommendations_application',
+  'idx_recommendation_conditions_recommendation',
+  'idx_engagement_selections_application',
+  'idx_engagement_selections_recommendation'
+);
+-- expect: 4 rows
 ```
 
 Only once every query above returns its expected result:
@@ -227,6 +240,48 @@ Only once every query above returns its expected result:
     every request to these routes fails outright rather than silently
     falling back to the old unrestricted-tier behavior this migration
     exists to close.
+
+## Post-Deployment Cron Verification (Production Only)
+
+`vercel.json` now registers `/api/send-recommendation-reminders` on
+`0 * * * *` (hourly). **This registration only becomes a real, running
+Vercel Cron once this branch is actually deployed to a production
+Vercel project** — nothing about it can be observed or exercised on a
+Preview deployment, since Vercel Cron is a production-deployment feature.
+Every verification of this endpoint done so far (auth gate, eligibility
+thresholds, claim-once behavior, no-reminder-after-paid/superseded/
+withdrawn) was against the real handler logic and a real Postgres
+database directly, via manual/authorized invocation — not against an
+actual scheduled Vercel Cron trigger, because none exists until
+production deployment. Do the following **after** production deployment,
+before considering this endpoint operationally verified:
+
+1. Vercel Dashboard → the production project → Settings → Cron Jobs.
+   Confirm `/api/send-recommendation-reminders` is listed, **enabled**,
+   and its schedule reads exactly `0 * * * *`.
+2. Manually invoke it once against production
+   (`https://<production-domain>/api/send-recommendation-reminders?manual=<CRON_MANUAL_SECRET>`)
+   and confirm a `200` with the expected `{ checked, sent }` shape — this
+   proves the manual-secret path works in the real deployed environment,
+   not just locally.
+3. Confirm authorization still holds in production: hit the same URL
+   with no `manual` param and no cron header and confirm `401`.
+4. Do **not** manually fabricate an `x-vercel-cron` header against
+   production to "test" the cron path — that header should only ever be
+   trusted when Vercel's own infrastructure sets it; there is no safe way
+   to forge-test this without weakening the check. Instead, confirm the
+   cron path indirectly: wait for the next scheduled hour to pass, then
+   check Vercel's function logs (Dashboard → Deployments → the
+   production deployment → Functions → this route) for an invocation
+   whose request carries Vercel's cron identity, and confirm it returned
+   `200`.
+5. After that first automatic invocation, spot-check the database directly
+   (not the API) that no reminder was sent for a recommendation that
+   shouldn't have qualified yet, and that any recommendation which did
+   qualify has its corresponding `*_reminder_sent_at` column now set
+   exactly once.
+6. Only after steps 1–5 all pass should this endpoint be considered
+   verified in production, not merely "correctly coded."
 
 ## What this runbook does not cover
 
