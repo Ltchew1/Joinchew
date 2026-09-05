@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pre-Portal Specification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf8f2; --surface: #ffffff; --surface-2: #f2efe4;
+    --border: rgba(28,27,20,0.12); --border-strong: rgba(28,27,20,0.22);
+    --text: #1c1b14; --text-dim: rgba(28,27,20,0.72); --text-faint: rgba(28,27,20,0.46);
+    --gold: #8f7024; --gold-light: #b08f2e; --gold-wash: rgba(143,112,36,0.09);
+    --steel: #3f5f76; --steel-wash: rgba(63,95,118,0.09);
+    --good: #2f8a5c; --good-wash: rgba(47,138,92,0.1);
+    --warn: #8a6d1f; --warn-wash: rgba(138,109,31,0.1);
+    --bad: #b3453f; --bad-wash: rgba(179,69,63,0.1);
+    --shadow: 0 1px 2px rgba(28,27,20,0.04), 0 8px 24px rgba(28,27,20,0.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14140f; --surface: #1b1b15; --surface-2: #21211a;
+      --border: rgba(242,239,230,0.1); --border-strong: rgba(242,239,230,0.18);
+      --text: #f2efe6; --text-dim: rgba(242,239,230,0.72); --text-faint: rgba(242,239,230,0.44);
+      --gold: #d3ae4e; --gold-light: #e8ce7a; --gold-wash: rgba(211,174,78,0.1);
+      --steel: #8fb2c9; --steel-wash: rgba(143,178,201,0.1);
+      --good: #7fd9a4; --good-wash: rgba(127,217,164,0.1);
+      --warn: #e0c26a; --warn-wash: rgba(224,194,106,0.1);
+      --bad: #e08a8a; --bad-wash: rgba(224,138,138,0.1);
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14140f; --surface: #1b1b15; --surface-2: #21211a;
+    --border: rgba(242,239,230,0.1); --border-strong: rgba(242,239,230,0.18);
+    --text: #f2efe6; --text-dim: rgba(242,239,230,0.72); --text-faint: rgba(242,239,230,0.44);
+    --gold: #d3ae4e; --gold-light: #e8ce7a; --gold-wash: rgba(211,174,78,0.1);
+    --steel: #8fb2c9; --steel-wash: rgba(143,178,201,0.1);
+    --good: #7fd9a4; --good-wash: rgba(127,217,164,0.1);
+    --warn: #e0c26a; --warn-wash: rgba(224,194,106,0.1);
+    --bad: #e08a8a; --bad-wash: rgba(224,138,138,0.1);
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Work Sans', system-ui, sans-serif; line-height: 1.6; }
+  h1, h2, h3, h4 { font-family: 'Fraunces', Georgia, serif; text-wrap: balance; color: var(--text); letter-spacing: -0.01em; }
+  code, .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+  a { color: var(--gold); }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 24px 120px; }
+  .wide { max-width: 1180px; }
+  header.masthead { border-bottom: 1px solid var(--border); padding: 40px 0 28px; }
+  .masthead .eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .masthead .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); display: inline-block; }
+  .masthead h1 { font-size: clamp(2rem, 4.5vw, 2.9rem); font-weight: 600; margin: 0 0 10px; }
+  .masthead .sub { color: var(--text-dim); font-size: 1.05rem; max-width: 66ch; margin: 0 0 20px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 0.84rem; color: var(--text-faint); font-family: 'IBM Plex Mono', monospace; }
+  .meta-row strong { color: var(--text-dim); font-weight: 500; }
+  nav.toc { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--border); padding: 10px 24px; margin: 0 0 8px; display: flex; gap: 4px; overflow-x: auto; white-space: nowrap; backdrop-filter: blur(6px); }
+  nav.toc a { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.03em; color: var(--text-faint); text-decoration: none; padding: 6px 10px; border-radius: 6px; }
+  nav.toc a:hover { color: var(--text); background: var(--surface-2); }
+  section { padding: 44px 0; border-bottom: 1px solid var(--border); }
+  section:last-of-type { border-bottom: none; }
+  section > .tag { display: inline-flex; align-items: center; gap: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); background: var(--gold-wash); padding: 4px 10px; border-radius: 20px; margin-bottom: 14px; }
+  section h2 { font-size: 1.6rem; margin: 0 0 6px; }
+  section .dek { color: var(--text-dim); font-size: 1rem; max-width: 68ch; margin: 0 0 26px; }
+  h3 { font-size: 1.15rem; margin: 30px 0 10px; }
+  p { margin: 0 0 14px; max-width: 74ch; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; max-width: 74ch; }
+  li { margin-bottom: 6px; }
+  strong { color: var(--text); font-weight: 600; }
+  .callout { border-left: 3px solid var(--gold); background: var(--gold-wash); padding: 14px 18px; border-radius: 0 10px 10px 0; margin: 18px 0; font-size: 0.94rem; }
+  .callout.finding { border-left-color: var(--bad); background: var(--bad-wash); }
+  .callout.good { border-left-color: var(--good); background: var(--good-wash); }
+  .callout.rule { border-left-color: var(--steel); background: var(--steel-wash); }
+  .callout strong.label { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; color: inherit; }
+  .table-wrap { overflow-x: auto; margin: 18px 0; border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.85rem; background: var(--surface); }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-family: 'IBM Plex Mono', monospace; font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); background: var(--surface-2); white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; font-family: 'IBM Plex Mono', monospace; font-size: 0.66rem; letter-spacing: 0.02em; padding: 2px 8px; border-radius: 20px; white-space: nowrap; font-weight: 500; }
+  .chip.good { color: var(--good); background: var(--good-wash); }
+  .chip.warn { color: var(--warn); background: var(--warn-wash); }
+  .chip.bad { color: var(--bad); background: var(--bad-wash); }
+  .chip.neutral { color: var(--text-faint); background: var(--surface-2); }
+  .stage-block { margin: 26px 0; padding: 20px 22px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); }
+  .stage-block .k { font-family: 'IBM Plex Mono', monospace; color: var(--gold); font-size: 0.76rem; letter-spacing: 0.06em; }
+  .stage-block h3 { margin: 4px 0 10px; font-size: 1.15rem; }
+  .order-list { list-style: none; padding: 0; margin: 20px 0; counter-reset: step; }
+  .order-list li { counter-increment: step; position: relative; padding: 14px 0 14px 46px; border-bottom: 1px solid var(--border); margin: 0; }
+  .order-list li:last-child { border-bottom: none; }
+  .order-list li::before { content: counter(step); position: absolute; left: 0; top: 12px; width: 30px; height: 30px; border-radius: 8px; background: var(--gold-wash); color: var(--gold); display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 0.86rem; font-weight: 600; }
+  .order-list strong { display: block; margin-bottom: 3px; }
+  .rule-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 18px 0; }
+  @media (max-width: 760px) { .rule-grid { grid-template-columns: 1fr; } }
+  .rule-item { border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; font-size: 0.88rem; display: flex; gap: 10px; align-items: flex-start; }
+  .rule-item .mark { color: var(--good); font-family: 'IBM Plex Mono', monospace; font-weight: 600; flex: 0 0 auto; }
+  footer.endnote { padding: 40px 0 10px; color: var(--text-faint); font-size: 0.86rem; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap wide">
+    <div class="eyebrow"><span class="dot"></span> Spec only — no code, schema, or copy changed</div>
+    <h1>Pre-Portal Master Specification</h1>
+    <p class="sub">The canonical target state for the CHEW commercial/lifecycle machine, resolved item by item against the 24-point closure audit. Finish the machine before building the cockpit — this document is what "finished" means, precisely enough to implement without further guessing. No portal UI, no portal backend, no speculative code in this pass.</p>
+    <div class="meta-row">
+      <span><strong>Repo</strong> Ltchew1/Joinchew</span>
+      <span><strong>Branch</strong> preview/contract-agreement-intelligence</span>
+      <span><strong>Baseline commit</strong> 1e4b060</span>
+      <span><strong>Precedes</strong> Portal Readiness Master Report (this document resolves its open items)</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#audit">24-point audit</a>
+  <a href="#rules">Business rules</a>
+  <a href="#statemachine">State machine</a>
+  <a href="#commercial">Commercial model</a>
+  <a href="#pricing">Pricing/payment</a>
+  <a href="#agreement">Agreement model</a>
+  <a href="#enrollment">Enrollment rules</a>
+  <a href="#service">Service/capability model</a>
+  <a href="#completion">Completion/Continuity</a>
+  <a href="#db">Database changes</a>
+  <a href="#api">API changes</a>
+  <a href="#notifications">Notifications</a>
+  <a href="#workflows">Admin/client workflow</a>
+  <a href="#security">Security</a>
+  <a href="#unresolved">Unresolved</a>
+  <a href="#adversarial">Adversarial tests</a>
+  <a href="#order">Build order</a>
+</nav>
+
+<main class="wrap wide">
+
+<!-- ============================================================ -->
+<section id="audit">
+  <div class="tag">24-point closure audit</div>
+  <h2>Every item resolved, deferred, or specified below</h2>
+  <p class="dek">Items 1–11 were already audited in the Portal Readiness report and remain correct — restated here as locked, not re-litigated. Items 12, 23, and 24 are one-line fixes. Items 13–22 are where this document does new work.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Item</th><th>Status</th><th>Where resolved</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Public-site CTA consistency</td><td><span class="chip good">locked</span></td><td>Prior audit — every price surface routes to <span class="mono">apply.html</span>, none bypass to checkout</td></tr>
+        <tr><td>2</td><td>Application → qualification → decision</td><td><span class="chip good">locked</span></td><td>Prior audit; one fault-isolation fix carried into §API</td></tr>
+        <tr><td>3</td><td>Recommendation → starting position → price</td><td><span class="chip good">locked</span></td><td>§Commercial model</td></tr>
+        <tr><td>4</td><td>Exact scope attached to recommendation</td><td><span class="chip good">locked</span></td><td>§Service/capability model — confirmed fully derivable via existing FK chain, no new column needed</td></tr>
+        <tr><td>5</td><td>Session counts / Executive ceiling</td><td><span class="chip good">locked</span></td><td>2/4/6/8, never renegotiated; no tier above Executive by design</td></tr>
+        <tr><td>6</td><td>Pay-in-full pricing</td><td><span class="chip good">locked</span></td><td>§Pricing/payment</td></tr>
+        <tr><td>7</td><td>Monthly-payment architecture</td><td><span class="chip good">locked</span></td><td>§Pricing/payment</td></tr>
+        <tr><td>8</td><td>Deal Sheet before payment</td><td><span class="chip good">locked</span></td><td>§Agreement model</td></tr>
+        <tr><td>9</td><td>Signature verification before checkout</td><td><span class="chip good">locked</span></td><td>§Agreement model</td></tr>
+        <tr><td>10</td><td>Stripe payment/webhook durability</td><td><span class="chip good">locked</span></td><td>§Pricing/payment, §Failure matrix (prior report)</td></tr>
+        <tr><td>11</td><td>Enrollment only after signature + payment</td><td><span class="chip good">locked</span></td><td>§Enrollment rules</td></tr>
+        <tr><td>12</td><td>Portal invitation only after enrollment</td><td><span class="chip warn">specified</span></td><td>§Enrollment rules, §API changes item 1</td></tr>
+        <tr><td>13</td><td>Service/capability selection data model</td><td><span class="chip warn">specified — new</span></td><td>§Service/capability model</td></tr>
+        <tr><td>14</td><td>Execution tracking data model</td><td><span class="chip warn">specified — new</span></td><td>§Service/capability model</td></tr>
+        <tr><td>15</td><td>Progress tracking data model</td><td><span class="chip warn">specified — new</span></td><td>§Service/capability model (derived, no new storage beyond the ledger)</td></tr>
+        <tr><td>16</td><td>Completion tracking, <span class="mono">service_completed_at</span></td><td><span class="chip warn">specified — new</span></td><td>§Completion/Continuity</td></tr>
+        <tr><td>17</td><td>Continuity/30-day transition</td><td><span class="chip warn">specified — new</span></td><td>§Completion/Continuity</td></tr>
+        <tr><td>18</td><td>Membership transition and pricing</td><td><span class="chip bad">specified — real gap found</span></td><td>§Completion/Continuity — Membership currently has <strong>no live client-facing entry point at all</strong></td></tr>
+        <tr><td>19</td><td>Notification lifecycle</td><td><span class="chip warn">extended</span></td><td>§Notifications</td></tr>
+        <tr><td>20</td><td>Admin visibility into every state</td><td><span class="chip warn">extended</span></td><td>§Admin workflow</td></tr>
+        <tr><td>21</td><td>Failure/retry/idempotency at every step</td><td><span class="chip warn">extended</span></td><td>§API changes — every new write specified as claim-before-send/idempotent from day one</td></tr>
+        <tr><td>22</td><td>Security/privacy boundaries</td><td><span class="chip good">extended, no new AI authority</span></td><td>§Security</td></tr>
+        <tr><td>23</td><td>"Recommendation" naming collision</td><td><span class="chip warn">resolved — documentation-level, not schema-level</span></td><td>§Service/capability model</td></tr>
+        <tr><td>24</td><td>Stale docs</td><td><span class="chip neutral">queued, not yet executed</span></td><td>§Build order step 1</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="rules">
+  <div class="tag">Critical business rules</div>
+  <h2>Checked against the actual code, not asserted</h2>
+  <div class="rule-grid">
+    <div class="rule-item"><span class="mark">✓</span> Never charge before the agreement is signed — <span class="mono">create-program-checkout-session.js</span> requires a matching signature row.</div>
+    <div class="rule-item"><span class="mark">✓</span> Never create an active engagement from acceptance alone — <span class="mono">program_purchases</span> only exists after checkout session creation, which requires signature + selection.</div>
+    <div class="rule-item"><span class="mark">✗</span> Never invite into the portal merely because accepted — <strong>currently violated</strong>: this is exactly finding C-1/D-1. Fixed in §Enrollment rules.</div>
+    <div class="rule-item"><span class="mark">✓</span> Never expose internal notes/AI rationale/admin data to clients — grep-audited twice this engagement, held both times.</div>
+    <div class="rule-item"><span class="mark">✓</span> Never allow purchase outside the authorized engagement — server derives tier from <span class="mono">engagement_selections</span>, never the client.</div>
+    <div class="rule-item"><span class="mark">✓</span> Never duplicate charge/enrollment/notification on replay — idempotency keys + claim-before-send columns, verified directly.</div>
+    <div class="rule-item"><span class="mark">✓</span> Every commercial commitment has a durable source of truth — one authoritative row per fact, no browser-manufactured state.</div>
+    <div class="rule-item"><span class="mark">✗</span> Every client-visible promise corresponds to an actual capability — <strong>Membership is client-visible (services.html pricing) but has no working purchase path</strong>. Not a promise-breaking bug today (no CTA points at it), but it is the gap §18 exists to close before Continuity can hand off to it.</div>
+    <div class="rule-item"><span class="mark">✓</span> Every paid engagement has scope, price, structure, duration, and (as of this spec) a completion condition — the last piece is what §Completion adds.</div>
+    <div class="rule-item"><span class="mark">✓</span> Situation-aware pricing without arbitrary bespoke pricing — 4 fixed tiers + admin-scoped recommendation, no manual price entry anywhere in the codebase.</div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="statemachine">
+  <div class="tag">Canonical lifecycle state machine</div>
+  <h2>One state per stage, one table that owns it</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>State</th><th>Entered when</th><th>Owning table.column</th><th>Exits to</th></tr></thead>
+      <tbody>
+        <tr><td>SUBMITTED</td><td>Make Your Move form posted</td><td class="mono">applications.status = 'submitted'</td><td>SCORED or straight to DECIDED</td></tr>
+        <tr><td>SCORED</td><td>AI triage completes (or fails gracefully)</td><td class="mono">applications.status = 'scored'</td><td>DECIDED</td></tr>
+        <tr><td>DECIDED</td><td>Admin submits a decision</td><td class="mono">applications.decision, .status = 'decided'</td><td>RECOMMENDATION_PENDING (if accepted) or terminal</td></tr>
+        <tr><td>RECOMMENDATION_PENDING</td><td>Accepted, no sent recommendation yet</td><td>absence of a <span class="mono">sent</span> row</td><td>RECOMMENDED</td></tr>
+        <tr><td>RECOMMENDED</td><td>Admin sends a recommendation</td><td class="mono">engagement_recommendations.status = 'sent'</td><td>SELECTED, or SUPERSEDED by a new version</td></tr>
+        <tr><td>SELECTED</td><td>Client picks tier + payment plan</td><td class="mono">engagement_selections</td><td>SIGNED</td></tr>
+        <tr><td>SIGNED</td><td>Signature recorded, matching current selection</td><td class="mono">agreement_signatures</td><td>PAID or STALE (if superseded before payment)</td></tr>
+        <tr><td>PAID</td><td>Stripe webhook confirms the first charge</td><td class="mono">program_purchases.initial_payment_paid_at / entry_paid_at</td><td>ENROLLED</td></tr>
+        <tr><td>ENROLLED</td><td><em>Same event as PAID</em> — enrollment is not a separate step, it's the same webhook-confirmed fact</td><td class="mono">program_purchases.status IN ('complete','active')</td><td>IN_DELIVERY — <strong>and this is where the portal invitation should fire</strong></td></tr>
+        <tr><td>IN_DELIVERY</td><td>Enrolled, service not yet complete</td><td class="mono">program_purchases.service_completed_at IS NULL <em>(new)</em></td><td>COMPLETE</td></tr>
+        <tr><td>COMPLETE</td><td>Admin marks the engagement delivered</td><td class="mono">program_purchases.service_completed_at <em>(new)</em></td><td>IN_CONTINUITY</td></tr>
+        <tr><td>IN_CONTINUITY</td><td><span class="mono">service_completed_at</span> set, within 30 days</td><td class="mono">program_purchases.continuity_ends_at <em>(new, computed)</em></td><td>MEMBER, or CONTINUITY_ELAPSED</td></tr>
+        <tr><td>MEMBER</td><td>Graduate affirmatively opts into Membership</td><td>new <span class="mono">program_purchases</span> row, <span class="mono">tier='membership'</span></td><td>terminal (renews monthly until cancelled)</td></tr>
+        <tr><td>CONTINUITY_ELAPSED</td><td>30 days pass with no Membership opt-in</td><td>derived from <span class="mono">continuity_ends_at &lt; now()</span>, no new state stored</td><td>terminal for this engagement; a new application/recommendation cycle is how a former client returns</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout">
+    <strong class="label">One correction to the prior report's framing</strong>
+    PAID and ENROLLED are not sequential states — they are the <strong>same webhook-confirmed event</strong>, already collapsed correctly in the existing code. The gap was never "enrollment happens without payment" (it doesn't); the gap is that the <em>portal invitation</em> is wired to a much earlier, unrelated event (DECIDED). §Enrollment rules fixes exactly that one wire, not the payment/enrollment relationship itself.
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="commercial">
+  <div class="tag">Canonical commercial model</div>
+  <h2>Locked — do not relitigate</h2>
+  <p>Four fixed, published, non-negotiable one-time tiers (Focused Builder $897 · Infrastructure $1,997 · Advanced Infrastructure $3,497 · Executive $4,997), each with a fixed deliverable, session count, and document-review allotment. A human admin reads the applicant's Starting Position and recommends the appropriate tier (with an optional narrower alternative and a mandatory tradeoff explanation) — never an algorithm, never the applicant's own free choice from a menu. This is "starting position + needs + complexity → appropriate price," not a menu and not bespoke pricing, and it is already built and tested. No change proposed here.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="pricing">
+  <div class="tag">Canonical pricing/payment model</div>
+  <h2>Locked — do not relitigate</h2>
+  <p>Pay in Full (single charge) or Monthly Plan (fixed initial payment + N equal installments via a Stripe Subscription Schedule, <span class="mono">end_behavior: 'cancel'</span>) — identical total price either way. Verified: no N+1 invoice after the final installment, cure logic never re-notifies for a same-invoice retry success, idempotency key prevents a duplicate schedule on webhook replay. No new payment mechanism proposed anywhere in this spec — every new money-adjacent behavior below reuses this exact architecture.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="agreement">
+  <div class="tag">Canonical agreement model</div>
+  <h2>Locked — do not relitigate</h2>
+  <p>Recommendation → Agreement (Deal Sheet, rendered before payment) → Signature, bound to the exact <span class="mono">recommendation_id</span> + <span class="mono">version</span> the client selected against, with an immutable HTML snapshot and content hash. A stale recommendation (superseded after the client started signing) returns <span class="mono">409 RECOMMENDATION_UPDATED</span> rather than allowing a mismatched signature. No change proposed.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="enrollment">
+  <div class="tag">Canonical enrollment rules</div>
+  <h2>The one rule that changes: who gets invited, and when</h2>
+  <h3>Rule</h3>
+  <p><strong>An application is "enrolled" the instant <span class="mono">api/stripe-webhook.js</span> confirms the first payment for that application's purchase</strong> — this already exists and is already correct. <strong>The portal invitation must move to fire from this exact event</strong>, not from <span class="mono">api/send-decision.js</span>'s acceptance branch.</p>
+  <h3>Specified change</h3>
+  <ul>
+    <li>Remove the <span class="mono">createPortalInvitation</span> call from <span class="mono">api/send-decision.js</span> entirely — acceptance no longer creates portal access of any kind.</li>
+    <li>Add a <span class="mono">createPortalInvitation</span> call inside <span class="mono">api/stripe-webhook.js</span>, at the same point <span class="mono">program_purchases.status</span> first transitions to <span class="mono">complete</span>/<span class="mono">active</span> — guarded by the same claim-before-send doctrine as every other webhook notification (a new <span class="mono">portal_invited_at</span> column, claimed before the Clerk API call, so a webhook redelivery never sends a second invitation).</li>
+    <li>No change to Clerk invitation mechanics themselves (<span class="mono">lib/clerk.js</span> is reused as-is).</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section id="service">
+  <div class="tag">Canonical service/capability model</div>
+  <h2>Two different things were being conflated. Separating them resolves items 4, 13, 14, 15, and 23 at once.</h2>
+
+  <div class="callout finding">
+    <strong class="label">The conflation</strong>
+    "Service/capability" has meant two unrelated things in this codebase. <span class="mono">engagement_recommendations</span> / <span class="mono">recommendation_conditions</span> / <span class="mono">engagement_selections</span> is the <strong>commercial engine</strong> — what CHEW is paid to deliver. A completely separate, dormant subsystem — <span class="mono">capabilities</span>, <span class="mono">network_providers</span>, <span class="mono">capability_provider_links</span> — is a <strong>third-party referral registry</strong> (insurance, tax, legal, etc.), seeded with zero real providers by design. They share the word "capability" and nothing else. Item 13 ("service/capability selection data model") was at risk of being built by force-fitting the commercial engagement into the referral registry's tables. It should not be — they answer different questions.
+  </div>
+
+  <h3>Item 4 resolved: exact scope is already fully derivable — no new column needed</h3>
+  <p>The chain already exists: <span class="mono">program_purchases.agreement_signature_id → agreement_signatures.recommendation_id → engagement_recommendations</span>. Every fact about what a client is entitled to — deliverable, session count, document-review allotment, focus areas, priorities, conditions — is already reachable by joining three existing tables. The fix here is not schema, it's a <strong>read composition</strong>: one query (or view) that resolves "this purchase's current entitlement" in one call, so execution tracking below has a single source to count against instead of re-deriving the join everywhere.</p>
+
+  <h3>Items 13/14/15 resolved: a new, CHEW-internal execution ledger — not the referral registry</h3>
+  <p>New table, modeled directly on the existing <span class="mono">program_purchase_installments</span> pattern (same one-row-per-event convention already proven in this codebase):</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Column</th><th>Type</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">id</td><td>SERIAL</td><td>—</td></tr>
+        <tr><td class="mono">purchase_id</td><td>INTEGER REFERENCES program_purchases</td><td>which engagement this session belongs to</td></tr>
+        <tr><td class="mono">session_number</td><td>INTEGER</td><td>1-indexed, capped at <span class="mono">PROGRAMS[tier].sessionCount</span> — enforced at write time, not just displayed</td></tr>
+        <tr><td class="mono">delivered_at</td><td>TIMESTAMPTZ</td><td>when the session actually happened</td></tr>
+        <tr><td class="mono">logged_by</td><td>TEXT</td><td>admin identity, for auditability</td></tr>
+        <tr><td class="mono">notes</td><td>TEXT, nullable</td><td>internal only — same never-expose-to-client rule as <span class="mono">applications.internal_note</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Table name: <span class="mono">program_purchase_sessions</span>. Document-review usage is lower-stakes and doesn't need a full ledger: a single <span class="mono">document_reviews_used</span> counter on <span class="mono">program_purchases</span>, incremented by the same admin action that logs a review, capped at <span class="mono">PROGRAMS[tier].documentReviewEvents</span>. <strong>Progress (item 15) is derived, not stored</strong> — <span class="mono">sessions_delivered / sessionCount</span> and <span class="mono">document_reviews_used / documentReviewEvents</span> are computed at read time from this ledger and counter; no separate "progress" table or percentage column.</p>
+
+  <h3>Item 23 resolved: fix the name collision at the documentation layer, not the schema layer</h3>
+  <p>Renaming either system's tables now is pure migration risk for zero functional benefit — nothing is currently broken by the shared vocabulary, the risk is entirely forward-looking (a portal UI surfacing both concepts to the same person). The fix: from this point forward, every new doc, comment, and portal-facing string refers to the commercial engine as <strong>"Engagement Recommendation"</strong> and the referral system as <strong>"Capability Network"</strong> or <strong>"Provider Match"</strong> — never the bare word "recommendation" or "capability" alone in client-facing copy. No table or column renamed.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="completion">
+  <div class="tag">Canonical completion/Continuity/Membership model</div>
+  <h2>Items 16, 17, 18</h2>
+
+  <h3>Completion — item 16</h3>
+  <p>New column: <span class="mono">program_purchases.service_completed_at TIMESTAMPTZ</span>, nullable, set only by an explicit admin action (never automatic, never inferred from <span class="mono">sessions_delivered = sessionCount</span> — a client can legitimately finish early or need a session added; completion is a human judgment call CHEW makes, not a formula). Setting it is idempotent: if already set, a repeat call is a no-op, not an error and not a second Continuity clock.</p>
+
+  <h3>Continuity — item 17</h3>
+  <p>Computed at the moment <span class="mono">service_completed_at</span> is set: <span class="mono">continuity_ends_at = service_completed_at + interval '30 days'</span>, stored (not recomputed on every read) so it survives even if the tier's definition changes later. No charge, no automatic Membership enrollment, full record access preserved per locked doctrine. "Graduate" status (for the Membership fee waiver) is <strong>derived, not stored</strong>: <span class="mono">EXISTS (SELECT 1 FROM program_purchases WHERE application_id = X AND service_completed_at IS NOT NULL)</span> — a redundant stored boolean would only risk drifting from this one real fact.</p>
+
+  <h3>Membership — item 18, the real finding</h3>
+  <div class="callout finding">
+    <strong class="label">Membership currently has no live entry point</strong>
+    <span class="mono">create-program-checkout-session.js</span>'s <span class="mono">tier === 'membership'</span> branch is fully implemented and correctly gated against being reached by a first-time applicant — but nothing in the current site ever calls it. <span class="mono">services.html</span> shows Membership's real price with no CTA. <span class="mono">engagement_recommendations</span>'s CHECK constraint excludes it from ever being recommended. There is, today, no button, link, or flow anywhere a graduate could click to actually buy Membership.
+  </div>
+  <p>Specified fix: a new, narrow client-facing surface — reachable only once <span class="mono">continuity_ends_at</span> exists for that application (i.e., only during or after Continuity) — that offers Membership as an explicit, affirmative, separate purchase at its own price, with the entry fee waived if the graduate-derivation above is true. This is not a redesign of Membership's commercial terms (already correct, already locked) — it is building the front door that was never built.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="db">
+  <div class="tag">Database changes required</div>
+  <h2>Every new column and table, in one place</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Table</th><th>Change</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">program_purchases</td><td>+ <span class="mono">service_completed_at TIMESTAMPTZ</span></td><td>§Completion</td></tr>
+        <tr><td class="mono">program_purchases</td><td>+ <span class="mono">continuity_ends_at TIMESTAMPTZ</span></td><td>§Continuity, computed once at completion</td></tr>
+        <tr><td class="mono">program_purchases</td><td>+ <span class="mono">document_reviews_used INTEGER NOT NULL DEFAULT 0</span></td><td>§Service model</td></tr>
+        <tr><td class="mono">program_purchases</td><td>+ <span class="mono">portal_invited_at TIMESTAMPTZ</span></td><td>§Enrollment — claim-before-send guard for the moved invitation</td></tr>
+        <tr><td class="mono">program_purchase_sessions</td><td>new table (see §Service model for full column list)</td><td>Execution ledger, items 13/14</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>All additive, nullable or zero-defaulted, idempotent <span class="mono">IF NOT EXISTS</span> — same migration discipline as every prior pass on this branch. No existing column altered, no existing constraint loosened.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="api">
+  <div class="tag">API changes required</div>
+  <h2>Every new or modified endpoint, with its idempotency guarantee stated up front</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Endpoint</th><th>Change</th><th>Idempotency</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">api/send-decision.js</td><td>Remove <span class="mono">createPortalInvitation</span> call; wrap <span class="mono">sendDecisionEmail</span> in its own try/catch (closes the one fault-isolation gap found in the prior audit)</td><td>Already idempotent on <span class="mono">status='decided'</span></td></tr>
+        <tr><td class="mono">api/stripe-webhook.js</td><td>Add <span class="mono">createPortalInvitation</span> call at first transition into <span class="mono">complete</span>/<span class="mono">active</span>; refresh <span class="mono">next_payment_due_at</span> on each installment</td><td>New: claim <span class="mono">portal_invited_at</span> before sending, same pattern as every other webhook notification</td></tr>
+        <tr><td class="mono">api/mark-service-complete.js</td><td><strong>New.</strong> Admin-authed POST, sets <span class="mono">service_completed_at</span> + computes <span class="mono">continuity_ends_at</span>, sends the client a Continuity-started notice</td><td>No-op if already set; notice follows claim-before-send</td></tr>
+        <tr><td class="mono">api/log-session-delivered.js</td><td><strong>New.</strong> Admin-authed POST, appends to <span class="mono">program_purchase_sessions</span></td><td>Rejects a <span class="mono">session_number</span> beyond <span class="mono">sessionCount</span> or a duplicate number for the same purchase</td></tr>
+        <tr><td class="mono">api/log-document-review.js</td><td><strong>New.</strong> Admin-authed POST, increments <span class="mono">document_reviews_used</span></td><td>Rejects incrementing past <span class="mono">documentReviewEvents</span></td></tr>
+        <tr><td class="mono">api/purchase-status.js</td><td><strong>New.</strong> Token-authed GET — the "current entitlement" read composition from §Service model, resolving the full FK chain in one call</td><td>Read-only</td></tr>
+        <tr><td class="mono">api/select-membership.js</td><td><strong>New.</strong> The Membership front door — token-authed, gated on <span class="mono">continuity_ends_at</span> existing, applies the graduate fee-waiver derivation</td><td>Reuses the existing Membership checkout branch; no new payment code</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="notifications">
+  <div class="tag">Notification matrix (extending the prior report)</div>
+  <h2>Two new lifecycle events, same durability doctrine</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Event</th><th>Customer</th><th>Owner</th><th>Durability</th></tr></thead>
+      <tbody>
+        <tr><td>Portal invitation (moved trigger)</td><td>✓ (Clerk's own invite email)</td><td>—</td><td>Claim-before-send via new <span class="mono">portal_invited_at</span></td></tr>
+        <tr><td>Service marked complete / Continuity started</td><td>✓</td><td>—</td><td>Claim-before-send, same column that gates the state itself</td></tr>
+        <tr><td>Session logged / document review logged</td><td>— (internal record only)</td><td>—</td><td>Not client-facing; no email needed, the write itself is the record</td></tr>
+        <tr><td>Membership selected (new)</td><td>✓</td><td>✓</td><td>Reuses the existing Membership checkout notification code as-is</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="workflows">
+  <div class="tag">Admin and client workflow</div>
+  <h2>What each side sees, once this spec is built — website only, no portal screens</h2>
+  <h3>Admin (in <span class="mono">admin-applications.html</span>)</h3>
+  <ul>
+    <li>A "Mark Service Complete" control on any enrolled application, showing sessions-delivered / allotted and document-reviews-used / allotted at a glance before the admin confirms.</li>
+    <li>A "Log Session Delivered" and "Log Document Review" control, each capped at the tier's real limits — the UI cannot submit a number beyond what the tier allows.</li>
+    <li>Continuity/Membership status surfaced in the existing pipeline view: <em>in delivery / complete, in Continuity until [date] / Member since [date] / Continuity elapsed</em>.</li>
+  </ul>
+  <h3>Client (new page or extension of an existing one — still the marketing/commercial website, not the portal)</h3>
+  <ul>
+    <li>A status view (extending the existing token-based pattern, e.g. alongside <span class="mono">recommendation.html</span>) showing sessions delivered so far, out of the real total — not a percentage invented client-side, the same numbers the admin sees.</li>
+    <li>Once <span class="mono">continuity_ends_at</span> exists: an honest Continuity notice and, for the first time, an actual Membership offer with a real button.</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section id="security">
+  <div class="tag">Security boundaries</div>
+  <h2>No new AI authority; two new admin-only writes</h2>
+  <p>Every new write in this spec (<span class="mono">mark-service-complete</span>, <span class="mono">log-session-delivered</span>, <span class="mono">log-document-review</span>) is <span class="mono">requireAdmin</span>-gated, identical to the existing Scope Builder boundary. The client can only ever <em>read</em> their own entitlement/progress and <em>select</em> Membership when eligible — never write session counts, never mark their own engagement complete. AI has zero involvement anywhere in this spec; nothing here is a candidate for AI-assisted automation without a separate, explicit authorization.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="unresolved">
+  <div class="tag">Unresolved decisions</div>
+  <h2>Genuine judgment calls, not technical gaps — need your answer, not mine</h2>
+  <ol>
+    <li><strong>Can an admin un-complete an engagement?</strong> (e.g., marked complete by mistake). Spec above treats completion as effectively one-way; if a correction path is needed, it needs its own rule for what happens to an already-computed <span class="mono">continuity_ends_at</span> or an already-sent Continuity notice.</li>
+    <li><strong>What happens exactly at <span class="mono">continuity_ends_at</span>?</strong> Spec above treats it as a quiet, no-action expiry (the relationship doesn't end, just the free window) — confirm this is the intended feel, versus an active "last chance" nudge, which would need its own reminder-cron entry.</li>
+    <li><strong>Does Membership eligibility require completion of <em>this specific</em> engagement, or any CHEW engagement ever?</strong> The graduate-derivation query above checks "any," which seems right for a returning client, but should be confirmed.</li>
+    <li><strong>Session/document-review ledger granularity</strong> — the spec above logs real dates and an admin identity per session; confirm this level of detail is wanted (vs. a simpler running counter with no per-event history), since the ledger is slightly more building than a counter for a feature that may only ever be admin-facing.</li>
+    <li><strong>Is a document-review "event" ever worth its own ledger</strong> (mirroring sessions) rather than a bare counter — only matters if the future portal needs to show <em>which</em> submission corresponded to which review, not just a used/total count.</li>
+  </ol>
+</section>
+
+<!-- ============================================================ -->
+<section id="adversarial">
+  <div class="tag">Adversarial test scenarios</div>
+  <h2>What to verify once this is built — enumerated now, not executed yet</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Scenario</th><th>Required behavior</th></tr></thead>
+      <tbody>
+        <tr><td>Two Stripe webhook deliveries for the same enrollment event</td><td>Exactly one portal invitation, via <span class="mono">portal_invited_at</span> claim — not two Clerk invites</td></tr>
+        <tr><td>Admin calls mark-complete twice</td><td>Second call is a no-op; <span class="mono">continuity_ends_at</span> does not shift, no second Continuity email</td></tr>
+        <tr><td>Admin attempts to log session 5 for a Focused Builder engagement (2-session tier)</td><td>Rejected — session_number capped at <span class="mono">sessionCount</span></td></tr>
+        <tr><td>Admin logs the same session number twice</td><td>Rejected — one row per session number per purchase</td></tr>
+        <tr><td>Client attempts to select Membership before any engagement has <span class="mono">service_completed_at</span> set</td><td>403 — Membership front door is gated on <span class="mono">continuity_ends_at</span> existing, same doctrine as every other gated endpoint in this codebase</td></tr>
+        <tr><td>A non-graduate (never completed any engagement) selects Membership anyway</td><td>Allowed to purchase, entry fee <strong>not</strong> waived — eligibility to buy and eligibility for the fee waiver are two different checks</td></tr>
+        <tr><td>Client requests their own purchase-status while a session is being logged concurrently by admin</td><td>Read reflects whatever committed first; no torn read of a partially-written ledger row (standard transaction isolation, nothing new to build)</td></tr>
+        <tr><td>Someone reaches <span class="mono">api/mark-service-complete.js</span> without an admin session</td><td>401, identical to every existing admin-authed route</td></tr>
+        <tr><td>An application is accepted but never pays</td><td>No portal invitation is ever sent for it — this is the entire point of moving the trigger</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="order">
+  <div class="tag">Exact implementation order</div>
+  <h2>Sequence, not a list</h2>
+  <ol class="order-list">
+    <li><strong>Update or clearly mark historical the two stale docs (item 24).</strong> Zero risk, zero dependency on anything else, closes a real "contradictory information" gap immediately.</li>
+    <li><strong>Fix decision-email fault isolation.</strong> One try/catch in <span class="mono">api/send-decision.js</span>, isolated from everything else in this spec.</li>
+    <li><strong>Schema migration: the four new columns + <span class="mono">program_purchase_sessions</span>.</strong> Additive, idempotent, deployable ahead of any code that reads them — same discipline as every prior migration on this branch.</li>
+    <li><strong>Move the portal invitation trigger</strong> (remove from <span class="mono">send-decision.js</span>, add to <span class="mono">stripe-webhook.js</span> with its own claim column). This is the one item with real behavioral consequence — test it in isolation before layering anything else on top.</li>
+    <li><strong>Build <span class="mono">api/mark-service-complete.js</span>, <span class="mono">api/log-session-delivered.js</span>, <span class="mono">api/log-document-review.js</span></strong> and their admin-applications.html controls.</li>
+    <li><strong>Build <span class="mono">api/purchase-status.js</span></strong> — the read composition every subsequent client-facing surface (and, eventually, the portal) will depend on.</li>
+    <li><strong>Build the client-facing progress/Continuity status view</strong> on the website, reading from step 6.</li>
+    <li><strong>Build <span class="mono">api/select-membership.js</span></strong> and its client-facing entry point — the Membership front door that doesn't exist today.</li>
+    <li><strong>Run the full adversarial test list above</strong> against real Postgres, matching this engagement's established testing discipline.</li>
+    <li><strong>Only then</strong> — with every state in §State machine backed by a real column, every new write idempotent, and Membership actually reachable — begin portal API design against a lifecycle that has nothing left to guess about.</li>
+  </ol>
+</section>
+
+</main>
+
+<footer class="endnote">
+  <div class="wrap wide">
+    <p>Zero files changed to produce this specification. Nothing here authorizes implementation — the build order above is sequenced and ready the moment it is.</p>
+  </div>
+</footer>
+
+</body>
+</html>
