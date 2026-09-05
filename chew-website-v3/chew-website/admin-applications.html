@@ -180,12 +180,32 @@
     return window.Clerk.session.getToken().catch(function () { return null; });
   }
 
+  // openSignIn() previously had no error handling at all here: if it
+  // threw (Clerk not fully ready, a Dashboard-side restriction rejecting
+  // this origin, an unrecognized option) the button stayed disabled
+  // forever with nothing visible -- a real failure looked identical to
+  // "nothing happened." This does not change what's called or any auth
+  // semantics, only whether a failure is ever shown instead of silently
+  // swallowed.
   signInBtn.addEventListener('click', function () {
     signInBtn.disabled = true;
-    window.Clerk.openSignIn({
-      afterSignInUrl: window.location.href,
-      afterSignUpUrl: window.location.href,
-    });
+    function handleOpenSignInFailure(err) {
+      console.error('Clerk sign-in failed to open:', err);
+      signInBtn.disabled = false;
+      showAccessForm('Unable to open the sign-in window. Please try again, or contact support if this persists.');
+    }
+    try {
+      var result = window.Clerk.openSignIn({
+        afterSignInUrl: window.location.href,
+        afterSignUpUrl: window.location.href,
+      });
+      signInBtn.disabled = false;
+      if (result && typeof result.catch === 'function') {
+        result.catch(handleOpenSignInFailure);
+      }
+    } catch (err) {
+      handleOpenSignInFailure(err);
+    }
   });
 
   window.addEventListener('DOMContentLoaded', function () {
