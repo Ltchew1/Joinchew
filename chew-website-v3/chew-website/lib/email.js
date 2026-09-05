@@ -222,8 +222,10 @@ const DECISION_CONTENT = {
       <p>You'll receive a separate email — <strong>Your CHEW Recommendation Is
       Ready</strong> — as soon as that review is complete, with the specific
       engagement we recommend and why.</p>
-      <p>You'll also get a separate email inviting you to set up your CHEW Client Portal
-      account, where your Blueprint and roadmap will appear as your strategist puts them together.</p>
+      <p>Once you review your recommendation, sign your agreement, and complete
+      payment, you'll receive a separate invitation to set up your CHEW Client
+      Portal account, where your Blueprint and roadmap will appear as your
+      strategist puts them together.</p>
     `,
   },
   ACCEPT_WITH_CONDITIONS: {
@@ -238,8 +240,10 @@ const DECISION_CONTENT = {
       CHEW Recommendation Is Ready</strong> — with the specific engagement we
       recommend, and it will show any conditions that need to be in place before
       you can move into contracting.</p>
-      <p>You'll also get a separate email inviting you to set up your CHEW Client Portal
-      account, where your Blueprint and roadmap will appear as your strategist puts them together.</p>
+      <p>Once any conditions are satisfied, you review your recommendation, sign
+      your agreement, and complete payment, you'll receive a separate invitation
+      to set up your CHEW Client Portal account, where your Blueprint and
+      roadmap will appear as your strategist puts them together.</p>
     `,
   },
   WAITLIST: {
