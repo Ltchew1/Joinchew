@@ -10,22 +10,17 @@
 const { query } = require('./db');
 const { getDealSheetData } = require('./agreementRegistry');
 const { PROGRAMS } = require('./programs');
+const { isGraduate } = require('./graduateStatus');
 
 async function composePurchaseStatus(purchase) {
   const program = PROGRAMS[purchase.tier];
   let deal = null;
   try { deal = getDealSheetData(purchase.tier); } catch { deal = null; }
 
-  const [sessionsResult, reviewsResult, graduateResult] = await Promise.all([
+  const [sessionsResult, reviewsResult, graduate] = await Promise.all([
     query(`SELECT count(*)::int c FROM program_purchase_sessions WHERE purchase_id = $1`, [purchase.id]),
     query(`SELECT count(*)::int c FROM program_purchase_document_reviews WHERE purchase_id = $1`, [purchase.id]),
-    query(
-      `SELECT EXISTS(
-         SELECT 1 FROM program_purchases
-         WHERE application_id = $1 AND service_completed_at IS NOT NULL
-       ) AS graduate`,
-      [purchase.application_id]
-    ),
+    isGraduate(purchase.application_id),
   ]);
 
   const now = new Date();
@@ -55,7 +50,7 @@ async function composePurchaseStatus(purchase) {
     serviceCompletedAt: purchase.service_completed_at,
     continuityEndsAt: purchase.continuity_ends_at,
     lifecycleStatus,
-    membershipEligible: graduateResult.rows[0].graduate,
+    membershipEligible: graduate,
   };
 }
 

@@ -52,6 +52,11 @@
           <div class="eng-stat-row"><strong>Engagement</strong><span id="eng-tier-label"></span></div>
           <div class="eng-stat-row"><strong>Status</strong><span id="eng-status-pill"></span></div>
           <div id="eng-deliverable-row" class="eng-stat-row" style="display:none;"><strong>Deliverable</strong><span id="eng-deliverable"></span></div>
+          <div id="eng-next-billing-row" class="eng-stat-row" style="display:none;"><strong>Next billing date</strong><span id="eng-next-billing"></span></div>
+          <div id="eng-manage-membership-row" style="display:none; margin-top:16px;">
+            <button type="button" class="btn btn-outline btn-sm" id="eng-manage-membership-btn">Manage Membership</button>
+            <div id="eng-manage-membership-status" class="status-note" style="display:none; margin-top:10px;"></div>
+          </div>
         </div>
 
         <div id="eng-progress-card" class="glass card eng-section" style="padding:24px; display:none;">
@@ -253,6 +258,13 @@
           document.getElementById('eng-deliverable-row').style.display = 'flex';
           document.getElementById('eng-deliverable').textContent = data.deliverable;
         }
+        if (data.isMembership && data.membershipNextBillingDate) {
+          document.getElementById('eng-next-billing-row').style.display = 'flex';
+          document.getElementById('eng-next-billing').textContent = new Date(data.membershipNextBillingDate).toLocaleDateString();
+        }
+        if (data.canManageMembership) {
+          document.getElementById('eng-manage-membership-row').style.display = 'block';
+        }
         if (!data.isMembership) {
           renderProgress(data);
           renderCompletion(data);
@@ -271,6 +283,29 @@
     retryBtn.style.display = 'none';
     load();
   });
+
+  document.getElementById('eng-manage-membership-btn').addEventListener('click', function () {
+    var btn = this;
+    var manageStatus = document.getElementById('eng-manage-membership-status');
+    manageStatus.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Opening billing management…';
+
+    fetch('/api/create-membership-billing-portal-session', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ token: token }),
+    })
+      .then(function (res) { return res.json().then(function (body) { if (!res.ok) throw new Error(body.error || 'Unable to open billing management.'); return body; }); })
+      .then(function (result) { window.location = result.url; })
+      .catch(function (err) {
+        btn.disabled = false;
+        btn.textContent = 'Manage Membership';
+        manageStatus.textContent = err.message || 'Something went wrong — please try again or email leroyt@joinchew.com.';
+        manageStatus.style.display = 'block';
+      });
+  });
+
   load();
 })();
 </script>

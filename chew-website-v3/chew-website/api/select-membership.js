@@ -36,6 +36,7 @@
 const crypto = require('crypto');
 const { query, getPool } = require('../lib/db');
 const { getProgram } = require('../lib/programs');
+const { isGraduate } = require('../lib/graduateStatus');
 const { AGREEMENT_VERSION } = require('../lib/agreement');
 const { renderAgreementHtml, TIER_LABELS } = require('../lib/agreementText');
 const { sendOwnerSignedAgreementNotice, sendClientSignedAgreementCopyEmail } = require('../lib/email');
@@ -111,13 +112,7 @@ module.exports = async (req, res) => {
       });
     }
 
-    const graduateResult = await query(
-      `SELECT EXISTS(
-         SELECT 1 FROM program_purchases WHERE application_id = $1 AND service_completed_at IS NOT NULL
-       ) AS graduate`,
-      [application.id]
-    );
-    if (!graduateResult.rows[0].graduate) {
+    if (!(await isGraduate(application.id))) {
       return res.status(403).json({
         error: 'CHEW Membership becomes available after a paid engagement is complete. It is not available yet for this application.',
         code: 'MEMBERSHIP_NOT_YET_AVAILABLE',

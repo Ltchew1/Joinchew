@@ -10,6 +10,14 @@ to check at each step. 111/170 assertions cited elsewhere in this pass are
 all against a *mocked* Postgres, not live Stripe — this checklist is the
 remaining, separate gate.
 
+**Sequences G and H (Membership join/Billing Portal and the corrected
+portal-invitation timing) were added after the Pre-Portal implementation
+pass and are UNVERIFIED against a real Stripe or Clerk account for the
+same reason — the 19/19 adversarial-suite result cited in the Pre-Portal
+Implementation Report is against mocked Stripe/Clerk/Resend clients only.
+Per the external review of that report: "GO AFTER HARDENING" is
+conditioned on Sequences G and H actually being run, not merely written.
+
 ## Setup (one time)
 
 1. In the Stripe Dashboard, switch to **Test mode** (toggle, top right).
@@ -154,6 +162,88 @@ confirm the same idempotency key returns the same schedule and the DB
 converges to the correct state. Given the mocked coverage is already
 rigorous here, this live sequence is lower-priority than A–E.
 
+## Sequence G — Membership: graduate join, waived entry fee, trial, Billing Portal
+
+Added after the Pre-Portal implementation pass (`api/select-membership.js`,
+`api/create-program-checkout-session.js`'s Membership branch, and
+`api/create-membership-billing-portal-session.js`). None of this has been
+verified against a real Stripe test-mode account — the mocked suite
+(`adversarial-suite.js`, scenario 12b) proves the application logic only,
+never a real Checkout Session or Subscription object. This is the gate
+that actually proves it.
+
+1. Take an application through a full one-time engagement to completion:
+   accept → recommendation → select engagement → sign → Pay in Full via
+   `4242 4242 4242 4242` → in the admin queue, use the new Delivery &
+   Completion panel to log every session/document-review event up to the
+   tier's ceiling, then click **Mark Service Complete**.
+2. Confirm in the database: `service_completed_at` and `continuity_ends_at`
+   are set, and `is_graduate(application_id)` returns `true`
+   (`SELECT is_graduate(<id>);` directly in psql).
+3. Open `my-engagement.html?token=<that application's access_token>` and
+   confirm the Membership offer card appears, entry fee shown as
+   **Waived**, and the join form is present.
+4. Submit the join form (`api/select-membership.js`), then let it proceed
+   to `api/create-program-checkout-session.js` and land on Stripe
+   Checkout. **Confirm in the Stripe Dashboard that the Checkout Session's
+   line items contain ONLY the recurring Membership price — no entry-fee
+   line item at all** (this is the one thing a mocked Stripe client cannot
+   verify: that Stripe's real API accepts a subscription Checkout Session
+   with a single line item plus `subscription_data.trial_period_days`,
+   with nothing due today).
+5. Complete Checkout with `4242 4242 4242 4242`. Confirm in the database:
+   `program_purchases` gets a second row for this application
+   (`tier = 'membership'`), `entry_paid_at`/`initial_payment_paid_at` set,
+   `status = 'complete'`, `membership_status = 'trialing'`,
+   `stripe_customer_id`/`stripe_subscription_id` populated.
+6. Confirm the Membership welcome email arrived and correctly states
+   `amountPaidCents` as the recurring amount only (not the entry fee —
+   there was none charged today).
+7. **Confirm no second portal invitation was created** —
+   `applications.portal_invited_at` should be unchanged from whatever it
+   was set to during the original (non-Membership) engagement in step 1;
+   `maybeInvitePortal` in `api/stripe-webhook.js` is never called on the
+   Membership path, but this is the one place that's actually provable
+   against a real Stripe event rather than a mocked one.
+8. Reload `my-engagement.html` with the same token. Confirm it now shows
+   the Membership status pill (**Trialing**), a next-billing date pulled
+   live from Stripe (`subscription.current_period_end`, roughly 30 days
+   out), and a **Manage Membership** button.
+9. Click **Manage Membership**. Confirm it redirects to a real Stripe
+   Billing Portal session for the correct Customer, and that Stripe's
+   portal lets you cancel the subscription. Cancel it there, then confirm
+   (via the `customer.subscription.updated`/`.deleted` webhook already
+   wired) that `program_purchases.membership_status` becomes `'cancelled'`
+   and reloading `my-engagement.html` reflects that.
+
+## Sequence H — original engagement → confirmed enrollment → portal invitation
+
+Verifies the corrected portal-handoff timing (moved off admissions
+acceptance onto confirmed payment this pass) against a real Stripe event,
+plus duplicate-delivery safety specifically for the invitation itself.
+
+1. Take a fresh application through: submit → AI score → admin **Accept**.
+   Confirm in the database that `applications.portal_invited_at` is
+   `NULL` immediately after acceptance — no invitation yet, regardless of
+   how long it's been.
+2. Continue: recommendation sent → select engagement → sign → Pay in Full
+   (or a Monthly Plan initial payment — both call sites should be
+   checked at least once each) via `4242 4242 4242 4242`.
+3. Confirm the webhook fires `checkout.session.completed`, and
+   `applications.portal_invited_at` is now set. Confirm (via whatever
+   admin visibility exists into Clerk, or the Clerk Dashboard's
+   Invitations list) that exactly one invitation exists for this
+   applicant's email.
+4. In Stripe Dashboard, **Resend** that same `checkout.session.completed`
+   event. Confirm the webhook returns 200, `portal_invited_at` is
+   unchanged (not re-stamped with a later timestamp), and no second Clerk
+   invitation was created.
+5. Repeat step 1-4 once for a Membership purchase from a graduate
+   (reusing Sequence G's application) and confirm portal_invited_at is
+   NOT touched a second time — it should already be set from the
+   applicant's original engagement, and the Membership webhook branch
+   must never call `maybeInvitePortal` at all.
+
 ## What to explicitly confirm at every sequence above
 
 - **Client email** — actually received (Resend delivery log), correct
@@ -166,6 +256,10 @@ rigorous here, this live sequence is lower-priority than A–E.
   all inspected directly in the Dashboard. None of these ids are ever
   exposed to the client-facing UI (confirm this too, e.g. by checking
   `booking-confirmed.html`'s network requests contain no raw Stripe ids).
+- **Clerk state** (Sequences G, H) — the Invitations list in the Clerk
+  Dashboard shows exactly one invitation per applicant email, never zero
+  and never two, and its timing lines up with confirmed payment, not
+  admissions acceptance.
 
 **No launch certification should be issued from mocked tests alone.**
 Sequences A–D are the minimum bar; E and F harden confidence further.

@@ -1417,3 +1417,23 @@ CREATE TABLE IF NOT EXISTS program_purchase_document_reviews (
   UNIQUE (purchase_id, review_number)
 );
 CREATE INDEX IF NOT EXISTS idx_program_purchase_document_reviews_purchase ON program_purchase_document_reviews (purchase_id);
+
+-- ============================================================
+-- Canonical Graduate predicate (see lib/graduateStatus.js). Per external
+-- review after the Pre-Portal implementation pass: "graduate" must have
+-- ONE authoritative definition enforced at the database level, not
+-- re-derived independently in every caller -- a future endpoint could
+-- otherwise interpret "completed" as status = 'complete', or
+-- payment_status = 'paid', instead of the actual locked doctrine
+-- (service_completed_at IS NOT NULL, any qualifying engagement, ever).
+-- Every call site -- Membership access, the entry-fee waiver,
+-- my-engagement.html eligibility, the admin badge, and the eventual
+-- Portal entitlement -- goes through this function (directly in SQL, or
+-- via lib/graduateStatus.js's isGraduate() in application code) instead
+-- of writing its own EXISTS(...) copy.
+CREATE OR REPLACE FUNCTION is_graduate(p_application_id INTEGER) RETURNS BOOLEAN AS $$
+  SELECT EXISTS(
+    SELECT 1 FROM program_purchases
+    WHERE application_id = p_application_id AND service_completed_at IS NOT NULL
+  );
+$$ LANGUAGE sql STABLE;

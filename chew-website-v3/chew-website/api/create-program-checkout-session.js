@@ -40,6 +40,7 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const { query } = require('../lib/db');
 const { getProgram, isOneTimeTier } = require('../lib/programs');
 const { getRecommendationById, isTierApproved } = require('../lib/recommendations');
+const { isGraduate } = require('../lib/graduateStatus');
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -93,15 +94,14 @@ module.exports = async (req, res) => {
     // gated on graduate status there), so this re-checks the SAME
     // graduate fact independently here rather than trusting that the
     // signature step's gate is still true — the exact defense-in-depth
-    // doctrine every other gate in this file already follows.
+    // doctrine every other gate in this file already follows. Computed
+    // once and reused below for the fee-waiver decision too (see the
+    // membership checkout branch) — the waiver must never trust gate
+    // ordering within this function, only a fresh isGraduate() result.
+    let clientIsGraduate = false;
     if (tier === 'membership') {
-      const graduateResult = await query(
-        `SELECT EXISTS(
-           SELECT 1 FROM program_purchases WHERE application_id = $1 AND service_completed_at IS NOT NULL
-         ) AS graduate`,
-        [application.id]
-      );
-      if (!graduateResult.rows[0].graduate) {
+      clientIsGraduate = await isGraduate(application.id);
+      if (!clientIsGraduate) {
         return res.status(403).json({ error: 'Membership is available to CHEW graduates after their engagement completes, not as a first-time engagement.' });
       }
     }
@@ -219,13 +219,15 @@ module.exports = async (req, res) => {
       const recurringPriceId = process.env[program.recurringPriceEnv];
       if (!recurringPriceId) return res.status(503).json({ error: `${program.recurringPriceEnv} is not configured yet.` });
 
-      // Reaching this branch already required graduate status (checked
-      // above), and the locked doctrine (Pre-Portal Master Specification)
-      // makes that same graduate fact the fee-waiver determination too —
-      // see lib/programs.js entryFeeWaivedForGraduates. So the entry-fee
-      // line item is simply omitted for every purchase that reaches here
-      // today, rather than charged and never actually waived.
-      const waiveEntryFee = program.entryFeeWaivedForGraduates;
+      // The locked doctrine (Pre-Portal Master Specification) makes
+      // graduate status BOTH the access gate above AND the fee-waiver
+      // determination — so this re-checks clientIsGraduate directly
+      // rather than trusting that reaching this line already implies it.
+      // A future change to the gate above (or a second entry path into
+      // this branch) must not be able to silently waive the fee for a
+      // non-graduate merely by skipping the earlier check — this line
+      // enforces the invariant on its own.
+      const waiveEntryFee = clientIsGraduate && program.entryFeeWaivedForGraduates;
       const lineItems = [{ price: recurringPriceId, quantity: 1 }];
       if (!waiveEntryFee) {
         const entryPriceId = process.env[program.entryPriceEnv];

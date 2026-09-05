@@ -22,6 +22,8 @@
 //
 // GET /api/my-engagement-status?token=<applications.access_token>
 
+const Stripe = require('stripe');
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const { query } = require('../lib/db');
 const { composePurchaseStatus } = require('../lib/engagementStatus');
 
@@ -48,7 +50,8 @@ module.exports = async (req, res) => {
               payment_plan_type, payment_plan_status, total_contract_amount_cents,
               installment_amount_cents, installment_count, installments_paid,
               initial_payment_paid_at, paid_in_full_at,
-              service_completed_at, continuity_ends_at, membership_status
+              service_completed_at, continuity_ends_at, membership_status,
+              stripe_customer_id, stripe_subscription_id
        FROM program_purchases WHERE application_id = $1 ORDER BY created_at DESC LIMIT 1`,
       [application.id]
     );
@@ -63,11 +66,34 @@ module.exports = async (req, res) => {
     }
 
     const status = await composePurchaseStatus(purchase);
+    const isMembership = purchase.tier === 'membership';
+
+    // Never make the frontend compute subscription state itself — resolve
+    // the next billing date here (live from Stripe, since this codebase
+    // has no stored "current period end" for an ongoing Membership
+    // subscription — see api/create-membership-billing-portal-session.js
+    // header) and hand back a ready-to-display value or null. A failed
+    // Stripe lookup degrades to null rather than failing the whole
+    // status response — the client still sees everything else.
+    let membershipNextBillingDate = null;
+    if (isMembership && purchase.stripe_subscription_id) {
+      try {
+        const subscription = await stripe.subscriptions.retrieve(purchase.stripe_subscription_id);
+        membershipNextBillingDate = subscription.current_period_end
+          ? new Date(subscription.current_period_end * 1000).toISOString()
+          : null;
+      } catch (stripeErr) {
+        console.error(`my-engagement-status: could not resolve next billing date for purchase ${purchase.id}:`, stripeErr.message);
+      }
+    }
+
     return res.status(200).json({
       fullName: application.full_name,
       ...status,
-      membershipStatus: purchase.tier === 'membership' ? purchase.membership_status : null,
-      isMembership: purchase.tier === 'membership',
+      membershipStatus: isMembership ? purchase.membership_status : null,
+      isMembership,
+      canManageMembership: isMembership && Boolean(purchase.stripe_customer_id),
+      membershipNextBillingDate,
     });
   } catch (err) {
     console.error('my-engagement-status error:', err.message);

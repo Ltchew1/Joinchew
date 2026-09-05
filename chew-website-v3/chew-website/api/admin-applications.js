@@ -51,9 +51,7 @@ module.exports = async (req, res) => {
               rec.primary_tier AS recommendation_primary_tier, rec.sent_at AS recommendation_sent_at,
               rec.viewed_at AS recommendation_viewed_at, rec.scope_review_requested_at AS recommendation_scope_review_requested_at,
               sel.selected_tier, sel.selected_payment_plan,
-              EXISTS(
-                SELECT 1 FROM program_purchases g WHERE g.application_id = a.id AND g.service_completed_at IS NOT NULL
-              ) AS is_graduate
+              is_graduate(a.id) AS is_graduate
        FROM applications a
        LEFT JOIN LATERAL (
          SELECT tier, signed_at FROM agreement_signatures
