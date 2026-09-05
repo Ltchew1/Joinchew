@@ -32,6 +32,32 @@ conditioned on Sequences G and H actually being run, not merely written.
    the deployment's environment (Vercel preview env vars, or local `.env`).
    `DATABASE_URL` must point at a real (test/staging) Postgres with the
    full `schema.sql` applied — see `PRODUCTION_DB_MIGRATION_RUNBOOK.md`.
+4a. Sequences G and H additionally require, and were NOT in this section
+    before those sequences were added — an operator who only did steps
+    1-4 above will hit missing-env-var errors partway through either one:
+    - `STRIPE_PRICE_MEMBERSHIP_RECURRING` (test-mode Price id) — required
+      for every Sequence G checkout attempt. `STRIPE_PRICE_MEMBERSHIP_ENTRY`
+      is NOT required today (`lib/programs.js` `entryFeeWaivedForGraduates:
+      true` means the entry-fee line item is never built), but keep a
+      test-mode value configured anyway in case that flag is ever
+      reverted — its absence would only surface the first time it isn't.
+    - `CLERK_SECRET_KEY` and `PORTAL_URL` — required for the portal
+      invitation itself (`lib/clerk.js`), created in Sequence H. Not read
+      by anything in Sequence G directly, but both sequences realistically
+      share one application (Sequence G reuses a graduate produced by
+      completing the original engagement in Sequence H first), so set
+      these before starting either.
+    - `ADMIN_CLERK_USER_ID` — required to authenticate into the admin
+      queue at all (`lib/admin-auth.js`), which both sequences need for
+      the admin Accept decision, Scope Builder, and Delivery & Completion
+      panel actions.
+    - `RESEND_API_KEY` and `FROM_EMAIL` — required for every email
+      confirmation named in "What to explicitly confirm" below (decision,
+      recommendation, signed-agreement, enrollment, Membership welcome,
+      Continuity notice).
+    - `SITE_URL` — required for correct Checkout `success_url`/
+      `cancel_url` and the Clerk invitation's `redirect_url`
+      (`PORTAL_URL/sign-up`).
 5. Use Stripe's documented test cards throughout: `4242 4242 4242 4242`
    (any future expiry, any CVC) for a successful charge;
    `4000 0000 0000 0341` for a card that's valid at Checkout but fails on
